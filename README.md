@@ -296,3 +296,9 @@ chunks are `eval = FALSE` and exist as a provenance record, not to be re-run cas
 Questions about the code: open an issue on
 [Naiklab/Cherry-PIC-Intestinal-Niches](https://github.com/Naiklab/Cherry-PIC-Intestinal-Niches),
 or contact Ikjot Sidhu.
+
+---
+
+## License
+
+MIT — see [LICENSE.md](LICENSE.md).
