@@ -1,0 +1,179 @@
+---
+title: "DR26001 Stage 03a — Short-term immune clustering (2024-02-09)"
+output:
+  html_notebook:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+Reprocesses the short-term immune arm into `short-term_immune-shor-term-2024-02-09.RDS`.
+
+Paths are relative to this `scripts/` directory.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Packages
+```{r chunk-01}
+pacman::p_load("Seurat", "dplyr", "harmony", "glue", "ggplot2", "patchwork")
+options(future.globals.maxSize = 4 * 1024^3)
+```
+
+# Create Dirs
+```{r chunk-02}
+# create.dir <- function(path) {if (!dir.exists(path)) dir.create(path, recursive = T)}
+
+# create.dir("../output/Clustering-Analysis-Immune-Short-Term/RDS")
+# create.dir("../output/Clustering-Analysis-Immune-Short-Term/plots")
+# create.dir("../output/Clustering-Analysis-Immune-Short-Term/plots/UMAP")
+# create.dir("../output/Clustering-Analysis-Immune-Short-Term/plots/Feature-Plots")
+# create.dir("../output/Clustering-Analysis-Immune-Short-Term/markers")
+```
+
+# Load Data
+```{r chunk-03}
+# This file is post separation of epithelia/immune from 2024-02-09 data, since it was not epithelia enriched
+seu_obj_short_term_immune_2024_02_09 <- readRDS("../../01-separate-epithelia-immune/outputs/short-term-2024-02-09_seu-obj-short-term-immune-2024-02-09-RNA-RNA_snn_res.0.5.RDS")
+
+# Split based on orig.ident (seq run) for Harmony
+# Join Layers (to then split)
+seu_obj_short_term_immune_2024_02_09 <- JoinLayers(seu_obj_short_term_immune_2024_02_09)
+
+# Resplit Layers
+seu_obj_short_term_immune_2024_02_09[["RNA"]] <- split(seu_obj_short_term_immune_2024_02_09[["RNA"]],
+                                              f = seu_obj_short_term_immune_2024_02_09$orig.ident)
+
+# Verify that layers are as I expect
+Layers(seu_obj_short_term_immune_2024_02_09)
+```
+
+# Reprocess Pipeline
+```{r chunk-04}
+multi_sample_pipeline <- function(merged_seu_obj, split_col = "orig.ident", res_cols = "RNA") {
+  
+  if (res_cols == "SCT") {
+    merged_seu_obj <- SCTransform(merged_seu_obj, verbose = FALSE)
+  } else {
+    merged_seu_obj <- NormalizeData(merged_seu_obj)
+    merged_seu_obj <- FindVariableFeatures(merged_seu_obj)
+    merged_seu_obj <- ScaleData(merged_seu_obj)
+  }
+  
+  merged_seu_obj <- RunPCA(merged_seu_obj)
+  merged_seu_obj <- RunHarmony(merged_seu_obj, assay.use = res_cols, group.by.vars = split_col)
+  merged_seu_obj <- RunUMAP(merged_seu_obj, reduction = "harmony", dims = 1:40)
+  merged_seu_obj <- FindNeighbors(merged_seu_obj, reduction = "harmony", dims = 1:40)
+  merged_seu_obj <- FindClusters(merged_seu_obj, resolution = c(1:10 / 10))
+  
+  return(merged_seu_obj)
+}
+```
+
+## Run Pipeline
+```{r chunk-05}
+seu_obj_short_term_immune_combined_processed <- multi_sample_pipeline(seu_obj_short_term_immune_2024_02_09, split_col = "orig.ident", res_cols = "RNA")
+
+# Add ribo genes just in case
+ribo_genes_mouse <- grep("^Rpl|^Rps", rownames(seu_obj_short_term_immune_combined_processed), value = TRUE)
+seu_obj_short_term_immune_combined_processed[["percent.ribo"]] <- PercentageFeatureSet(seu_obj_short_term_immune_combined_processed, features = ribo_genes_mouse)
+
+# View UMAP
+DimPlot(seu_obj_short_term_immune_combined_processed, group.by = "RNA_snn_res.0.1")
+```
+
+## Add Previous Annotations for comparison
+```{r chunk-06}
+# Prior annotations, joined on barcode. Load-bearing, not just a comparison.
+#
+# This column was extracted once from
+#   2024-08-06-Immune-Finalized-Seurat-Object.RDS (21,523 cells)
+# which lived under another user's Minerva account. The whole object was 4.5 GB and only
+# this one column was ever read from it, so it is stored here as a CSV instead: the join
+# below is unchanged, and this notebook now runs without cluster access.
+meta_immune_old <- read.csv("../data/prior_annotations_immune_2024-08-06.csv",
+                            stringsAsFactors = FALSE) %>%
+  select(barcodes, final_clusters)
+
+seu_obj_short_term_immune_combined_processed@meta.data <- seu_obj_short_term_immune_combined_processed@meta.data %>%
+  tibble::rownames_to_column("barcodes") %>%
+  dplyr::left_join(meta_immune_old, by = "barcodes") %>%
+  tibble::column_to_rownames("barcodes")
+```
+
+
+```{r fig.height=6, fig.width=12}
+DimPlot(seu_obj_short_term_immune_combined_processed, group.by = "final_clusters", label = T)
+saveRDS(seu_obj_short_term_immune_combined_processed, "../outputs/short-term_immune-shor-term-2024-02-09.RDS")
+```
+
+# Plots
+```{r chunk-07}
+create.dir <- function(dir_path) {
+  if (!dir.exists(dir_path)) {
+    dir.create(dir_path, recursive = TRUE)
+  }
+}
+
+create.dir("../output/Clustering-Analysis-Immune-Short-Term/plots/UMAP")
+create.dir("../output/Clustering-Analysis-Immune-Short-Term/plots/Feature-Plot")
+create.dir("../output/Clustering-Analysis-Immune-Short-Term/markers")
+```
+
+## 1. UMAP
+```{r chunk-08}
+# Individual UMAP
+pdf(glue("../outputs/short-term_UMAP-All-Resolutions.pdf"), height = 8, width = 12)
+for (res in grep("^RNA_snn", colnames(seu_obj_short_term_immune_combined_processed@meta.data), value = TRUE)) {
+  print(DimPlot(seu_obj_short_term_immune_combined_processed, group.by = res)  + 
+          ggplot2::ggtitle(glue("Resolution: {res}")))
+}
+dev.off()
+
+pdf(glue("../outputs/short-term_UMAP-All-Resolutions-labeled.pdf"), height = 8, width = 12)
+for (res in grep("^RNA_snn", colnames(seu_obj_short_term_immune_combined_processed@meta.data), value = TRUE)) {
+  print(DimPlot(seu_obj_short_term_immune_combined_processed, group.by = res, label = T)  + 
+          ggplot2::ggtitle(glue("Resolution: {res}")))
+}
+dev.off()
+
+pdf(glue("../outputs/short-term_UMAP-All-Resolutions-compared-to-previous-celltypes.pdf"), height = 8, width = 16)
+for (res in grep("^RNA_snn", colnames(seu_obj_short_term_immune_combined_processed@meta.data), value = TRUE)) {
+  a <- seu_obj_short_term_immune_combined_processed %>% DimPlot(group.by = "final_clusters")
+  b <- seu_obj_short_term_immune_combined_processed %>% DimPlot(group.by = res)
+  print(a+b)
+}
+dev.off()
+
+# GroupBy UMAPs
+pdf("../outputs/short-term_UMAP-groupby-plots.pdf", height = 8, width = 12)
+DimPlot(seu_obj_short_term_immune_combined_processed, group.by = "orig.ident") %>% print()
+DimPlot(seu_obj_short_term_immune_combined_processed, group.by = "Location") %>% print()
+DimPlot(seu_obj_short_term_immune_combined_processed, group.by = "Condition") %>% print()
+DimPlot(seu_obj_short_term_immune_combined_processed, group.by = "Sample_ID") %>% print()
+DimPlot(seu_obj_short_term_immune_combined_processed, group.by = "final_clusters") %>% print()
+dev.off()
+
+DimPlot(seu_obj_short_term_immune_combined_processed, group.by = "orig.ident") %>% print()
+DimPlot(seu_obj_short_term_immune_combined_processed, group.by = "Location") %>% print()
+DimPlot(seu_obj_short_term_immune_combined_processed, group.by = "Condition") %>% print()
+DimPlot(seu_obj_short_term_immune_combined_processed, group.by = "Sample_ID") %>% print()
+DimPlot(seu_obj_short_term_immune_combined_processed, group.by = "final_clusters") %>% print()
+```
+
+# Markers
+```{r chunk-09}
+source("../../helper-functions/processing-utils.R")
+
+presto_outs <- run.presto.specific.columns(seu_obj_short_term_immune_combined_processed, RNA_cols = T)
+
+# Save
+writexl::write_xlsx(presto_outs$`Raw-Markers`, "../outputs/short-term_Raw-Markers.xlsx")
+
+writexl::write_xlsx(presto_outs$`Filtered-Markers`, "../outputs/short-term_Filtered-Markers.xlsx")
+
+writexl::write_xlsx(presto_outs$`Top-Markers`, "../outputs/short-term_Top-Markers.xlsx")
+```
+
+

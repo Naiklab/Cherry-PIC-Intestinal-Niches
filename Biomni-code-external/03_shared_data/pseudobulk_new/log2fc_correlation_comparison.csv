@@ -1,0 +1,10 @@
+cell_type,n_shared,cor_all,cor_sig,cor_non_contam,cor_contam_only,n_contam
+Endothelial,7217,1,,1,1,14
+Macrophages,15509,1,1,1,1,40
+Fibroblasts,14180,1,1,1,1,34
+Bottom-Villus EC,8002,1,1,1,1,33
+Paneth,9046,1,1,1,1,32
+Plasmablasts,8063,1,1,1,1,19
+TA cells,11938,1,1,1,1,25
+cDC,9714,1,1,1,1,13
+Goblet,11518,1,1,1,1,29

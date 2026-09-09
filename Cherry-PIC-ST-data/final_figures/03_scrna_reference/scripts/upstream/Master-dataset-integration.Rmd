@@ -1,0 +1,1585 @@
+---
+title: "Master Dataset Integration — All cell types"
+output: html_notebook
+---
+
+# Overview
+# This notebook merges ALL datasets from the project into a single master object,
+# performs Harmony batch correction, and prepares the data for manual reannotation.
+# Original metadata from every source dataset is preserved throughout.
+#
+# Datasets included:
+#   1. Glisovic et al. 2025 — Fibroblast   (GSE269017, colon, Drop-seq)
+#   2. Rosenblum et al. 2026 — Epithelial  (this study; no GEO accession, small intestine, NovaSeqX)
+#   3. Rosenblum et al. 2026 — Immune      (this study; no GEO accession, small intestine, NovaSeqX)
+#   4. Niec et al. 2022 — SI single-cell   (RDS, 10x / CellBender filtered)
+#   5. Degirmenci 2018             (GSE113043, scRNA-seq)
+#   6. Kinchen 2018                (GSE114374, scRNA-seq, colon)
+#   7. McCarthy 2020               (GSE130681, 10x, small intestine mesenchyme)
+#   8. Roulis 2020                 (GSE142431, Drop-seq, colon mesenchyme)
+
+```{r setup}
+# Use the user defined library
+.libPaths("/sc/arion/projects/naiklab/ikjot/R") 
+
+library(Seurat)
+library(harmony)       # install.packages("harmony") if needed
+library(Matrix)
+library(tidyverse)
+library(patchwork)
+library(pheatmap)      # for heatmaps
+library(clustree)
+
+# Increase future.globals.maxSize for SCTransform parallelization
+options(future.globals.maxSize = 100000 * 1024^2)  # 100 GB
+
+# Standardized output structure
+output_root <- "output/master_integration"
+
+out_dirs <- list(
+  plots = list(
+    qc = file.path(output_root, "plots", "qc"),
+    integration = file.path(output_root, "plots", "integration"),
+    clustering = file.path(output_root, "plots", "clustering"),
+    clustering_umap = file.path(output_root, "plots", "clustering", "umap_by_resolution"),
+    markers = file.path(output_root, "plots", "markers"),
+    daniel = file.path(output_root, "plots", "daniel_markers")
+  ),
+  tables = list(
+    qc = file.path(output_root, "tables", "qc"),
+    clustering = file.path(output_root, "tables", "clustering"),
+    markers = file.path(output_root, "tables", "markers")
+  ),
+  rds = file.path(output_root, "rds")
+)
+
+all_out_dirs <- c(
+  unlist(out_dirs$plots, use.names = FALSE),
+  unlist(out_dirs$tables, use.names = FALSE),
+  out_dirs$rds,
+  file.path(out_dirs$tables$markers, "Markers_by-resolution")
+)
+
+invisible(lapply(all_out_dirs, function(path) {
+  dir.create(path, showWarnings = FALSE, recursive = TRUE)
+}))
+
+plot_file <- function(group, filename) file.path(out_dirs$plots[[group]], filename)
+table_file <- function(group, filename) file.path(out_dirs$tables[[group]], filename)
+rds_file <- function(filename) file.path(out_dirs$rds, filename)
+
+set.seed(42)
+```
+
+---
+
+# Section 1 — Load Daniel's processed objects
+
+```{r load-daniel}
+# Base paths
+daniel_output_dir <- "/sc/arion/projects/naiklab/shared/Daniel-Single-Cell-for-Ikjot/Ikjot-analysis-folder/output"
+local_rds_dir <- "Reference-Single-Cell-Data/rds-objects"
+
+# ── 1a. Fibroblast object (saved before HPC step) ────────────────────────────
+fib_path <- file.path(local_rds_dir, "Fibroblast.Obj.rds")
+if (!file.exists(fib_path)) {
+  stop("Missing fibroblast object: ", fib_path)
+}
+Fib.Obj <- readRDS(fib_path)
+cat("Fibroblast cells:", ncol(Fib.Obj), "\n")
+cat("Fibroblast metadata columns:", paste(colnames(Fib.Obj@meta.data), collapse = ", "), "\n\n")
+
+# ── 1b. Epithelial object ─────────────────────────────────────────────────────
+epi_path <- file.path(
+  daniel_output_dir,
+  "Clustering-Analysis-LT-ST-combined-Epithelia",
+  "RDS",
+  "EP.CTRL_data.processed.RDS"
+)
+if (!file.exists(epi_path)) {
+  stop("Missing epithelial object: ", epi_path)
+}
+Epi.Obj <- readRDS(epi_path)
+cat("Epithelial cells:", ncol(Epi.Obj), "\n")
+cat("Epithelial metadata columns:\n")
+print(colnames(Epi.Obj@meta.data))
+cat("\n")
+
+# ── 1c. Immune object ─────────────────────────────────────────────────────────
+immune_candidates <- c(
+  file.path(daniel_output_dir,
+            "Clustering-Analysis-LT-ST-combined-Immune",
+            "RDS",
+            "Immune.CTRL_data.processed.RDS"),
+  file.path(daniel_output_dir,
+            "Clustering-Analysis-LT-ST-combined-Immune",
+            "RDS",
+            "Immune.CTRL_data.filtered.RDS")
+)
+immune_path <- immune_candidates[file.exists(immune_candidates)][1]
+if (is.na(immune_path) || length(immune_path) == 0) {
+  stop("None of the candidate Immune object files were found:\n", paste(immune_candidates, collapse = "\n"))
+}
+Immune.Obj <- readRDS(immune_path)
+cat("Immune object source:", immune_path, "\n")
+cat("Immune cells:", ncol(Immune.Obj), "\n")
+cat("Immune metadata columns:\n")
+print(colnames(Immune.Obj@meta.data))
+```
+
+---
+
+# Section 2 — Load reference datasets
+
+## 2a. SpaceFold SI single-cell (pre-converted RDS)
+```{r load-spacefold}
+# Load pre-converted SpaceFold Seurat object
+spacefold_path <- "Reference-Single-Cell-Data/rds-objects/SI-data_SpaceFold-paper.RDS"
+
+if (!file.exists(spacefold_path)) {
+  stop("Missing SpaceFold object: ", spacefold_path)
+}
+
+SpaceFold.Obj <- readRDS(spacefold_path)
+
+cat("SpaceFold SI cells:", ncol(SpaceFold.Obj), "\n")
+cat("SpaceFold genes:", nrow(SpaceFold.Obj), "\n")
+cat("SpaceFold assays:", paste(Assays(SpaceFold.Obj), collapse = ", "), "\n")
+cat("SpaceFold metadata columns:", paste(colnames(SpaceFold.Obj@meta.data), collapse = ", "), "\n")
+```
+
+## 2b. Integration reference datasets (Degirmenci, Kinchen, McCarthy, Roulis)
+```{r load-integration-refs}
+# Load from project-level reference object folder.
+rds_path <- "Reference-Single-Cell-Data/rds-objects"
+
+required_rds <- c(
+  "Degirmenci.Obj.rds",
+  "Kinchen.Obj.rds",
+  "McCarthy.Obj.rds",
+  "Roulis.Obj.C1A.rds",
+  "Roulis.Obj.C1B.rds",
+  "Roulis.Obj.C2A.rds",
+  "Roulis.Obj.C2B.rds",
+  "Roulis.Obj.C2C.rds"
+)
+missing_rds <- required_rds[!file.exists(file.path(rds_path, required_rds))]
+if (length(missing_rds) > 0) {
+  stop("Missing integration RDS files in ", rds_path, ":\n", paste(missing_rds, collapse = "\n"))
+}
+
+Degirmenci.Obj <- readRDS(file.path(rds_path, "Degirmenci.Obj.rds"))
+Kinchen.Obj    <- readRDS(file.path(rds_path, "Kinchen.Obj.rds"))
+McCarthy.Obj   <- readRDS(file.path(rds_path, "McCarthy.Obj.rds"))
+Roulis.Obj.1   <- readRDS(file.path(rds_path, "Roulis.Obj.C1A.rds"))
+Roulis.Obj.2   <- readRDS(file.path(rds_path, "Roulis.Obj.C1B.rds"))
+Roulis.Obj.3   <- readRDS(file.path(rds_path, "Roulis.Obj.C2A.rds"))
+Roulis.Obj.4   <- readRDS(file.path(rds_path, "Roulis.Obj.C2B.rds"))
+Roulis.Obj.5   <- readRDS(file.path(rds_path, "Roulis.Obj.C2C.rds"))
+
+cat("Degirmenci:", ncol(Degirmenci.Obj),
+    "| Kinchen:", ncol(Kinchen.Obj),
+    "| McCarthy:", ncol(McCarthy.Obj), "\n")
+cat("Roulis (C1A–C2C):",
+    ncol(Roulis.Obj.1), ncol(Roulis.Obj.2), ncol(Roulis.Obj.3),
+    ncol(Roulis.Obj.4), ncol(Roulis.Obj.5), "\n")
+```
+
+---
+
+# Section 3 — Quality Control
+
+## 3a. Calculate QC metrics
+```{r calculate-qc-metrics}
+# List of all objects for QC
+all_objects <- list(
+  Fib.Obj = Fib.Obj,
+  Epi.Obj = Epi.Obj,
+  Immune.Obj = Immune.Obj,
+  SpaceFold.Obj = SpaceFold.Obj,
+  Degirmenci.Obj = Degirmenci.Obj,
+  Kinchen.Obj = Kinchen.Obj,
+  McCarthy.Obj = McCarthy.Obj,
+  Roulis.Obj.1 = Roulis.Obj.1,
+  Roulis.Obj.2 = Roulis.Obj.2,
+  Roulis.Obj.3 = Roulis.Obj.3,
+  Roulis.Obj.4 = Roulis.Obj.4,
+  Roulis.Obj.5 = Roulis.Obj.5
+)
+
+# Calculate percent mitochondrial and ribosomal genes for each object
+for (obj_name in names(all_objects)) {
+  obj <- all_objects[[obj_name]]
+  
+  # Ensure RNA assay is default
+  DefaultAssay(obj) <- "RNA"
+  
+  # Calculate percent mitochondrial (mt- or Mt- genes)
+  mt_pattern <- "^mt-|^Mt-|^MT-"
+  if (any(grepl(mt_pattern, rownames(obj)))) {
+    obj[["percent.mt"]] <- PercentageFeatureSet(obj, pattern = mt_pattern)
+  } else {
+    obj[["percent.mt"]] <- 0
+  }
+  
+  # Calculate percent ribosomal (Rpl/Rps genes)
+  ribo_pattern <- "^Rp[sl]|^RP[SL]"
+  if (any(grepl(ribo_pattern, rownames(obj)))) {
+    obj[["percent.ribo"]] <- PercentageFeatureSet(obj, pattern = ribo_pattern)
+  } else {
+    obj[["percent.ribo"]] <- 0
+  }
+  
+  # Assign back
+  all_objects[[obj_name]] <- obj
+  assign(obj_name, obj)
+}
+
+cat("QC metrics calculated for all objects.\n")
+```
+
+## 3b. Pre-filter QC summary
+```{r qc-summary-prefilter}
+# Create summary table of QC metrics before filtering
+qc_summary_pre <- data.frame(
+  Dataset = character(),
+  Cells = integer(),
+  Median_nFeature = numeric(),
+  Median_nCount = numeric(),
+  Median_pct_mt = numeric(),
+  Median_pct_ribo = numeric(),
+  stringsAsFactors = FALSE
+)
+
+for (obj_name in names(all_objects)) {
+  obj <- all_objects[[obj_name]]
+  qc_summary_pre <- rbind(qc_summary_pre, data.frame(
+    Dataset = obj_name,
+    Cells = ncol(obj),
+    Median_nFeature = median(obj$nFeature_RNA),
+    Median_nCount = median(obj$nCount_RNA),
+    Median_pct_mt = median(obj$percent.mt),
+    Median_pct_ribo = median(obj$percent.ribo)
+  ))
+}
+
+cat("=== PRE-FILTER QC SUMMARY ===\n")
+print(qc_summary_pre)
+cat("\nTotal cells before filtering:", sum(qc_summary_pre$Cells), "\n")
+```
+
+## 3c. QC Visualizations (before filtering)
+```{r qc-violin-plots, fig.width=16, fig.height=12}
+# Create combined object for visualization only
+temp_combined <- merge(
+  all_objects[[1]],
+  y = all_objects[-1],
+  add.cell.ids = names(all_objects)
+)
+temp_combined$dataset_temp <- sapply(strsplit(colnames(temp_combined), "_"), `[`, 1)
+
+# Violin plots for QC metrics
+p_nfeature <- VlnPlot(temp_combined, features = "nFeature_RNA", 
+                      group.by = "dataset_temp", pt.size = 0) +
+  geom_hline(yintercept = c(200, 500), linetype = "dashed", color = "red") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Genes per cell") + NoLegend()
+
+p_ncount <- VlnPlot(temp_combined, features = "nCount_RNA", 
+                    group.by = "dataset_temp", pt.size = 0) +
+  geom_hline(yintercept = c(500, 1000), linetype = "dashed", color = "red") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("UMIs per cell") + NoLegend()
+
+p_mt <- VlnPlot(temp_combined, features = "percent.mt", 
+                group.by = "dataset_temp", pt.size = 0) +
+  geom_hline(yintercept = c(10, 20), linetype = "dashed", color = "red") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("% Mitochondrial") + NoLegend()
+
+p_ribo <- VlnPlot(temp_combined, features = "percent.ribo", 
+                  group.by = "dataset_temp", pt.size = 0) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("% Ribosomal") + NoLegend()
+
+qc_plot <- (p_nfeature | p_ncount) / (p_mt | p_ribo)
+
+# Save
+pdf(plot_file("qc", "qc_violin_prefilter.pdf"), width = 16, height = 12)
+print(qc_plot)
+dev.off()
+
+qc_plot
+
+rm(temp_combined); gc()
+```
+
+```{r qc-scatter-plots, fig.width=14, fig.height=10}
+# Scatter plots for each dataset
+scatter_plots <- list()
+for (obj_name in names(all_objects)[1:6]) {  # First 6 for display
+  obj <- all_objects[[obj_name]]
+  scatter_plots[[obj_name]] <- ggplot(obj@meta.data, 
+                                       aes(x = nCount_RNA, y = nFeature_RNA, color = percent.mt)) +
+    geom_point(size = 0.5, alpha = 0.5) +
+    scale_color_viridis_c(limits = c(0, 25)) +
+    geom_hline(yintercept = 200, linetype = "dashed", color = "red") +
+    geom_vline(xintercept = 500, linetype = "dashed", color = "red") +
+    ggtitle(obj_name) +
+    theme_minimal() +
+    theme(legend.position = "none")
+}
+
+scatter_combined <- wrap_plots(scatter_plots, ncol = 3) +
+  plot_annotation(title = "nCount vs nFeature (colored by %MT)")
+
+pdf(plot_file("qc", "qc_scatter_prefilter.pdf"), width = 14, height = 10)
+print(scatter_combined)
+dev.off()
+
+scatter_combined
+```
+
+## 3d. Apply QC filters
+```{r apply-qc-filters}
+# Define QC thresholds — ADJUST THESE AS NEEDED
+# These are relatively permissive defaults; tighten based on your data
+
+qc_thresholds <- list(
+  min_features = 200,     # Minimum genes per cell
+  max_features = 8000,    # Maximum genes per cell (doublet filter)
+  min_counts = 500,       # Minimum UMIs per cell
+  max_counts = 50000,     # Maximum UMIs per cell (doublet filter)
+  max_mt = 15             # Maximum % mitochondrial
+)
+
+cat("=== QC FILTER THRESHOLDS ===\n")
+cat("Min features (genes):", qc_thresholds$min_features, "\n")
+cat("Max features (genes):", qc_thresholds$max_features, "\n")
+cat("Min counts (UMIs):", qc_thresholds$min_counts, "\n")
+cat("Max counts (UMIs):", qc_thresholds$max_counts, "\n")
+cat("Max % mitochondrial:", qc_thresholds$max_mt, "\n\n")
+
+# Apply filters to each object
+cells_before <- c()
+cells_after <- c()
+
+for (obj_name in names(all_objects)) {
+  obj <- all_objects[[obj_name]]
+  cells_before[obj_name] <- ncol(obj)
+  
+  # Apply filters
+  obj <- subset(obj,
+    subset = nFeature_RNA >= qc_thresholds$min_features &
+             nFeature_RNA <= qc_thresholds$max_features &
+             nCount_RNA >= qc_thresholds$min_counts &
+             nCount_RNA <= qc_thresholds$max_counts &
+             percent.mt <= qc_thresholds$max_mt
+  )
+  
+  cells_after[obj_name] <- ncol(obj)
+  all_objects[[obj_name]] <- obj
+  assign(obj_name, obj)
+  
+  cat(sprintf("%s: %d → %d cells (%.1f%% retained)\n",
+              obj_name, cells_before[obj_name], cells_after[obj_name],
+              100 * cells_after[obj_name] / cells_before[obj_name]))
+}
+
+cat("\n=== TOTAL ===\n")
+cat("Before:", sum(cells_before), "cells\n")
+cat("After:", sum(cells_after), "cells\n")
+cat("Retained:", sprintf("%.1f%%", 100 * sum(cells_after) / sum(cells_before)), "\n")
+```
+
+## 3e. Post-filter QC summary
+```{r qc-summary-postfilter}
+# Create summary table after filtering
+qc_summary_post <- data.frame(
+  Dataset = character(),
+  Cells_Before = integer(),
+  Cells_After = integer(),
+  Pct_Retained = numeric(),
+  Median_nFeature = numeric(),
+  Median_nCount = numeric(),
+  Median_pct_mt = numeric(),
+  stringsAsFactors = FALSE
+)
+
+for (obj_name in names(all_objects)) {
+  obj <- all_objects[[obj_name]]
+  qc_summary_post <- rbind(qc_summary_post, data.frame(
+    Dataset = obj_name,
+    Cells_Before = cells_before[obj_name],
+    Cells_After = cells_after[obj_name],
+    Pct_Retained = round(100 * cells_after[obj_name] / cells_before[obj_name], 1),
+    Median_nFeature = median(obj$nFeature_RNA),
+    Median_nCount = median(obj$nCount_RNA),
+    Median_pct_mt = median(obj$percent.mt)
+  ))
+}
+
+cat("=== POST-FILTER QC SUMMARY ===\n")
+print(qc_summary_post)
+
+# Save QC summary to CSV
+write.csv(qc_summary_post, table_file("qc", "qc_filtering_summary.csv"), row.names = FALSE)
+cat("\nQC summary saved to:", table_file("qc", "qc_filtering_summary.csv"), "\n")
+```
+
+```{r qc-violin-postfilter, fig.width=16, fig.height=8}
+# Post-filter violin plots
+temp_combined <- merge(
+  all_objects[[1]],
+  y = all_objects[-1],
+  add.cell.ids = names(all_objects)
+)
+temp_combined$dataset_temp <- sapply(strsplit(colnames(temp_combined), "_"), `[`, 1)
+
+p_nfeature_post <- VlnPlot(temp_combined, features = "nFeature_RNA", 
+                           group.by = "dataset_temp", pt.size = 0) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Genes per cell (post-filter)") + NoLegend()
+
+p_mt_post <- VlnPlot(temp_combined, features = "percent.mt", 
+                     group.by = "dataset_temp", pt.size = 0) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("% Mitochondrial (post-filter)") + NoLegend()
+
+qc_plot_post <- p_nfeature_post | p_mt_post
+
+pdf(plot_file("qc", "qc_violin_postfilter.pdf"), width = 16, height = 6)
+print(qc_plot_post)
+dev.off()
+
+qc_plot_post
+
+rm(temp_combined); gc()
+```
+
+---
+
+# Section 4 — Standardise metadata across all objects
+
+# A common set of columns is added to every object so they survive the merge
+# cleanly. All original columns are preserved — nothing is overwritten.
+```{r standardise-metadata}
+# Helper: safely rename a metadata column without overwriting existing ones
+safe_copy_meta <- function(obj, from_col, to_col) {
+  if (from_col %in% colnames(obj@meta.data) &&
+      !to_col %in% colnames(obj@meta.data)) {
+    obj[[to_col]] <- obj@meta.data[[from_col]]
+  }
+  return(obj)
+}
+
+# ── Glisovic — Fibroblast ─────────────────────────────────────────────────────────
+Fib.Obj$dataset_id      <- "GSE269017"
+Fib.Obj$dataset_label   <- "Glisovic_Fibroblast"
+Fib.Obj$cell_class      <- "Fibroblast"
+Fib.Obj$tissue          <- "Colon"
+Fib.Obj$sequencing_tech <- "Drop-seq"
+Fib.Obj$orig_annotation <- NA_character_  # no prior cell type annotation
+Fib.Obj$data_type       <- "UMI_counts"
+
+# ── Rosenblum — Epithelial (this study) ──────────────────────────────────────
+Epi.Obj$dataset_id      <- "NaikLab-data"
+Epi.Obj$dataset_label   <- "Rosenblum_Epithelial"
+Epi.Obj$cell_class      <- "Epithelial"
+Epi.Obj$tissue          <- "Small intestine"
+Epi.Obj$sequencing_tech <- "PIPseq"
+Epi.Obj$data_type       <- "UMI_counts"
+# Preserve the three cell type annotation columns under standardised name
+Epi.Obj <- safe_copy_meta(Epi.Obj, "cell_type_labels",  "orig_annotation")
+Epi.Obj <- safe_copy_meta(Epi.Obj, "cell_type_broad",   "orig_celltype_broad")
+Epi.Obj <- safe_copy_meta(Epi.Obj, "cell_type_narrow",  "orig_celltype_narrow")
+
+# ── Rosenblum — Immune (this study) ──────────────────────────────────────────
+Immune.Obj$dataset_id      <- "NaikLab-data"
+Immune.Obj$dataset_label   <- "Rosenblum_Immune"
+Immune.Obj$cell_class      <- "Immune"
+Immune.Obj$tissue          <- "Small intestine"
+Immune.Obj$sequencing_tech <- "PIPseq"
+Immune.Obj$data_type       <- "UMI_counts"
+# Copy over whatever annotation column exists
+for (col in c("cell_type_labels", "cell_type_broad", "seurat_clusters")) {
+  if (col %in% colnames(Immune.Obj@meta.data)) {
+    Immune.Obj$orig_annotation <- as.character(Immune.Obj@meta.data[[col]])
+    break
+  }
+}
+
+# ── Niec — SpaceFold SI ──────────────────────────────────────────────────────
+SpaceFold.Obj$dataset_id      <- "GSE190037"
+SpaceFold.Obj$dataset_label   <- "Niec_SpaceFold_SI"
+SpaceFold.Obj$tissue          <- "Small intestine"
+SpaceFold.Obj$sequencing_tech <- "10x_Chromium"
+# Counts are CellBender ambient-corrected and therefore non-integer (nCount_RNA
+# ranges 518.80 - 3862.88), so they are not raw UMIs.
+SpaceFold.Obj$data_type       <- "CellBender_corrected_counts"
+
+# This dataset spans all three compartments - roughly 40% of its cells are immune,
+# stromal or endothelial - so cell_class is derived from the authors' own coarse
+# annotation rather than set to a single value.
+# "neurons/enteroendocrine" is a merged upstream label; in this epithelium-enriched
+# dataset the enteroendocrine fraction dominates, so those 26 cells count as Epithelial.
+# Endothelial types (lymphatic, blood vasc.) and glia fold into Mesenchymal, which is
+# what the figure code maps to the Stroma compartment.
+niec_cell_class <- c(
+  "stem/TA"                 = "Epithelial",
+  "mature_enterocyte"       = "Epithelial",
+  "goblet"                  = "Epithelial",
+  "Paneth"                  = "Epithelial",
+  "tuft"                    = "Epithelial",
+  "neurons/enteroendocrine" = "Epithelial",
+  "rest B"                  = "Immune",
+  "cycling/GC B cell"       = "Immune",
+  "plasma"                  = "Immune",
+  "T cell"                  = "Immune",
+  "macrophage"              = "Immune",
+  "cDC/monocyte"            = "Immune",
+  "pDC"                     = "Immune",
+  "str"                     = "Mesenchymal",
+  "lymphatic"               = "Mesenchymal",
+  "blood vasc."             = "Mesenchymal",
+  "glial"                   = "Mesenchymal"
+)
+.sf_coarse <- as.character(SpaceFold.Obj$coarse_cluster_dbRM)
+SpaceFold.Obj$cell_class <- unname(niec_cell_class[.sf_coarse])
+if (any(is.na(SpaceFold.Obj$cell_class)))
+  warning("Unmapped Niec coarse cluster: ",
+          paste(unique(.sf_coarse[is.na(SpaceFold.Obj$cell_class)]), collapse = ", "))
+cat("Niec cell_class:\n"); print(table(SpaceFold.Obj$cell_class))
+SpaceFold.Obj <- safe_copy_meta(SpaceFold.Obj, "cell_state",          "orig_annotation")
+SpaceFold.Obj <- safe_copy_meta(SpaceFold.Obj, "coarse_cluster_dbRM", "orig_celltype_broad")
+
+# ── Degirmenci ────────────────────────────────────────────────────────────────
+Degirmenci.Obj$dataset_id      <- "GSE113043"
+Degirmenci.Obj$dataset_label   <- "Degirmenci_2018"
+Degirmenci.Obj$cell_class      <- "Mesenchymal"
+Degirmenci.Obj$tissue          <- "Small intestine"
+Degirmenci.Obj$sequencing_tech <- "10x_Chromium"
+Degirmenci.Obj$orig_annotation <- NA_character_
+Degirmenci.Obj$data_type       <- "UMI_counts"
+
+# ── Kinchen ───────────────────────────────────────────────────────────────────
+Kinchen.Obj$dataset_id      <- "GSE114374"
+Kinchen.Obj$dataset_label   <- "Kinchen_2018"
+Kinchen.Obj$cell_class      <- "Mesenchymal"
+Kinchen.Obj$tissue          <- "Colon"
+Kinchen.Obj$sequencing_tech <- "10x_Chromium"
+Kinchen.Obj$orig_annotation <- NA_character_
+Kinchen.Obj$data_type       <- "UMI_counts"
+
+# ── McCarthy ──────────────────────────────────────────────────────────────────
+McCarthy.Obj$dataset_id      <- "GSE130681"
+McCarthy.Obj$dataset_label   <- "McCarthy_2020"
+McCarthy.Obj$cell_class      <- "Mesenchymal"
+McCarthy.Obj$tissue          <- "Small intestine"
+McCarthy.Obj$sequencing_tech <- "10x_Chromium"
+McCarthy.Obj$orig_annotation <- NA_character_
+McCarthy.Obj$data_type       <- "UMI_counts"
+
+# ── Roulis ────────────────────────────────────────────────────────────────────
+for (obj_name in c("Roulis.Obj.1","Roulis.Obj.2","Roulis.Obj.3",
+                   "Roulis.Obj.4","Roulis.Obj.5")) {
+  obj <- get(obj_name)
+  obj$dataset_id      <- "GSE142431"
+  obj$dataset_label   <- "Roulis_2020"
+  obj$cell_class      <- "Mesenchymal"
+  obj$tissue          <- "Colon"
+  obj$sequencing_tech <- "Drop-seq"
+  obj$orig_annotation <- NA_character_
+  obj$data_type       <- "UMI_counts"
+  assign(obj_name, obj)
+}
+
+cat("Metadata standardisation complete.\n")
+```
+
+---
+
+# Section 5 — SCTransform per object (normalise before merging)
+
+# Each object is SCTransformed individually to avoid the memory cost of
+# ScaleData on the full merged matrix.
+```{r sctransform-per-object}
+# Ensure raw RNA counts are the active assay before SCTransform
+objects_to_transform <- list(
+  Fib.Obj, Epi.Obj, Immune.Obj,
+  SpaceFold.Obj,
+  Degirmenci.Obj, Kinchen.Obj, McCarthy.Obj,
+  Roulis.Obj.1, Roulis.Obj.2, Roulis.Obj.3, Roulis.Obj.4, Roulis.Obj.5
+)
+obj_names <- c(
+  "Fib.Obj", "Epi.Obj", "Immune.Obj",
+  "SpaceFold.Obj",
+  "Degirmenci.Obj", "Kinchen.Obj", "McCarthy.Obj",
+  "Roulis.Obj.1", "Roulis.Obj.2", "Roulis.Obj.3", "Roulis.Obj.4", "Roulis.Obj.5"
+)
+
+for (i in seq_along(objects_to_transform)) {
+  cat("SCTransform:", obj_names[i], "\n")
+  DefaultAssay(objects_to_transform[[i]]) <- "RNA"
+  objects_to_transform[[i]] <- SCTransform(
+    objects_to_transform[[i]],
+    assay   = "RNA",
+    verbose = FALSE
+  )
+  assign(obj_names[i], objects_to_transform[[i]])
+  cat("  Done. Cells:", ncol(get(obj_names[i])), "\n")
+}
+
+gc()
+```
+
+---
+
+# Section 6 — Merge all objects into one master object
+
+```{r merge-all}
+Master.Obj <- merge(
+  Fib.Obj,
+  y = list(
+    Epi.Obj, Immune.Obj,
+    SpaceFold.Obj,
+    Degirmenci.Obj, Kinchen.Obj, McCarthy.Obj,
+    Roulis.Obj.1, Roulis.Obj.2, Roulis.Obj.3, Roulis.Obj.4, Roulis.Obj.5
+  ),
+  merge.data = FALSE
+)
+
+# Free individual objects from memory
+rm(Fib.Obj, Epi.Obj, Immune.Obj,
+   SpaceFold.Obj,
+   Degirmenci.Obj, Kinchen.Obj, McCarthy.Obj,
+   Roulis.Obj.1, Roulis.Obj.2, Roulis.Obj.3, Roulis.Obj.4, Roulis.Obj.5)
+gc()
+
+cat("Total cells in master object:", ncol(Master.Obj), "\n\n")
+cat("Cells per dataset:\n")
+print(table(Master.Obj$dataset_label))
+cat("\nCells per cell class:\n")
+print(table(Master.Obj$cell_class))
+```
+
+---
+
+# Section 7 — Select integration features and run PCA
+
+```{r pca}
+# Set default assay to SCT
+DefaultAssay(Master.Obj) <- "SCT"
+
+# Select variable features across all cells
+Master.Obj <- FindVariableFeatures(Master.Obj, nfeatures = 3000)
+
+# PCA on shared variable features across all SCT-normalised layers
+Master.Obj <- RunPCA(Master.Obj, assay = "SCT", verbose = FALSE)
+
+elbow_p <- ElbowPlot(Master.Obj, ndims = 50) +
+  ggtitle("Elbow plot - choose n dims for Harmony and UMAP")
+
+# Save to PDF
+pdf(plot_file("integration", "elbow_plot.pdf"), width = 8, height = 6)
+print(elbow_p)
+dev.off()
+
+elbow_p
+```
+
+---
+
+# Section 8 — Harmony batch correction
+
+# Harmony corrects the PCA embedding for batch effects introduced by
+# dataset of origin, sequencing technology, and tissue differences.
+# It is preferred over CCA here because:
+#   - We have 14 input objects / many batches
+#   - Cell type composition differs across datasets
+#   - Computationally efficient at this scale
+```{r harmony}
+# Correct for dataset and sequencing technology simultaneously
+Master.Obj <- RunHarmony(
+  Master.Obj,
+  # `sequencing_tech` records the single-cell CAPTURE platform (PIPseq / Drop-seq /
+  # 10x_Chromium), not the sequencer. It previously mixed a sequencer ("NovaSeqX") and an
+  # assay type ("scRNA-seq") with real platform names.
+  #
+  # NOTE for anyone rebuilding: standardising it merged the former "scRNA-seq" group into
+  # "10x_Chromium", so this variable now has 3 levels where the frozen object was built
+  # with 4. A rebuild therefore corrects on a slightly different grouping. Harmony is
+  # stochastic in any case, so a rebuild never reproduces the frozen embedding exactly.
+  group.by.vars  = c("dataset_label", "sequencing_tech"),
+  reduction      = "pca",
+  reduction.save = "harmony",
+  assay.use      = "SCT",
+  verbose        = FALSE
+)
+
+cat("Harmony embedding dimensions:", dim(Embeddings(Master.Obj, "harmony")), "\n")
+```
+
+---
+
+# Section 9 — UMAP and clustering on Harmony embedding
+
+# Update n_dims below based on the elbow plot in Section 6.
+```{r umap-clustering}
+n_dims <- 30  # adjust after inspecting elbow plot
+cluster_resolutions <- c(0.1, 0.2, 0.3, 0.4, 0.5, 0.8, 1, 1.2, 1.5, 2, 2.5, 3)
+selected_resolution <- 1.2
+
+Master.Obj <- RunUMAP(Master.Obj,
+                       reduction = "harmony",
+                       dims      = 1:n_dims,
+                       verbose   = FALSE)
+
+Master.Obj <- FindNeighbors(Master.Obj,
+                             reduction = "harmony",
+                             dims      = 1:n_dims,
+                             verbose   = FALSE)
+
+# Run clustering over a broader resolution range
+Master.Obj <- FindClusters(Master.Obj,
+                            resolution = cluster_resolutions,
+                            verbose    = FALSE)
+
+selected_cluster_col <- paste0("SCT_snn_res.", selected_resolution)
+if (!selected_cluster_col %in% colnames(Master.Obj@meta.data)) {
+  stop("Selected clustering column not found: ", selected_cluster_col)
+}
+
+Master.Obj$seurat_clusters <- Master.Obj@meta.data[[selected_cluster_col]]
+Idents(Master.Obj) <- "seurat_clusters"
+
+cat("Cluster resolutions run:", paste(cluster_resolutions, collapse = ", "), "\n")
+cat("Selected default resolution for downstream plots:", selected_resolution, "\n")
+cat("Number of clusters at selected resolution:", length(levels(Master.Obj$seurat_clusters)), "\n")
+table(Master.Obj$seurat_clusters)
+```
+
+```{r clustree-resolution-analysis, fig.width=12, fig.height=10}
+# Visualize cluster transitions across resolutions
+cluster_cols <- grep("^SCT_snn_res\\.", colnames(Master.Obj@meta.data), value = TRUE)
+
+if (length(cluster_cols) < 2) {
+  stop("Need at least 2 clustering resolutions for clustree. Found: ", length(cluster_cols))
+}
+
+# Build compact clustering-only table (nba_clusts style)
+clustree_input <- Master.Obj@meta.data[, cluster_cols, drop = FALSE]
+
+# Rename columns to simple K-prefix format, e.g. K0.1, K0.2, K0.5
+colnames(clustree_input) <- sub("^SCT_snn_res\\.", "K", colnames(clustree_input))
+
+clustree_plot <- clustree(clustree_input, prefix = "K") +
+  ggtitle("Clustree - cluster transitions across resolutions")
+
+clustree_stability_plot <- clustree(
+  clustree_input,
+  prefix = "K",
+  node_colour = "sc3_stability"
+) +
+  ggtitle("Clustree - SC3 stability across resolutions")
+
+pdf(plot_file("clustering", "clustree_resolution_transitions.pdf"), width = 12, height = 10)
+print(clustree_plot)
+print(clustree_stability_plot)
+dev.off()
+
+png(plot_file("clustering", "clustree_resolution_transitions.png"), width = 1400, height = 1100, res = 130)
+print(clustree_stability_plot)
+dev.off()
+
+# Save cluster counts per resolution
+cluster_count_summary <- tibble(
+  resolution = cluster_resolutions,
+  n_clusters = sapply(cluster_resolutions, function(res) {
+    col_name <- paste0("SCT_snn_res.", res)
+    length(unique(Master.Obj@meta.data[[col_name]]))
+  })
+)
+
+write.csv(cluster_count_summary,
+          table_file("clustering", "cluster_counts_by_resolution.csv"),
+          row.names = FALSE)
+
+print(cluster_count_summary)
+clustree_stability_plot
+```
+
+---
+
+# Section 10 — Visualisations
+
+```{r dimplots, fig.width=16, fig.height=14}
+p1 <- DimPlot(Master.Obj, reduction = "umap", group.by = "seurat_clusters",
+              label = TRUE, pt.size = 0.2) +
+  ggtitle(paste0("Initial clusters (res = ", selected_resolution, ")"))
+
+p2 <- DimPlot(Master.Obj, reduction = "umap", group.by = "dataset_label",
+              pt.size = 0.2) +
+  ggtitle("Dataset of origin")
+
+p3 <- DimPlot(Master.Obj, reduction = "umap", group.by = "cell_class",
+              pt.size = 0.2) +
+  ggtitle("Cell class")
+
+p4 <- DimPlot(Master.Obj, reduction = "umap", group.by = "sequencing_tech",
+              pt.size = 0.2) +
+  ggtitle("Sequencing technology")
+
+# Save combined plot to PDF
+pdf(plot_file("integration", "umap_overview.pdf"), width = 16, height = 14)
+print((p1 | p2) / (p3 | p4))
+dev.off()
+
+# Save cluster UMAPs for every tested resolution in the clustering directory
+umap_resolution_paths <- c()
+
+for (res in cluster_resolutions) {
+  res_col <- paste0("SCT_snn_res.", res)
+
+  if (!res_col %in% colnames(Master.Obj@meta.data)) {
+    warning("Skipping missing clustering column for UMAP export: ", res_col)
+    next
+  }
+
+  Master.Obj$seurat_clusters <- Master.Obj@meta.data[[res_col]]
+  Idents(Master.Obj) <- "seurat_clusters"
+
+  res_plot <- DimPlot(
+    Master.Obj,
+    reduction = "umap",
+    group.by = "seurat_clusters",
+    label = TRUE,
+    pt.size = 0.2
+  ) +
+    ggtitle(paste0("Clusters on Harmony UMAP (res = ", res, ")"))
+
+  res_file_stub <- paste0("umap_clusters_res_", gsub("\\.", "_", as.character(res)))
+  res_pdf <- plot_file("clustering_umap", paste0(res_file_stub, ".pdf"))
+  res_png <- plot_file("clustering_umap", paste0(res_file_stub, ".png"))
+
+  pdf(res_pdf, width = 10, height = 8)
+  print(res_plot)
+  dev.off()
+
+  png(res_png, width = 1200, height = 960, res = 150)
+  print(res_plot)
+  dev.off()
+
+  umap_resolution_paths <- c(umap_resolution_paths, res_pdf)
+}
+
+# Restore selected resolution as default identity for downstream sections
+selected_cluster_col <- paste0("SCT_snn_res.", selected_resolution)
+Master.Obj$seurat_clusters <- Master.Obj@meta.data[[selected_cluster_col]]
+Idents(Master.Obj) <- "seurat_clusters"
+
+# Save selected-resolution cluster UMAP in the integration directory as a convenience copy
+pdf(plot_file("integration", "umap_clusters_selected_resolution.pdf"), width = 10, height = 8)
+print(p1)
+dev.off()
+
+pdf(plot_file("integration", "umap_dataset.pdf"), width = 10, height = 8)
+print(p2)
+dev.off()
+
+pdf(plot_file("integration", "umap_cellclass.pdf"), width = 10, height = 8)
+print(p3)
+dev.off()
+
+pdf(plot_file("integration", "umap_seqtech.pdf"), width = 10, height = 8)
+print(p4)
+dev.off()
+
+cat("Saved clustering UMAPs for resolutions to:", out_dirs$plots$clustering_umap, "\n")
+cat("Number of resolution-specific UMAP PDFs:", length(umap_resolution_paths), "\n")
+
+(p1 | p2) / (p3 | p4)
+```
+
+```{r dimplot-orig-annotations, fig.width=12, fig.height=5}
+# Show original annotations where available
+p5 <- DimPlot(Master.Obj, reduction = "umap", group.by = "orig_annotation",
+              label = TRUE, repel = TRUE, pt.size = 0.2) +
+  ggtitle("Original annotations (where available)") +
+  NoLegend()
+
+# Save to PDF
+pdf(plot_file("integration", "umap_orig_annotations.pdf"), width = 12, height = 10)
+print(p5)
+dev.off()
+
+p5
+```
+
+```{r feature-plots, fig.width=14, fig.height=10}
+# Broad cell type markers to guide reannotation
+DefaultAssay(Master.Obj) <- "SCT"
+
+feature_p <- FeaturePlot(Master.Obj, reduction = "umap", pt.size = 0.1,
+            features = c(
+              "Vim",     # fibroblast / mesenchymal
+              "Krt8",    # epithelial
+              "Ptprc",   # immune (Cd45)
+              "Epcam",   # epithelial
+              "Pdgfra",  # mesenchymal fibroblast
+              "Acta2"    # smooth muscle / myofibroblast
+            ))
+
+# Save to PDF
+pdf(plot_file("integration", "feature_markers.pdf"), width = 14, height = 10)
+print(feature_p)
+dev.off()
+
+feature_p
+```
+
+---
+
+# Section 11 — Standard marker analysis
+
+```{r standard-findallmarkers, fig.width=14, fig.height=12}
+DefaultAssay(Master.Obj) <- "SCT"
+Idents(Master.Obj) <- "seurat_clusters"
+
+marker_resolution_dir <- file.path(table_file("markers", "Markers_by-resolution"))
+
+# Prepare SCT assay for differential expression testing
+Master.Obj <- PrepSCTFindMarkers(Master.Obj)
+
+cat("Running FindAllMarkers for all tested resolutions:\n")
+
+marker_summary <- list()
+selected_markers <- NULL
+
+for (res in cluster_resolutions) {
+  res_col <- paste0("SCT_snn_res.", res)
+
+  if (!res_col %in% colnames(Master.Obj@meta.data)) {
+    warning("Skipping missing resolution column: ", res_col)
+    next
+  }
+
+  Master.Obj$seurat_clusters <- Master.Obj@meta.data[[res_col]]
+  Idents(Master.Obj) <- "seurat_clusters"
+
+  cat("  - Resolution ", res, " ...\n", sep = "")
+
+  markers_res <- FindAllMarkers(
+    Master.Obj,
+    assay = "SCT",
+    only.pos = TRUE,
+    min.pct = 0.25,
+    logfc.threshold = 0.25,
+    test.use = "wilcox"
+  )
+
+  write.csv(
+    markers_res,
+    file.path(marker_resolution_dir,
+              paste0("findallmarkers_res_", res, ".csv")),
+    row.names = FALSE
+  )
+
+  top_markers_res <- markers_res %>%
+    group_by(cluster) %>%
+    slice_max(order_by = avg_log2FC, n = 10, with_ties = FALSE) %>%
+    arrange(cluster, desc(avg_log2FC))
+
+  write.csv(
+    top_markers_res,
+    file.path(marker_resolution_dir,
+              paste0("top10_markers_per_cluster_res_", res, ".csv")),
+    row.names = FALSE
+  )
+
+  marker_summary[[as.character(res)]] <- tibble(
+    resolution = res,
+    n_clusters = length(unique(Master.Obj$seurat_clusters)),
+    n_markers = nrow(markers_res)
+  )
+
+  if (as.character(res) == as.character(selected_resolution)) {
+    selected_markers <- markers_res
+  }
+}
+
+marker_summary_df <- bind_rows(marker_summary)
+write.csv(marker_summary_df,
+          file.path(marker_resolution_dir, "marker_summary_by_resolution.csv"),
+          row.names = FALSE)
+
+# Keep selected resolution as default identity for downstream sections
+selected_cluster_col <- paste0("SCT_snn_res.", selected_resolution)
+Master.Obj$seurat_clusters <- Master.Obj@meta.data[[selected_cluster_col]]
+Idents(Master.Obj) <- "seurat_clusters"
+
+# Heatmap for selected resolution
+if (!is.null(selected_markers) && nrow(selected_markers) > 0) {
+  write.csv(selected_markers,
+            table_file("markers", "findallmarkers_res_selected.csv"),
+            row.names = FALSE)
+
+  top_markers_per_cluster <- selected_markers %>%
+    group_by(cluster) %>%
+    slice_max(order_by = avg_log2FC, n = 10, with_ties = FALSE) %>%
+    arrange(cluster, desc(avg_log2FC))
+
+  write.csv(top_markers_per_cluster,
+            table_file("markers", "top10_markers_per_cluster_res_selected.csv"),
+            row.names = FALSE)
+
+  heatmap_features <- selected_markers %>%
+    group_by(cluster) %>%
+    slice_max(order_by = avg_log2FC, n = 5, with_ties = FALSE) %>%
+    pull(gene) %>%
+    unique()
+
+  # Downsample for readable and memory-safe heatmap rendering
+  cells_for_heatmap <- unlist(lapply(levels(Idents(Master.Obj)), function(cl) {
+    cl_cells <- WhichCells(Master.Obj, idents = cl)
+    sample(cl_cells, min(length(cl_cells), 200))
+  }))
+
+  heatmap_obj <- subset(Master.Obj, cells = cells_for_heatmap)
+
+  marker_heatmap <- DoHeatmap(
+    heatmap_obj,
+    features = heatmap_features,
+    group.by = "seurat_clusters",
+    slot = "data",
+    size = 3
+  ) +
+    ggtitle(paste0("Top markers heatmap (res = ", selected_resolution, ")"))
+
+  pdf(plot_file("markers", "findallmarkers_heatmap_res_selected.pdf"), width = 14, height = 12)
+  print(marker_heatmap)
+  dev.off()
+
+  cat("FindAllMarkers complete for all resolutions.\n")
+  print(marker_summary_df)
+  marker_heatmap
+} else {
+  cat("FindAllMarkers complete for all resolutions, but selected resolution had no markers for heatmap.\n")
+  print(marker_summary_df)
+}
+```
+
+## 11b. RNA-assay heatmap (log-normalised)
+```{r rna-lognorm-heatmap, fig.width=14, fig.height=12}
+# Log-normalise the RNA assay and generate a heatmap using it instead of SCT.
+# This gives an independent view of marker expression free of SCTransform modelling.
+
+if (!is.null(selected_markers) && nrow(selected_markers) > 0) {
+
+  # ── Log-normalise the RNA assay ──────────────────────────────────────────────
+  DefaultAssay(Master.Obj) <- "RNA"
+  Master.Obj <- NormalizeData(Master.Obj, normalization.method = "LogNormalize",
+                              scale.factor = 10000, verbose = FALSE)
+
+  # Scale only the genes we need for the heatmap (memory-safe)
+  heatmap_features_rna <- selected_markers %>%
+    group_by(cluster) %>%
+    slice_max(order_by = avg_log2FC, n = 5, with_ties = FALSE) %>%
+    pull(gene) %>%
+    unique()
+
+  # Keep only genes present in the RNA assay
+  heatmap_features_rna <- heatmap_features_rna[heatmap_features_rna %in% rownames(Master.Obj)]
+
+  Master.Obj <- ScaleData(Master.Obj, features = heatmap_features_rna, verbose = FALSE)
+
+  # ── Downsample for readable heatmap ─────────────────────────────────────────
+  Idents(Master.Obj) <- "seurat_clusters"
+  cells_for_heatmap_rna <- unlist(lapply(levels(Idents(Master.Obj)), function(cl) {
+    cl_cells <- WhichCells(Master.Obj, idents = cl)
+    sample(cl_cells, min(length(cl_cells), 200))
+  }))
+
+  heatmap_obj_rna <- subset(Master.Obj, cells = cells_for_heatmap_rna)
+
+  # ── Draw heatmap ────────────────────────────────────────────────────────────
+  marker_heatmap_rna <- DoHeatmap(
+    heatmap_obj_rna,
+    features = heatmap_features_rna,
+    group.by = "seurat_clusters",
+    assay = "RNA",
+    slot = "scale.data",
+    size = 3
+  ) +
+    ggtitle(paste0("Top markers heatmap - RNA LogNormalize (res = ",
+                   selected_resolution, ")"))
+
+  pdf(plot_file("markers", "findallmarkers_heatmap_RNA_lognorm.pdf"),
+      width = 14, height = 12)
+  print(marker_heatmap_rna)
+  dev.off()
+
+  # Restore SCT as default assay for downstream sections
+  DefaultAssay(Master.Obj) <- "SCT"
+
+  cat("RNA log-normalised heatmap saved.\n")
+  marker_heatmap_rna
+} else {
+  cat("No selected markers available for RNA heatmap.\n")
+}
+```
+
+---
+
+# Section 12 — Custom Marker Gene Analysis (Daniel's Markers)
+
+## 11a. Load marker gene signatures
+```{r load-daniel-markers}
+# Load custom marker genes from Daniel
+markers_df <- read.csv("Custom-Marker-genes-only-from-Daniel.csv", stringsAsFactors = FALSE)
+markers_df <- markers_df[, c("Cell_Type", "Marker")]  # Keep only relevant columns
+markers_df <- markers_df[markers_df$Cell_Type != "Cell_Type", ]  # Remove header row if duplicated
+
+# Create named list of gene signatures for UCell
+marker_list <- split(markers_df$Marker, markers_df$Cell_Type)
+marker_list <- lapply(marker_list, function(x) x[x != ""])  # Remove empty strings
+
+# Show summary
+cat("Cell types with marker signatures:\n")
+for (ct in names(marker_list)) {
+  cat(sprintf("  %s: %d genes\n", ct, length(marker_list[[ct]])))
+}
+
+# Daniel marker plots are saved under standardized output paths
+```
+
+## 11b. UCell signature scoring
+```{r ucell-scoring}
+# Install UCell if needed
+if (!requireNamespace("UCell", quietly = TRUE)) {
+  BiocManager::install("UCell")
+}
+library(UCell)
+
+# Set SCT as default assay for scoring
+DefaultAssay(Master.Obj) <- "SCT"
+
+# Run UCell scoring for all signatures
+Master.Obj <- AddModuleScore_UCell(
+  Master.Obj, 
+  features = marker_list,
+  name = "_UCell"
+)
+
+# Show new metadata columns
+ucell_cols <- grep("_UCell$", colnames(Master.Obj@meta.data), value = TRUE)
+cat("UCell signature scores added:\n")
+print(ucell_cols)
+```
+
+## 11c. Feature plots for UCell scores
+```{r ucell-feature-plots, fig.width=16, fig.height=20}
+# Feature plots for each UCell signature score
+ucell_cols <- grep("_UCell$", colnames(Master.Obj@meta.data), value = TRUE)
+
+# Plot in batches of 6
+n_plots <- length(ucell_cols)
+n_batches <- ceiling(n_plots / 6)
+
+for (batch in 1:n_batches) {
+  start_idx <- (batch - 1) * 6 + 1
+  end_idx <- min(batch * 6, n_plots)
+  cols_batch <- ucell_cols[start_idx:end_idx]
+  
+  p_batch <- FeaturePlot(Master.Obj, features = cols_batch, 
+                         reduction = "umap", pt.size = 0.1, ncol = 2) &
+    scale_color_viridis_c()
+  
+  # Save to PDF
+  pdf(plot_file("daniel", sprintf("ucell_scores_batch%d.pdf", batch)), 
+      width = 12, height = ceiling(length(cols_batch)/2) * 5)
+  print(p_batch)
+  dev.off()
+  
+  print(p_batch)
+}
+```
+
+## 11d. Feature plots for individual marker genes
+```{r marker-feature-plots, fig.width=14, fig.height=10}
+DefaultAssay(Master.Obj) <- "SCT"
+
+# Get all unique genes from markers
+all_markers <- unique(markers_df$Marker)
+all_markers <- all_markers[all_markers != ""]
+
+# Filter to genes present in the dataset
+available_markers <- all_markers[all_markers %in% rownames(Master.Obj)]
+missing_markers <- all_markers[!all_markers %in% rownames(Master.Obj)]
+
+cat("Available markers:", length(available_markers), "/", length(all_markers), "\n")
+if (length(missing_markers) > 0) {
+  cat("Missing markers:", paste(missing_markers, collapse = ", "), "\n")
+}
+
+# Plot each cell type's markers separately
+for (cell_type in names(marker_list)) {
+  genes <- marker_list[[cell_type]]
+  genes_available <- genes[genes %in% rownames(Master.Obj)]
+  
+  if (length(genes_available) == 0) {
+    cat("Skipping", cell_type, "- no genes found\n")
+    next
+  }
+  
+  # Feature plot
+  fp <- FeaturePlot(Master.Obj, features = genes_available, 
+                    reduction = "umap", pt.size = 0.1, ncol = 3) &
+    scale_color_viridis_c()
+  
+  # Clean filename (replace spaces and special chars)
+  clean_name <- gsub("[^A-Za-z0-9]", "_", cell_type)
+  
+  # Save to PDF
+  n_genes <- length(genes_available)
+  pdf(plot_file("daniel", sprintf("feature_%s.pdf", clean_name)), 
+      width = 14, height = ceiling(n_genes/3) * 4)
+  print(fp)
+  dev.off()
+  
+  cat("Saved feature plot for:", cell_type, "\n")
+}
+```
+
+## 11e. Violin plots for marker genes by cluster
+```{r marker-violin-plots, fig.width=16, fig.height=10}
+# Violin plots for each cell type's markers grouped by cluster
+for (cell_type in names(marker_list)) {
+  genes <- marker_list[[cell_type]]
+  genes_available <- genes[genes %in% rownames(Master.Obj)]
+  
+  if (length(genes_available) == 0) next
+  
+  # Violin plot by cluster
+  vp <- VlnPlot(Master.Obj, features = genes_available, 
+                group.by = "seurat_clusters", pt.size = 0, ncol = 3) &
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  clean_name <- gsub("[^A-Za-z0-9]", "_", cell_type)
+  
+  n_genes <- length(genes_available)
+  pdf(plot_file("daniel", sprintf("violin_%s.pdf", clean_name)), 
+      width = 16, height = ceiling(n_genes/3) * 4)
+  print(vp)
+  dev.off()
+  
+  cat("Saved violin plot for:", cell_type, "\n")
+}
+```
+
+## 11f. Dot plots for all cell type markers
+```{r marker-dotplots, fig.width=20, fig.height=14}
+# Create a comprehensive dot plot with all markers grouped by cell type
+# Select top markers per cell type for readability
+top_markers <- lapply(marker_list, function(x) {
+  x_avail <- x[x %in% rownames(Master.Obj)]
+  head(x_avail, 5)  # Top 5 per cell type
+})
+top_markers <- top_markers[sapply(top_markers, length) > 0]
+
+# Flatten for DotPlot
+all_top_markers <- unlist(top_markers)
+
+# Overall dot plot by cluster
+dp_cluster <- DotPlot(Master.Obj, features = all_top_markers, 
+                      group.by = "seurat_clusters") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 8)) +
+  ggtitle("Marker gene expression by cluster")
+
+pdf(plot_file("daniel", "dotplot_all_markers_by_cluster.pdf"), width = 20, height = 10)
+print(dp_cluster)
+dev.off()
+
+dp_cluster
+```
+
+```{r dotplot-by-dataset, fig.width=16, fig.height=10}
+# Dot plot by dataset
+dp_dataset <- DotPlot(Master.Obj, features = all_top_markers, 
+                      group.by = "dataset_label") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 8)) +
+  ggtitle("Marker gene expression by dataset")
+
+pdf(plot_file("daniel", "dotplot_all_markers_by_dataset.pdf"), width = 16, height = 8)
+print(dp_dataset)
+dev.off()
+
+dp_dataset
+```
+
+```{r dotplot-by-cellclass, fig.width=16, fig.height=8}
+# Dot plot by cell class
+dp_cellclass <- DotPlot(Master.Obj, features = all_top_markers, 
+                        group.by = "cell_class") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 8)) +
+  ggtitle("Marker gene expression by cell class")
+
+pdf(plot_file("daniel", "dotplot_all_markers_by_cellclass.pdf"), width = 16, height = 6)
+print(dp_cellclass)
+dev.off()
+
+dp_cellclass
+```
+
+## 11g. UCell score heatmap by cluster
+```{r ucell-heatmap, fig.width=14, fig.height=10}
+# Calculate mean UCell scores per cluster
+ucell_cols <- grep("_UCell$", colnames(Master.Obj@meta.data), value = TRUE)
+
+ucell_means <- Master.Obj@meta.data %>%
+  group_by(seurat_clusters) %>%
+  summarise(across(all_of(ucell_cols), mean, na.rm = TRUE)) %>%
+  column_to_rownames("seurat_clusters")
+
+# Clean column names for display
+colnames(ucell_means) <- gsub("_UCell$", "", colnames(ucell_means))
+
+# Heatmap
+pdf(plot_file("daniel", "ucell_heatmap_by_cluster.pdf"), width = 14, height = 10)
+pheatmap(t(ucell_means), 
+         scale = "row",
+         cluster_cols = TRUE,
+         cluster_rows = TRUE,
+         color = colorRampPalette(c("navy", "white", "firebrick3"))(100),
+         main = "UCell signature scores by cluster (scaled)")
+dev.off()
+
+pheatmap(t(ucell_means), 
+         scale = "row",
+         cluster_cols = TRUE,
+         cluster_rows = TRUE,
+         color = colorRampPalette(c("navy", "white", "firebrick3"))(100),
+         main = "UCell signature scores by cluster (scaled)")
+```
+
+---
+
+# Section 13 — Add Cluster Annotations (Resolution 1.2)
+
+```{r add-annotations, fig.width=16, fig.height=12}
+# =============================================================================
+# LOAD CLUSTER ANNOTATIONS FOR RESOLUTION 1.2
+# =============================================================================
+
+annotation.file <- "single cell seq combined datasets annotation res 1_2 With colors RCTD apr 2nd.csv"
+
+if (!file.exists(annotation.file)) {
+ stop("Annotation file not found: ", annotation.file)
+}
+
+cat("Loading annotations from:", annotation.file, "\n")
+annotations <- read.csv(annotation.file, stringsAsFactors = FALSE)
+# Columns after read.csv: X. (#), Population, Hex.Code, RCTD.cell.type.name
+
+cat("\nCluster Annotations Summary:\n")
+print(annotations)
+
+# Clean up - drop rows with missing cluster numbers
+annotations <- annotations[!is.na(annotations$X.) & annotations$X. != "", ]
+annotations$Population[is.na(annotations$Population) | annotations$Population == ""] <- "Unannotated"
+
+# Sanitize Population labels to plain ASCII so PDF/grid renderers don't choke
+# on Unicode: Greek alpha (U+03B1) -> "a", em/en-dashes -> "-", collapse whitespace
+sanitize_ascii <- function(x) {
+  x <- gsub("\u03B1", "a", x)
+  x <- gsub("\u2014|\u2013", "-", x)
+  x <- gsub("\\s+", " ", trimws(x))
+  x
+}
+annotations$Population <- sanitize_ascii(annotations$Population)
+
+# ---------------------------------------------------------------------------
+# Map annotations onto cells using resolution 1.2
+# ---------------------------------------------------------------------------
+res_col <- "SCT_snn_res.1.2"
+if (!res_col %in% colnames(Master.Obj@meta.data)) {
+  stop("Resolution 1.2 clustering column not found: ", res_col)
+}
+
+cell.clusters <- as.character(Master.Obj@meta.data[[res_col]])
+
+# Build mapping: cluster number -> population label
+cluster_to_annot <- setNames(annotations$Population,
+                              as.character(annotations$X.))
+
+annot_vec <- cluster_to_annot[cell.clusters]
+annot_vec[is.na(annot_vec)] <- "Unannotated"
+
+Master.Obj@meta.data$cluster_annotation <- annot_vec
+
+cat("\nAnnotation added to metadata column: cluster_annotation\n")
+cat("Unique labels:", length(unique(Master.Obj@meta.data$cluster_annotation)), "\n")
+print(table(Master.Obj@meta.data$cluster_annotation))
+
+# ---------------------------------------------------------------------------
+# Color palette — from Hex.Code column in annotation CSV
+# ---------------------------------------------------------------------------
+annotation_labels <- sort(unique(Master.Obj@meta.data$cluster_annotation))
+
+# Build Population -> Hex.Code map, deduplicate by name, NA -> grey fallback
+csv_color_map <- setNames(annotations$Hex.Code, annotations$Population)
+csv_color_map <- csv_color_map[!duplicated(names(csv_color_map))]
+
+annotation_colors <- sapply(annotation_labels, function(lbl) {
+  hex <- csv_color_map[[lbl]]
+  if (!is.null(hex) && !is.na(hex) && hex != "NA" && hex != "") hex else "#808080"
+})
+annotation_colors <- setNames(annotation_colors, annotation_labels)
+
+# ---------------------------------------------------------------------------
+# UMAP coloured by annotation
+# ---------------------------------------------------------------------------
+p_annot <- DimPlot(Master.Obj,
+                   reduction = "umap",
+                   group.by = "cluster_annotation",
+                   label = TRUE,
+                   label.size = 3,
+                   repel = TRUE,
+                   pt.size = 0.2,
+                   cols = annotation_colors) +
+  ggtitle("UMAP - Cluster Annotations (res 1.2)") +
+  theme(legend.position = "right",
+        legend.text = element_text(size = 7))
+
+p_annot_no_labels <- DimPlot(Master.Obj,
+                   reduction = "umap",
+                   group.by = "cluster_annotation",
+                   repel = TRUE,
+                   pt.size = 0.2,
+                   cols = annotation_colors) +
+  ggtitle("UMAP - Cluster Annotations (res 1.2) - No labels") +
+  theme(legend.position = "right",
+        legend.text = element_text(size = 7))
+
+ggsave(plot_file("clustering", "umap_annotations_res1.2.pdf"),
+       plot = p_annot, width = 16, height = 12)
+
+ggsave(plot_file("clustering", "umap_annotations_res1.2.png"),
+       plot = p_annot, width = 16, height = 12, dpi = 150)
+
+ggsave(plot_file("clustering", "umap_annotations_res1.2(no-labels).pdf"),
+       plot = p_annot_no_labels, width = 16, height = 12)
+
+cat("\nAnnotation UMAP saved to:", plot_file("clustering", "umap_annotations_res1.2.pdf"), "\n")
+
+p_annot
+```
+
+```{r annotation-split-plots, fig.width=20, fig.height=10}
+# UMAP split by dataset, coloured by annotation
+p_split_dataset <- DimPlot(Master.Obj,
+                           reduction = "umap",
+                           group.by = "cluster_annotation",
+                           split.by = "dataset_label",
+                           label = FALSE,
+                           pt.size = 0.1,
+                           cols = annotation_colors,
+                           ncol = 4) +
+  ggtitle("Annotations split by dataset") +
+  theme(legend.text = element_text(size = 6))
+
+ggsave(plot_file("clustering", "umap_annotations_split_by_dataset.pdf"),
+       plot = p_split_dataset, width = 24, height = 14)
+
+# UMAP split by cell class
+p_split_class <- DimPlot(Master.Obj,
+                         reduction = "umap",
+                         group.by = "cluster_annotation",
+                         split.by = "cell_class",
+                         label = TRUE,
+                         label.size = 2.5,
+                         repel = TRUE,
+                         pt.size = 0.1,
+                         cols = annotation_colors) +
+  ggtitle("Annotations split by cell class") +
+  theme(legend.text = element_text(size = 7))
+
+ggsave(plot_file("clustering", "umap_annotations_split_by_cellclass.pdf"),
+       plot = p_split_class, width = 20, height = 10)
+
+cat("Split UMAP plots saved.\n")
+
+p_split_class
+```
+
+```{r annotation-composition, fig.width=16, fig.height=10}
+# ---------------------------------------------------------------------------
+# Composition bar plots
+# ---------------------------------------------------------------------------
+
+# Cluster composition by dataset
+comp_df <- Master.Obj@meta.data %>%
+  filter(cluster_annotation != "Unannotated") %>%
+  count(cluster_annotation, dataset_label) %>%
+  group_by(dataset_label) %>%
+  mutate(pct = n / sum(n) * 100)
+
+p_comp <- ggplot(comp_df, aes(x = dataset_label, y = pct, fill = cluster_annotation)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = annotation_colors) +
+  theme_classic() +
+  labs(title = "Cell type composition by dataset (res 1.2)",
+       x = "Dataset", y = "% of cells", fill = "Annotation") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.text = element_text(size = 7))
+
+ggsave(plot_file("clustering", "annotation_composition_by_dataset.pdf"),
+       plot = p_comp, width = 16, height = 10)
+
+# Dataset composition per annotation
+comp_df2 <- Master.Obj@meta.data %>%
+  filter(cluster_annotation != "Unannotated") %>%
+  count(cluster_annotation, dataset_label) %>%
+  group_by(cluster_annotation) %>%
+  mutate(pct = n / sum(n) * 100)
+
+p_comp2 <- ggplot(comp_df2, aes(x = cluster_annotation, y = pct, fill = dataset_label)) +
+  geom_bar(stat = "identity", position = "stack") +
+  theme_classic() +
+  labs(title = "Dataset composition per annotation (res 1.2)",
+       x = "Annotation", y = "% of cells", fill = "Dataset") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 7))
+
+ggsave(plot_file("clustering", "dataset_composition_by_annotation.pdf"),
+       plot = p_comp2, width = 16, height = 10)
+
+# Save composition table
+write.csv(comp_df,
+          table_file("clustering", "annotation_composition_by_dataset.csv"),
+          row.names = FALSE)
+
+cat("Composition plots and tables saved.\n")
+
+p_comp
+```
+
+---
+
+# Section 14 — Save master object
+
+```{r save-master}
+saveRDS(Master.Obj, rds_file("Master.Obj.rds"))
+cat("Master object saved to ", rds_file("Master.Obj.rds"), "\n", sep = "")
+cat("Total cells:", ncol(Master.Obj), "\n")
+cat("\nMetadata columns preserved:\n")
+print(colnames(Master.Obj@meta.data))
+
+# List UCell scores included
+ucell_cols <- grep("_UCell$", colnames(Master.Obj@meta.data), value = TRUE)
+cat("\nUCell signature scores included:", length(ucell_cols), "\n")
+```
+# Load the Master Obj if needed here
+```{r}
+Master.Obj <- readRDS("output/master_integration/rds/Master.Obj.rds")
+```
+

@@ -1,0 +1,22 @@
+seurat_clusters,specific-cell-type-label,general-cell-type-label,old-cell-type-labels
+0,SC,SC,SC
+1,Bottom villus enterocytes,Enterocytes ,Enterocytes Proximal -1
+10,Bottom-villus enterocytes,Enterocytes ,Enterocytes Proximal -2
+11,Mid-Top villus enterocytes,Enterocytes ,Top Villus enterocytes
+12,Preenterocytes,Pre-enterocytes,Pre-enterocytes-1
+13,Tuft,Tuft,Tuft
+14,Enteroendocrine,Enteroendocrine,Enteroendocrine
+15,Enterocytes,Enterocytes ,Enterocytes Distal -1
+16,Goblet,Goblet,Goblet
+17,Goblet,Goblet,Goblet
+18,immune,immune,immune
+19,Paneth,Paneth,Paneth
+2,TA,TA,TA-1
+20,remove,remove,remove
+3,Mid-Top Villus enterocytes,Enterocytes ,Enterocytes Proximal-3
+4,Paneth,Paneth,Paneth
+5,TA,TA,TA-2
+6,TA,TA,TA-3
+7,Pre-enterocytes,Pre-enterocytes,Pre-enterocytes-2
+8,TA,TA,TA-4
+9,Goblet,Goblet,Goblet

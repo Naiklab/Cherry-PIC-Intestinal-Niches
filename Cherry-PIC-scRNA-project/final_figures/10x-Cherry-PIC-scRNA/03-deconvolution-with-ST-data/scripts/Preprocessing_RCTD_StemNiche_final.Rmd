@@ -1,0 +1,120 @@
+<!--
+Pre-processing Pipeline — Stem Cell Niche RCTD Deconvolution (FINAL, documentation).
+Designed to be included via `{r child=...}` in the deconvolution figure script, so
+this file has NO YAML header (a child's YAML would render as stray text in the parent).
+To knit standalone: rmarkdown::render("Preprocessing_RCTD_StemNiche_final.Rmd").
+-->
+
+# Pre-processing Pipeline — Stem Cell Niche RCTD Deconvolution
+
+## Purpose
+
+**Reproducibility record** for the RCTD-deconvolved stem cell niche spatial object
+(`niche_object_8um_with_DR_RCTD.RDS`) — the object behind Figure 6's deconvolution
+panels. Included via a `{r child=...}` chunk in the deconvolution figure script.
+
+**All chunks are `eval = FALSE`** — code-of-record, curated from the authoritative
+source notebooks `04_RCTD_Deconvolution_StemCellNiche_8um.Rmd` (in
+`DR_scRNA_001/analysis/`) and `Stem_Cell_Niche_Analysis_8um.Rmd` /
+`Swap_LowRes_to_HiRes_Images.Rmd` (in `DR_Visium_HD_analysis_Jan_26/`). Not
+re-run at figure time; the figure reads the frozen RDS + hi-res PNGs. To rebuild,
+run the stages below in order on a compute node.
+
+### Object build DAG
+
+```
+final_analysis_object.RDS (8um Visium HD, all spots)
+   │
+   ▼  Stem_Cell_Niche_Analysis_8um.Rmd (DR_Visium_HD_analysis_Jan_26/)
+   │  assigns stem_niche_zone: Stem_cell | Immediate_periphery | NA
+   ▼
+final_analysis_object_8um_with_stem_niche.RDS
+   │
+   ▼  04_RCTD_Deconvolution_StemCellNiche_8um.Rmd (DR_scRNA_001/analysis/)
+   │  (1) subset spots to stem_niche_zone %in% c("Stem_cell","Immediate_periphery")
+   │  (2) build RCTD reference from DR26001_v2_annotated_seurat_singlets.rds,
+   │      fine-grained `cell_type` (min 25 cells/type; excludes Unknown/
+   │      Unassigned/Doublet/low-quality/Mid-villus enterocytes/Brunner's gland)
+   │  (3) run.RCTD(doublet_mode = "doublet", UMI_min = 50) per sample
+   │  (4) merge per-sample results -> DR_RCTD_* proportion + dominant_celltype
+   │      + spot_class columns
+   ▼
+niche_object_8um_with_DR_RCTD.RDS
+   │
+   ▼  Swap_LowRes_to_HiRes_Images.Rmd technique (DR_Visium_HD_analysis_Jan_26/),
+   │  applied inline in 13/14_RCTD_HiRes_Plots_*.Rmd (DR_scRNA_001/analysis/):
+   │  swap each image slot's low-res raster for Space Ranger's
+   │  tissue_hires_image.png; point scale.factors$lowres at scale.factors$hires
+   │  so every existing pt.size.factor call renders against the hi-res image
+   │  unchanged.
+   ▼
+Figure 6 deconvolution panels (this figure)
+```
+
+RCTD reference uses the fine-grained `cell_type` column (not `broad_cell_type`) —
+this is a stem-cell-niche-specific choice (04 differs from notebooks 10/11's
+`broad_cell_type` reference), so subtypes like GREM1+/FOXL1+ fibroblasts and
+resident/monocyte-derived/proliferating macrophages stay distinct in the niche
+deconvolution.
+
+## Stage 1 — Assign niche zones (`Stem_Cell_Niche_Analysis_8um.Rmd`)
+
+```{r stage1-niche-zones, eval=FALSE}
+# Distance-based zone assignment around the stem-cell-annotated spatial cluster
+# (see Stem_Cell_Niche_Analysis_8um.Rmd for the exact distance thresholds).
+merged.object$stem_niche_zone <- assign_niche_zone(merged.object)  # Stem_cell | Immediate_periphery | NA
+saveRDS(merged.object, "output_8um/RDS-files/final_analysis_object_8um_with_stem_niche.RDS")
+```
+
+## Stage 2 — Build RCTD reference + run per sample (`04_RCTD_Deconvolution_StemCellNiche_8um.Rmd`)
+
+```{r stage2-rctd, eval=FALSE}
+merged.object <- readRDS("output_8um/RDS-files/final_analysis_object_8um_with_stem_niche.RDS")
+niche_object  <- merged.object[, !is.na(merged.object$stem_niche_zone) &
+                                  merged.object$stem_niche_zone %in%
+                                  c("Stem_cell", "Immediate_periphery")]
+
+sc_ref <- readRDS("outputs/DR26001_v2_annotated_seurat_singlets.rds")
+
+REMOVE_LABELS <- c("Unknown", "Unassigned", "Doublet",
+                   "High-mitochondrial/low-quality cells",
+                   "Low-confidence sparse-marker myeloid-like cells",
+                   "Transcriptionally diffuse low-confidence cells",
+                   "Mid-villus enterocytes", "Mid villus enterocyte-2",
+                   "Regenerative Brunners gland-like epithelial cells")
+MIN_CELLS_PER_CT <- 25
+
+ref_celltypes <- factor(sc_ref$cell_type)
+valid_cts <- names(table(ref_celltypes))[table(ref_celltypes) >= MIN_CELLS_PER_CT &
+                                          !names(table(ref_celltypes)) %in% REMOVE_LABELS]
+ref_rctd <- Reference(counts = round(GetAssayData(sc_ref, layer = "counts")),
+                      cell_types = droplevels(ref_celltypes[ref_celltypes %in% valid_cts]),
+                      nUMI = colSums(...))
+
+# Per sample: SpatialRNA() from tissue coordinates + counts, then
+for (img in Images(niche_object)) {
+  rctd <- create.RCTD(spatial_rctd, ref_rctd, max_cores = 1, UMI_min = 50)
+  rctd <- run.RCTD(rctd, doublet_mode = "doublet")
+  saveRDS(rctd, paste0("rctd_niche_result_", img, ".RDS"))
+}
+
+# Merge per-sample weights -> DR_RCTD_<celltype> proportion columns,
+# DR_RCTD_dominant_celltype, DR_RCTD_spot_class
+saveRDS(niche_object, "outputs/RCTD/8um_stem_niche/RDS-files/niche_object_8um_with_DR_RCTD.RDS")
+```
+
+## Stage 3 — Hi-res image swap (applied inline in the figure script)
+
+```{r stage3-hires-swap, eval=FALSE}
+# For each image slot (e.g. "Duodenum.3.008um"), replace the low-res raster with
+# Space Ranger's tissue_hires_image.png and point scale.factors$lowres at the
+# hi-res value, so pt.size.factor-based plotting calls need no changes.
+img <- niche_object@images[[slot_name]]
+img@image <- png::readPNG(hires_png_path)
+img@scale.factors$lowres <- img@scale.factors$hires
+niche_object@images[[slot_name]] <- img
+```
+
+This is the canonical fine-`cell_type` RCTD deconvolution for the stem cell
+niche; the all-spots datasets (notebooks 10/11) use a separate `broad_cell_type`
+reference and are not part of this figure.

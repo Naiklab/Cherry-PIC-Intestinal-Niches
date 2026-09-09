@@ -1,0 +1,109 @@
+<!--
+Pre-processing Pipeline — DR26001 scRNA Annotation (FINAL, documentation).
+Designed to be included via `{r child=...}` in Fig6_scRNA_final.Rmd, so this
+file has NO YAML header (a child's YAML would render as stray text in the parent).
+To knit standalone: rmarkdown::render("Preprocessing_scRNA_Annotation_final.Rmd").
+-->
+
+# Pre-processing Pipeline — DR26001 scRNA Annotation
+
+## Purpose
+
+**Reproducibility record** for the filtered, annotated DR26001 single-cell object
+(`DR26001_v2_annotated_seurat_singlets.rds`) — the object behind Figure 6's UMAP
+and composition panels. Included at the top of `Fig6_scRNA_final.Rmd` via a
+`{r child=...}` chunk.
+
+**All chunks are `eval = FALSE`** — code-of-record, curated from the authoritative
+source notebooks `01_seurat_standard_workflow.Rmd` and
+`03_annotation_and_doublet_filtering.Rmd` in `DR_scRNA_001/analysis/`. Not re-run
+at figure time; the figure reads the frozen RDS. To rebuild, run the stages below
+in order on a compute node.
+
+### Object build DAG
+
+```
+CellRanger multi (SHNA04_DR26001_0) ──► per-sample filtered matrices (HTO-demuxed)
+   │  Mouseileum (OB1, OB2)  |  MouseDuo (OB3, OB4)
+   ▼
+01_seurat_standard_workflow.Rmd:
+   merge samples → SCTransform (per-sample) → PCA → Harmony → UMAP → cluster (res 1.0)
+   ▼
+DR26001_v2_seurat.rds
+   ▼
+03_annotation_and_doublet_filtering.Rmd:
+   assign cell_type / broad_cell_type (from biologist-curated annotation xlsx,
+   `Hex color == "Remove"` flag = single source of truth for exclusion)
+   → scDblFinder doublet detection
+   → filter low-quality clusters + doublets
+   → refit SCTransform on filtered population (keeps SCT models consistent)
+   ▼
+DR26001_v2_annotated_seurat_singlets.rds   ← Figure 6 (this figure) & RCTD reference
+```
+
+`cell_type` = fine-grained annotation (e.g. GREM1+ fibroblasts, FOXL1+ fibroblasts,
+resident/monocyte-derived/proliferating macrophages kept separate).
+`broad_cell_type` = same clusters collapsed into coarser groups (e.g. all
+fibroblast/macrophage subtypes merged) — colors for both come from the same
+annotation xlsx referenced above.
+
+## Stage 1 — Merge + cluster (`01_seurat_standard_workflow.Rmd`)
+
+```{r stage1-merge-cluster, eval=FALSE}
+# Two HTO-demultiplexed samples from CellRanger multi (per_sample_outs already
+# separate cells by sample — no additional HTO demux needed in Seurat).
+seu_ileum <- Read10X(ileum_filtered_matrix_dir)
+seu_duo   <- Read10X(duo_filtered_matrix_dir)
+
+seu <- merge(CreateSeuratObject(seu_ileum, project = "Mouseileum"),
+             CreateSeuratObject(seu_duo,   project = "MouseDuo"),
+             add.cell.ids = c("Mouseileum", "MouseDuo"))
+
+# SCTransform fit PER SAMPLE at merge time (median_umi baked in per-sample —
+# this is why 03's Section 6 refit is required after any cell-count-changing filter).
+seu <- SCTransform(seu, vst.flavor = "v2")
+seu <- RunPCA(seu) |> RunHarmony(group.by.vars = "orig.ident") |>
+  RunUMAP(reduction = "harmony", dims = 1:30) |>
+  FindNeighbors(reduction = "harmony", dims = 1:30) |>
+  FindClusters(resolution = 1.0)
+
+saveRDS(seu, "DR26001_v2_seurat.rds")
+```
+
+## Stage 2 — Annotate + filter (`03_annotation_and_doublet_filtering.Rmd`)
+
+```{r stage2-annotate-filter, eval=FALSE}
+# Single source of truth for both colors AND exclusion: the biologist-curated
+# annotation xlsx. No second hand-maintained exclusion list anywhere else.
+ann_df <- readxl::read_excel(
+  "New-annotations/New qc resolution 1 annotation  broad annotation and colors July07.xlsx")
+REMOVE_CLUSTERS <- ann_df$Cluster[ann_df$`Hex color` == "Remove"]
+
+seu$cell_type       <- unname(setNames(ann_df$Annotation, ann_df$Cluster)[cluster_ids])
+seu$broad_cell_type <- unname(setNames(ann_df[["Broad annotation"]], ann_df$Cluster)[cluster_ids])
+
+# Doublet detection (scDblFinder) on the PRE-filter object (QC diagnostics need
+# pre-filter data — you can't plot "where the doublets are" after removing them).
+sce <- as.SingleCellExperiment(seu)
+sce <- scDblFinder::scDblFinder(sce, samples = "orig.ident")
+seu$doublet_call <- sce$scDblFinder.class
+
+# Filter: low-quality clusters (Hex color == "Remove") + doublets, together —
+# doublet filtering + low-quality-cluster removal both happen BEFORE any plot
+# other than the doublet-detection QC diagnostics themselves.
+seu_final <- seu[, !(cluster_ids %in% REMOVE_CLUSTERS) & seu$doublet_call != "doublet"]
+
+# Refit SCTransform on the filtered population — filtering doesn't recompute
+# the per-sample median_umi baked into the original SCT model, and doesn't
+# drop the same fraction of cells from each sample, so the inherited SCT
+# models would silently no longer match the filtered population.
+seu_final <- SCTransform(seu_final, vst.flavor = "v2")
+seu_final <- RunPCA(seu_final) |> RunHarmony(group.by.vars = "orig.ident") |>
+  RunUMAP(reduction = "harmony", dims = 1:30)
+
+saveRDS(seu_final, "DR26001_v2_annotated_seurat_singlets.rds")
+```
+
+This is the canonical doublet-filtered object; earlier `_with_doublets.rds` /
+unfiltered variants exist in the outputs folder but should never be used for
+new analysis.

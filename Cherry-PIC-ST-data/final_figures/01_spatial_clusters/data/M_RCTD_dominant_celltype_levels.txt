@@ -1,0 +1,43 @@
+# M_RCTD_dominant_celltype — the 38 distinct values present in
+# final_analysis_object_with_master_deconv_hires.RDS
+# Extracted 27 Aug 2026 from the legends of the fig3bc_* output PDFs (union of all 4 samples).
+# Kept because reading them again would mean loading a 4.3 GB object that needs >24 GB RAM.
+# Used to verify the granular -> Broad palette mapping in Fig3_VisiumHD_final.Rmd.
+Activated_fibroblasts
+Activated_interstitial_fibroblasts
+Blood_endothelial_cells
+Bottom_villus_enterocytes
+CD34__interstitial_fibroblasts
+CD4_T_cells
+Cycling_cytotoxic_CD8aa_IEL
+Cytotoxic_CD8aa_IEL_1
+Cytotoxic_CD8aa_IEL_2
+Cytotoxic_CD8aa_IEL_3
+Cytotoxic_CD8aa_IEL_4
+Early_progenitors
+Enteric_glia
+Enteroendocrine_cells
+GC_B_cells
+Goblet_cells
+IL22_Innate_like_T_cells
+Lymphatic_endothelial_cells
+Macrophages
+Mid_villus_distal_enterocytes
+Mid_villus_proximal_enterocytes
+Myofibroblasts
+Naive_B_cells
+PDGFRA__myofibroblasts
+PDGFRA__telocyte_like_fibroblasts
+Pericytes
+Plasma_cells
+Plasmacytoid_dendritic_cells
+Resident_CD8aa_IELs
+Secretory_progenitors
+Stem_cells
+TA_cells
+TA_cells___Early_progenitors
+Tip_villus_enterocytes_1
+Tip_villus_enterocytes_2
+Tuft_cells
+Unknown
+cDC1

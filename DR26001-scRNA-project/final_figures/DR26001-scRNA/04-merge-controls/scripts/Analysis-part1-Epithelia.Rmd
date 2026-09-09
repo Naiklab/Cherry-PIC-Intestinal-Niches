@@ -1,0 +1,327 @@
+---
+title: "DR26001 Stage 04a — Merge control epithelial samples (long-term + short-term)"
+output:
+  html_notebook:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+## Purpose
+
+Merge the control samples from the long-term and short-term epithelial arms into one
+Harmony-integrated object, annotate it, remove the immune clusters, and compare
+duodenum vs ileum.
+
+The no-immune object produced here is the handoff for two downstream analyses:
+the master scRNA reference (Figure S5) and the stem/TA populations used in the
+ligand–receptor analysis (Figures 6F–6G, S8).
+
+| | |
+|---|---|
+| **Inputs** | `../../02-epithelia-clustering/outputs/long-term_seu_obj_epi_long_term_2024_03_22_transfer_labels-UCell-Added.RDS`<br>`../../02-epithelia-clustering/outputs/short-term_seu_obj_short_term_combined_processed.RDS`<br>`../data/updated-cell-type-labels-for-IKJOT.csv`<br>`../data/Combined-cell-type-annotations.csv` |
+| **Key outputs** | `../outputs/epithelia_EP.CTRL_data.processed.RDS`<br>`../outputs/epithelia_EP.CTRL_data.processed(no-immune).RDS` **← the handoff object**<br>`../outputs/epithelia_DE_Genes.Duodenum.Vs.Ileum-CTRL-cell-type-*.csv` |
+
+Paths are relative to this `scripts/` directory. Run with the working directory set here.
+
+## 0. Setup
+
+```{r setup, message=FALSE, warning=FALSE}
+# Portable: only prepend these library paths when they actually exist.
+for (.p in c("/hpc/packages/minerva-rocky9/rpackages/4.4.1/site-library",
+             "/hpc/packages/minerva-rocky9/R/4.4.1/lib64/R/library")) {
+  if (dir.exists(.p)) .libPaths(c(.p, .libPaths()))
+}
+
+library(Seurat)
+library(tidyverse)
+library(harmony)
+library(glue)
+library(EnhancedVolcano)
+
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+
+out <- function(f) file.path("../outputs", f)
+```
+
+## 1. Load the per-arm epithelial objects
+
+```{r load-arms}
+longterm.ep  <- readRDS("../../02-epithelia-clustering/outputs/long-term_seu_obj_epi_long_term_2024_03_22_transfer_labels-UCell-Added.RDS")
+shorterm.ep  <- readRDS("../../02-epithelia-clustering/outputs/short-term_seu_obj_short_term_combined_processed.RDS")
+
+# Short-term clustering of record is res 0.7.
+shorterm.ep@meta.data$seurat_clusters <- shorterm.ep@meta.data$RNA_snn_res.0.7
+Idents(shorterm.ep) <- shorterm.ep$seurat_clusters
+
+# The long-term arm carries its labels from the earlier transfer step.
+longterm.ep@meta.data$cell_type_label_final <- longterm.ep@meta.data$predicted_transfer_label
+```
+
+## 2. Attach the short-term cell-type labels
+
+The CSV maps short-term res-0.7 cluster numbers to three parallel labelling schemes.
+
+```{r shortterm-labels}
+updated_labels <- read.csv("../data/updated-cell-type-labels-for-IKJOT.csv",
+                           stringsAsFactors = FALSE)
+
+cluster_to_specific <- setNames(updated_labels$specific.cell.type.label, updated_labels$seurat_clusters)
+cluster_to_general  <- setNames(updated_labels$general.cell.type.label,  updated_labels$seurat_clusters)
+cluster_to_old      <- setNames(updated_labels$old.cell.type.labels,     updated_labels$seurat_clusters)
+
+stopifnot("seurat_clusters" %in% colnames(shorterm.ep@meta.data))
+
+# unname() is required: named vectors trigger a "No cell overlap" error on assignment.
+shorterm.ep$specific_cell_type_label <- unname(cluster_to_specific[as.character(Idents(shorterm.ep))])
+shorterm.ep$general_cell_type_label  <- unname(cluster_to_general[as.character(shorterm.ep$seurat_clusters)])
+shorterm.ep$old_cell_type_labels     <- unname(cluster_to_old[as.character(shorterm.ep$seurat_clusters)])
+```
+
+```{r shortterm-label-qc, fig.width=8, fig.height=6}
+DimPlot(shorterm.ep, group.by = "specific_cell_type_label", label = TRUE, label.size = 3) +
+  ggtitle("Short-term: specific labels") + theme(legend.position = "bottom")
+DimPlot(shorterm.ep, group.by = "general_cell_type_label", label = TRUE, label.size = 3) +
+  ggtitle("Short-term: general labels") + theme(legend.position = "bottom")
+DimPlot(shorterm.ep, group.by = "old_cell_type_labels", label = TRUE, label.size = 3) +
+  ggtitle("Short-term: old labels") + theme(legend.position = "bottom")
+```
+
+## 3. Subset to controls and merge
+
+```{r merge-controls}
+longterm.ep.CTRL_only <- longterm.ep[, longterm.ep@meta.data$Condition == "Control"]
+shorterm.ep.CTRL_only <- shorterm.ep[, shorterm.ep@meta.data$Condition == "Control"]
+
+EP.CTRL_data <- merge(longterm.ep.CTRL_only, shorterm.ep.CTRL_only)
+
+# Split the RNA assay by sequencing run so Harmony has something to integrate over.
+EP.CTRL_data <- JoinLayers(EP.CTRL_data)
+EP.CTRL_data[["RNA"]] <- split(EP.CTRL_data[["RNA"]], f = EP.CTRL_data$orig.ident)
+Layers(EP.CTRL_data)
+```
+
+## 4. Harmony reprocessing
+
+```{r pipeline-def}
+multi_sample_pipeline <- function(merged_seu_obj, split_col = "orig.ident", res_cols = "RNA") {
+  if (res_cols == "SCT") {
+    merged_seu_obj <- SCTransform(merged_seu_obj, verbose = FALSE)
+  } else {
+    merged_seu_obj <- NormalizeData(merged_seu_obj)
+    merged_seu_obj <- FindVariableFeatures(merged_seu_obj)
+    merged_seu_obj <- ScaleData(merged_seu_obj)
+  }
+  merged_seu_obj <- RunPCA(merged_seu_obj)
+  merged_seu_obj <- RunHarmony(merged_seu_obj, assay.use = res_cols, group.by.vars = split_col)
+  merged_seu_obj <- RunUMAP(merged_seu_obj, reduction = "harmony", dims = 1:40)
+  merged_seu_obj <- FindNeighbors(merged_seu_obj, reduction = "harmony", dims = 1:40)
+  merged_seu_obj <- FindClusters(merged_seu_obj, resolution = c(1:10 / 10))
+  merged_seu_obj
+}
+```
+
+```{r run-pipeline}
+EP.CTRL_data.processed <- multi_sample_pipeline(EP.CTRL_data)
+```
+
+## 5. Transfer the short-term labels onto the merged object
+
+```{r label-transfer}
+shorterm.ep.CTRL_only <- RunPCA(shorterm.ep.CTRL_only, verbose = FALSE)
+shorterm.ep.CTRL_only <- RunUMAP(shorterm.ep.CTRL_only, dims = 1:30, verbose = FALSE)
+
+transfer.anchors <- FindTransferAnchors(
+  reference = shorterm.ep.CTRL_only,
+  query     = EP.CTRL_data.processed,
+  dims      = 1:30,
+  reference.reduction = "pca"
+)
+
+# Same anchors, three label schemes.
+for (scheme in c("specific_cell_type_label", "general_cell_type_label", "old_cell_type_labels")) {
+  td <- TransferData(anchorset = transfer.anchors,
+                     refdata   = shorterm.ep.CTRL_only[[scheme]][, 1],
+                     dims      = 1:30)
+  EP.CTRL_data.processed@meta.data[[scheme]]              <- td$predicted.id
+  EP.CTRL_data.processed@meta.data[[paste0(scheme, "_score")]] <- td$prediction.score.max
+}
+
+EP.CTRL_data.processed$predicted.id       <- NULL
+EP.CTRL_data.processed$prediction.score.max <- NULL
+```
+
+```{r transfer-qc, fig.width=14, fig.height=6}
+DimPlot(EP.CTRL_data.processed, group.by = "RNA_snn_res.0.7", label = TRUE) + ggtitle("Clusters (res 0.7)") |
+  DimPlot(EP.CTRL_data.processed, group.by = "specific_cell_type_label", label = TRUE, label.size = 2) + ggtitle("Transferred specific labels")
+```
+
+## 6. Annotate res 0.8 and remove the immune clusters
+
+```{r annotate-and-split}
+cell.type.annot  <- read.csv("../data/Combined-cell-type-annotations.csv")
+
+Idents(EP.CTRL_data.processed) <- "RNA_snn_res.0.8"
+new.cluster.ids <- cell.type.annot$cell_type
+names(new.cluster.ids) <- levels(EP.CTRL_data.processed@meta.data$RNA_snn_res.0.8)
+
+EP.CTRL_data.processed <- RenameIdents(EP.CTRL_data.processed, new.cluster.ids)
+EP.CTRL_data.processed@meta.data$cell_type_labels <- Idents(EP.CTRL_data.processed)
+
+EP.CTRL_data.processed <- JoinLayers(EP.CTRL_data.processed)
+EP.CTRL_data.processed <- NormalizeData(EP.CTRL_data.processed)
+
+EP.CTRL_data.processed.no_immune <- subset(
+  EP.CTRL_data.processed,
+  EP.CTRL_data.processed@meta.data$cell_type_labels != "Immune")
+EP.CTRL_data.processed.no_immune <- JoinLayers(EP.CTRL_data.processed.no_immune)
+EP.CTRL_data.processed.no_immune <- NormalizeData(EP.CTRL_data.processed.no_immune)
+```
+
+## 7. Save the handoff objects
+
+```{r save-objects}
+saveRDS(EP.CTRL_data.processed,           out("epithelia_EP.CTRL_data.processed.RDS"))
+saveRDS(EP.CTRL_data.processed.no_immune, out("epithelia_EP.CTRL_data.processed(no-immune).RDS"))
+```
+
+## 8. UMAPs and composition
+
+```{r umap-panels}
+res_cols <- grep("^RNA_snn", colnames(EP.CTRL_data.processed@meta.data), value = TRUE)
+
+pdf(out("epithelia_UMAP-All-Resolutions.pdf"), height = 8, width = 12)
+for (res in res_cols) print(DimPlot(EP.CTRL_data.processed, group.by = res) + ggtitle(glue("Resolution: {res}")))
+dev.off()
+
+pdf(out("epithelia_UMAP-All-Resolutions-labeled.pdf"), height = 8, width = 12)
+for (res in res_cols) print(DimPlot(EP.CTRL_data.processed, group.by = res, label = TRUE) + ggtitle(glue("Resolution: {res}")))
+dev.off()
+
+pdf(out("epithelia_UMAP-All-Resolutions-ST-Label-Transfer.pdf"), height = 8, width = 16)
+for (res in res_cols) {
+  print(DimPlot(EP.CTRL_data.processed, group.by = "old_cell_type_labels") +
+        DimPlot(EP.CTRL_data.processed, group.by = res) +
+        DimPlot(EP.CTRL_data.processed, group.by = "general_cell_type_label") +
+        DimPlot(EP.CTRL_data.processed, group.by = "specific_cell_type_label"))
+}
+dev.off()
+
+group_vars <- c("orig.ident", "Location", "Condition", "Sample_ID", "Time_Course",
+                "old_cell_type_labels", "specific_cell_type_label", "general_cell_type_label")
+
+pdf(out("epithelia_UMAP-groupby-plots.pdf"), height = 8, width = 12)
+for (g in group_vars) print(DimPlot(EP.CTRL_data.processed, group.by = g))
+dev.off()
+
+pdf(out("epithelia_Updated-UMAP-groupby-plots.pdf"), height = 8, width = 12)
+for (g in c("orig.ident", "Location", "Condition", "Sample_ID", "cell_type_labels")) {
+  print(DimPlot(EP.CTRL_data.processed.no_immune, group.by = g, pt.size = 3))
+}
+dev.off()
+```
+
+```{r composition}
+composition.df <- table(EP.CTRL_data.processed.no_immune@meta.data$cell_type_labels,
+                        EP.CTRL_data.processed.no_immune@meta.data$Location) %>%
+  as.data.frame() %>%
+  dplyr::rename(cell_type_labels = Var1, Location = Var2)
+
+black.bold.16.text <- element_text(face = "bold", color = "black", size = 14,
+                                   angle = 90, vjust = 0.5, hjust = 1)
+brks <- c(0, 0.25, 0.5, 0.75, 1)
+
+pdf(out("epithelia_PERCENTAGE_COMPOSTION_PLOT_GROUP_BY_LOCATION_EPITHELIA-ONLY.pdf"),
+    height = 14, width = 8)
+ggplot(composition.df, aes(x = Location, y = Freq, fill = cell_type_labels)) +
+  geom_bar(stat = "identity", position = "fill") +
+  scale_y_continuous(breaks = brks, labels = scales::percent(brks)) +
+  ylab("% Composition of Location by Clusters") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.text.x = black.bold.16.text)
+dev.off()
+```
+
+## 9. Duodenum vs Ileum differential expression
+
+```{r de-global}
+DE_Genes.DuodenumVsIleum <- FindMarkers(
+  EP.CTRL_data.processed.no_immune,
+  group.by = "Location", ident.1 = "Duodenum", ident.2 = "Ileum", assay = "RNA") %>%
+  dplyr::filter(p_val_adj <= 0.05)
+
+write.csv(DE_Genes.DuodenumVsIleum,
+          out("epithelia_DE_Genes.DuodenumVsIleum-CTRL(Epithelial-Cells-only).csv"))
+```
+
+Per cell type. `DE_Genes.Duodenum.Vs.Ileum-CTRL-cell-type-Enterocytes-only.csv` from this
+loop is the input table behind the Figure 3F bubble panel.
+
+```{r de-per-celltype}
+cell.types.of.interest <- c("SC", "Enterocytes", "TA", "Goblet",
+                            "Pre-enterocytes", "Tuft", "Paneth", "Enteroendocrine")
+
+for (x in cell.types.of.interest) {
+  tryCatch({
+    subset_data <- subset(EP.CTRL_data.processed.no_immune, cell_type_labels %in% c(x))
+    de <- FindMarkers(subset_data, group.by = "Location",
+                      ident.1 = "Duodenum", ident.2 = "Ileum", assay = "RNA") %>%
+      dplyr::filter(p_val_adj <= 0.05)
+
+    write.csv(de, out(glue("epithelia_DE_Genes.Duodenum.Vs.Ileum-CTRL-cell-type-{x}-only.csv")))
+
+    pdf(out(glue("epithelia_Volcano-Plot-DE_Genes.Duodenum.Vs.Ileum-CTRL-cell-type-{x}-only.pdf")))
+    print(EnhancedVolcano::EnhancedVolcano(de, x = "avg_log2FC", y = "p_val_adj",
+                                           lab = rownames(de)))
+    dev.off()
+  }, error = function(e) message(glue("skipped {x}: {conditionMessage(e)}")))
+}
+```
+
+## 10. Duodenum vs Ileum heatmaps
+
+```{r heatmaps}
+EP.CTRL_data.processed.no_immune <- ScaleData(
+  EP.CTRL_data.processed.no_immune,
+  features = Features(EP.CTRL_data.processed.no_immune))
+
+top100.Duodenum.Genes <- DE_Genes.DuodenumVsIleum %>% dplyr::filter(avg_log2FC > 0) %>% slice_head(n = 100)
+top100.Ileum.Genes    <- DE_Genes.DuodenumVsIleum %>% dplyr::filter(avg_log2FC < 0) %>% slice_head(n = 100)
+
+# NOTE: the original notebook also plotted objects named `top100` and `top50` that were
+# never defined in the file — they existed only in the interactive session. Reconstructed
+# here as the top 100 / top 50 rows of the significant DE table. Verify before reuse.
+top100 <- DE_Genes.DuodenumVsIleum %>% slice_head(n = 100)
+top50  <- DE_Genes.DuodenumVsIleum %>% slice_head(n = 50)
+
+both <- c(rownames(top100.Duodenum.Genes), rownames(top100.Ileum.Genes))
+
+pdf(out("epithelia_HEATMAP-EP.CTRL_data-Top-100-Upregulated-genes-in-Duodenum-and-Ileum.pdf"),
+    height = 30, width = 15)
+DoHeatmap(EP.CTRL_data.processed.no_immune, features = both, group.by = "Location")
+dev.off()
+
+pdf(out("epithelia_HEATMAP-EP.CTRL_data-Top-100-Upregulated-genes-in-Duodenum-and-Ileum(Grouped-by-Cell-Type).pdf"),
+    height = 30, width = 15)
+DoHeatmap(EP.CTRL_data.processed.no_immune, features = both, group.by = "cell_type_labels")
+dev.off()
+
+pdf(out("epithelia_HEATMAP-EP.CTRL_data-Top-100-DE-genes-DuodenumVsIleum.pdf"))
+DoHeatmap(EP.CTRL_data.processed.no_immune, features = rownames(top100), group.by = "Location") + NoLegend()
+dev.off()
+
+pdf(out("epithelia_HEATMAP-EP.CTRL_data-Top-50-DE-genes-DuodenumVsIleum.pdf"))
+DoHeatmap(EP.CTRL_data.processed.no_immune, features = rownames(top50), group.by = "Location") + NoLegend()
+dev.off()
+```
+
+## 11. Enterocyte subset — input for the Figure 3F bubble panel
+
+```{r fig3e-inputs}
+subset_data <- subset(EP.CTRL_data.processed, cell_type_labels %in% c("Enterocytes"))
+DE_Genes.DuodenumVsIleum.Enterocytes.only <- read.csv(
+  out("epithelia_DE_Genes.Duodenum.Vs.Ileum-CTRL-cell-type-Enterocytes-only.csv"))
+```
+
+> The original notebook stopped here. The `DotPlot()` that turns `subset_data` and this DE
+> table into Figure 3F was run interactively and never saved — it is the one missing piece.

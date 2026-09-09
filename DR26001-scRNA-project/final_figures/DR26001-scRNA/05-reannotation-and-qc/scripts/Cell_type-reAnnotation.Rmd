@@ -1,0 +1,253 @@
+---
+title: "DR26001 Stage 05a — Cell-type re-annotation and trajectory subset"
+output:
+  html_notebook:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+Annotates 21 clusters at `RNA_snn_res.0.8` and defines the 13-cluster trajectory subset. The SC and TA labels set here are what the ligand-receptor analysis consumes.
+
+Paths are relative to this `scripts/` directory.
+
+
+# Load Required Libraries
+```{r chunk-01}
+library(Seurat)
+library(tidyverse)
+library(SingleR)
+library(celldex)
+library(readxl)
+library(harmony)
+```
+
+# Set Working Directory
+```{r chunk-02}
+```
+
+# Load Seurat Object
+```{r chunk-03}
+seu <- readRDS("../data/seu-obj-V5-Annotation-pre-removal-2025-03-26.RDS")
+```
+
+# Join Layers (required for Seurat v5 objects before downstream processing)
+```{r chunk-04}
+seu <- JoinLayers(seu)
+#counts <- LayerData(obj)
+```
+
+# Fetch reference - Immgen Data
+```{r chunk-05}
+ref <- fetchReference("immgen", "2024-02-26")
+ref_2 <- fetchReference("mouse_rnaseq", "2024-02-26")
+```
+
+# Run SingleR Cell-Type Prediction Using ImmGen Reference
+```{r chunk-06}
+# Main-level and fine-level label predictions using the ImmGen reference
+pred.immgen.labels <- SingleR(test = seu[["RNA"]]$counts,ref=ref,assay.type.test=1,labels = ref $label.main)
+pred.immgen.fine.labels <- SingleR(test = seu[["RNA"]]$counts,ref=ref,assay.type.test=1,labels = ref $label.fine)
+```
+
+# Run SingleR Cell-Type Prediction Using Mouse RNAseq Reference
+```{r chunk-07}
+# Main-level and fine-level label predictions using the Mouse RNAseq reference
+pred.mouse_rnaseq.labels <- SingleR(test = seu[["RNA"]]$counts,ref=ref_2,assay.type.test=1,labels = ref_2$label.main)
+pred.mouse_rnaseq.fine.labels <- SingleR(test = seu[["RNA"]]$counts,ref=ref_2,assay.type.test=1,labels = ref_2$label.fine)
+```
+
+# Store SingleR Predictions in Seurat Metadata
+```{r chunk-08}
+# Add ImmGen and Mouse RNAseq main/fine label predictions to the Seurat object metadata
+seu@meta.data$predicted_main_labels_immgen <- pred.immgen.labels$labels
+seu@meta.data$predicted_fine_labels_immgen <- pred.immgen.fine.labels$labels
+
+seu@meta.data$predicted_main_labels_mouseRNAseq <- pred.mouse_rnaseq.labels$labels
+seu@meta.data$predicted_fine_labels_mouseRNAseq <- pred.mouse_rnaseq.fine.labels$labels
+
+
+```
+
+# Export SingleR Prediction UMAP Plots to PDF
+```{r chunk-09}
+# Save UMAP plots coloured by SingleR predicted cell-type labels
+pdf("../outputs/SingleR-Prediction-UMAP-plots.pdf")
+DimPlot(seu,group.by = "predicted_main_labels_immgen")
+DimPlot(seu,group.by = "predicted_main_labels_mouseRNAseq")
+DimPlot(seu,group.by = "predicted_fine_labels_mouseRNAseq")
+dev.off()
+```
+
+# Export SingleR Score Heatmaps to PDF
+```{r chunk-10}
+# Heatmaps showing per-cell prediction scores, grouped by existing narrow and broad cell-type annotations
+pdf("../outputs/SingleR-Prediction-Scores-Heatmap.pdf")
+plotScoreHeatmap(pred.mouse_rnaseq.labels,clusters = seu@meta.data$cell_type_narrow)
+plotScoreHeatmap(pred.mouse_rnaseq.labels,clusters = seu@meta.data$cell_type_broad)
+dev.off()
+
+
+```
+
+
+# Survey Available SingleR References
+```{r chunk-11}
+# List all reference datasets available through celldex/SingleR
+References_avail <- surveyReferences() %>% as.data.frame()
+```
+
+#Import gene signatures from Daniel
+```{r chunk-12}
+# Read in gene signature table provided by Daniel (used for module scoring / marker analysis)
+gene.signatures <- read_excel("../data/gene signatures for ikjot.xlsx")
+```
+
+# Load Epithelial-Only Processed Object and Preview Annotations
+```{r chunk-13}
+# Load the immune-removed, processed epithelial object and inspect existing cell-type labels
+seu <- readRDS("../../04-merge-controls/outputs/epithelia_EP.CTRL_data.processed(no-immune).RDS")
+seu@meta.data
+DimPlot(seu,group.by ="cell_type_labels")
+```
+
+# Annotate All Clusters at Resolution 0.8 (from "scRNA seq res 0.8 for epithelia trajectory")
+```{r chunk-14}
+# Full cell-type annotations for all clusters at Seurat SNN res 0.8
+all_cluster_annotations <- c(
+  "0"  = "SC",
+  "1"  = "Proximal enterocytes-1",
+  "2"  = "Proximal enterocytes-3",
+  "3"  = "TA",
+  "4"  = "Goblet",
+  "5"  = "TA",
+  "6"  = "TA",
+  "7"  = "TA",
+  "8"  = "Pre-enterocytes-2",
+  "9"  = "SC",
+  "10" = "Pre-enterocytes-1",
+  "11" = "Tuft",
+  "12" = "Paneth",
+  "13" = "Enteroendocrine",
+  "14" = "Secretory progenitors",
+  "15" = "Proximal enterocytes-2",
+  "16" = "Immune",
+  "17" = "Goblet",
+  "18" = "Distal enterocyte-1",
+  "19" = "Distal enterocyte-2",
+  "20" = "Immune"
+)
+
+seu@meta.data$cell_type_res0.8 <- all_cluster_annotations[as.character(seu@meta.data$RNA_snn_res.0.8)]
+```
+
+# Subset to Trajectory Cell Types and Generate UMAP Plots
+```{r chunk-15}
+# Clusters to keep for trajectory analysis (from "Keep for trajectory" column in annotation file)
+clusters_to_keep <- c(0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 15, 18, 19)
+
+seu_subset <- subset(seu, subset = RNA_snn_res.0.8 %in% clusters_to_keep)
+```
+
+```{r chunk-16}
+# Trajectory cell-type annotations (subset of res 0.8 clusters kept for trajectory analysis)
+trajectory_annotations <- c(
+  "0"  = "SC",
+  "1"  = "Proximal enterocytes-1",
+  "2"  = "Proximal enterocytes-3",
+  "3"  = "TA",
+  "5"  = "TA",
+  "6"  = "TA",
+  "7"  = "TA",
+  "8"  = "Pre-enterocytes-2",
+  "9"  = "SC",
+  "10" = "Pre-enterocytes-1",
+  "15" = "Proximal enterocytes-2",
+  "18" = "Distal enterocyte-1",
+  "19" = "Distal enterocyte-2"
+)
+
+seu_subset@meta.data$trajectory_cell_type <- trajectory_annotations[as.character(seu_subset@meta.data$RNA_snn_res.0.8)]
+```
+
+# Export Trajectory Subset UMAP Plots to PDF
+```{r chunk-17}
+# Save UMAP plots for the trajectory subset coloured by trajectory annotations, original labels, and clusters
+pdf("../outputs/Trajectory-subset-UMAP-plots.pdf")
+DimPlot(seu_subset, group.by = "trajectory_cell_type", label = TRUE, repel = TRUE) +
+  ggtitle("Trajectory Subset - Trajectory Annotations")
+DimPlot(seu_subset, group.by = "cell_type_labels", label = TRUE, repel = TRUE) +
+  ggtitle("Trajectory Subset - Original Cell Type Labels")
+DimPlot(seu_subset, group.by = "seurat_clusters", label = TRUE, repel = TRUE) +
+  ggtitle("Trajectory Subset - Clusters")
+dev.off()
+```
+
+# Quick In-Notebook Preview of Trajectory Annotations
+```{r chunk-18}
+# Quick preview
+DimPlot(seu_subset, group.by = "Location", label = TRUE, repel = TRUE)
+```
+```{r chunk-19}
+multi_sample_pipeline <- function(merged_seu_obj, split_col = "orig.ident", res_cols = "RNA") {
+  
+  if (res_cols == "SCT") {
+    merged_seu_obj <- SCTransform(merged_seu_obj, verbose = FALSE)
+  } else {
+    merged_seu_obj <- NormalizeData(merged_seu_obj)
+    merged_seu_obj <- FindVariableFeatures(merged_seu_obj)
+    merged_seu_obj <- ScaleData(merged_seu_obj)
+  }
+  
+  merged_seu_obj <- RunPCA(merged_seu_obj)
+  # assay.use was removed in harmony v1.0+; use reduction = "pca" instead
+  merged_seu_obj <- RunHarmony(merged_seu_obj, reduction = "pca", group.by.vars = split_col, reduction.save = "harmony")
+  merged_seu_obj <- RunUMAP(merged_seu_obj, reduction = "harmony", dims = 1:40)
+  merged_seu_obj <- FindNeighbors(merged_seu_obj, reduction = "harmony", dims = 1:40)
+  merged_seu_obj <- FindClusters(merged_seu_obj, resolution = c(1:10 / 10))
+  
+  return(merged_seu_obj)
+}
+```
+
+# Subclustering on Trajectory Subset
+
+## Build Neighbour Graph and Find Subclusters Using Existing Harmony Reduction
+```{r chunk-20}
+# The harmony reduction is already present in the subset object (carried over from the parent object)
+# No need to re-run PCA or Harmony - use the existing embedding directly
+seu_subset <- RunUMAP(seu_subset, reduction = "harmony", dims = 1:40)
+seu_subset <- FindNeighbors(seu_subset, reduction = "harmony", dims = 1:40)
+seu_subset <- FindClusters(seu_subset, resolution = c(1:10 / 10))
+```
+
+
+```{r chunk-21}
+pdf("../outputs/Subset-epithelia-trajectory_cell_type_plots.pdf")
+DimPlot(seu_subset,group.by = "trajectory_cell_type",label = TRUE)
+DimPlot(seu_subset,group.by = "Location")
+DimPlot(seu_subset,group.by = "RNA_snn_res.0.5")
+dev.off()
+```
+
+## Visualise Subclusters
+```{r chunk-22}
+# Plot subclusters at each resolution alongside trajectory cell-type annotations for comparison
+DimPlot(seu_subset, group.by = "RNA_snn_res.0.2", label = TRUE, repel = TRUE) + ggtitle("Subclusters - res 0.2")
+DimPlot(seu_subset, group.by = "RNA_snn_res.0.4", label = TRUE, repel = TRUE) + ggtitle("Subclusters - res 0.4")
+DimPlot(seu_subset, group.by = "RNA_snn_res.0.6", label = TRUE, repel = TRUE) + ggtitle("Subclusters - res 0.6")
+DimPlot(seu_subset, group.by = "RNA_snn_res.0.8", label = TRUE, repel = TRUE) + ggtitle("Subclusters - res 0.8")
+DimPlot(seu_subset, group.by = "trajectory_cell_type", label = TRUE, repel = TRUE) + ggtitle("Trajectory Cell Types")
+```
+
+## Export Subcluster UMAP Plots to PDF
+```{r chunk-23}
+pdf("../outputs/Trajectory-subset-Subclusters.pdf")
+DimPlot(seu_subset, group.by = "RNA_snn_res.0.2", label = TRUE, repel = TRUE) + ggtitle("Subclusters - res 0.2")
+DimPlot(seu_subset, group.by = "RNA_snn_res.0.4", label = TRUE, repel = TRUE) + ggtitle("Subclusters - res 0.4")
+DimPlot(seu_subset, group.by = "RNA_snn_res.0.6", label = TRUE, repel = TRUE) + ggtitle("Subclusters - res 0.6")
+DimPlot(seu_subset, group.by = "RNA_snn_res.0.8", label = TRUE, repel = TRUE) + ggtitle("Subclusters - res 0.8")
+DimPlot(seu_subset, group.by = "trajectory_cell_type", label = TRUE, repel = TRUE) + ggtitle("Trajectory Cell Types")
+dev.off()
+```
+

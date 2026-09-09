@@ -1,0 +1,306 @@
+---
+title: "DR26001 Stage 02a — Short-term epithelial clustering (2024-02-09 + 2024-06-05)"
+output:
+  html_notebook:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+Merges the two short-term epithelial pools and reprocesses them into `short-term_seu_obj_short_term_combined_processed.RDS`.
+
+Paths are relative to this `scripts/` directory.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Packages
+```{r chunk-01}
+pacman::p_load("Seurat", "dplyr", "harmony", "glue")
+options(future.globals.maxSize = 4 * 1024^3)
+```
+
+# Create Dirs
+```{r chunk-02}
+# create.dir <- function(path) {if (!dir.exists(path)) dir.create(path, recursive = T)}
+
+# create.dir("../output/RDS")
+# create.dir("../output/plots")
+# create.dir("../output/plots/UMAP")
+# create.dir("../output/plots/Feature-Plots")
+# create.dir("../output/markers")
+```
+
+# Load Data
+```{r chunk-03}
+# This file is post separation of epithelia/immune from 2024-02-09 data, since it was not epithelia enriched
+seu_obj_short_term_epi_2024_02_09 <- readRDS("../../01-separate-epithelia-immune/outputs/short-term-2024-02-09_seu-obj-short-term-epithelia-2024-02-09-RNA-RNA_snn_res.0.5.RDS")
+
+# This file is the direct output of htp pipeline on 2024-06-05 since it was epithelia enriched
+seu_obj_short_term_epi_2024_06_05 <- readRDS("../../00-hashtag-pools/data/final-htp-seu-obj-2024-06-05-RNA.RDS")
+
+# Remove Clusters seu_obj_short_term_epi_2024_06_05 
+seu_obj_short_term_epi_2024_06_05@meta.data <- seu_obj_short_term_epi_2024_06_05@meta.data %>%
+  select(-starts_with("RNA_snn_res"), -seurat_clusters)
+
+# Combine
+seu_obj_short_term_combined <- merge(seu_obj_short_term_epi_2024_02_09, seu_obj_short_term_epi_2024_06_05)
+
+# Split based on orig.ident (seq run) for Harmony
+# Join Layers (to then split)
+seu_obj_short_term_combined <- JoinLayers(seu_obj_short_term_combined)
+
+# Resplit Layers
+seu_obj_short_term_combined[["RNA"]] <- split(seu_obj_short_term_combined[["RNA"]],
+                                              f = seu_obj_short_term_combined$orig.ident)
+
+# Verify that layers are as I expect
+Layers(seu_obj_short_term_combined)
+```
+
+# Reprocess Pipeline
+```{r chunk-04}
+multi_sample_pipeline <- function(merged_seu_obj, split_col = "orig.ident", res_cols = "RNA") {
+  
+  if (res_cols == "SCT") {
+    merged_seu_obj <- SCTransform(merged_seu_obj, verbose = FALSE)
+  } else {
+    merged_seu_obj <- NormalizeData(merged_seu_obj)
+    merged_seu_obj <- FindVariableFeatures(merged_seu_obj)
+    merged_seu_obj <- ScaleData(merged_seu_obj)
+  }
+  
+  merged_seu_obj <- RunPCA(merged_seu_obj)
+  merged_seu_obj <- RunHarmony(merged_seu_obj, assay.use = res_cols, group.by.vars = split_col)
+  merged_seu_obj <- RunUMAP(merged_seu_obj, reduction = "harmony", dims = 1:40)
+  merged_seu_obj <- FindNeighbors(merged_seu_obj, reduction = "harmony", dims = 1:40)
+  merged_seu_obj <- FindClusters(merged_seu_obj, resolution = c(1:10 / 10))
+  
+  return(merged_seu_obj)
+}
+```
+
+## Run Pipeline
+```{r chunk-05}
+seu_obj_short_term_combined_processed <- multi_sample_pipeline(seu_obj_short_term_combined, split_col = "orig.ident", res_cols = "RNA")
+
+# Add ribo genes just in case
+ribo_genes_mouse <- grep("^Rpl|^Rps", rownames(seu_obj_short_term_combined_processed), value = TRUE)
+seu_obj_short_term_combined_processed[["percent.ribo"]] <- PercentageFeatureSet(seu_obj_short_term_combined_processed, features = ribo_genes_mouse)
+
+# View UMAP
+DimPlot(seu_obj_short_term_combined_processed, group.by = "RNA_snn_res.0.1")
+```
+
+## Add Previous Annotations for comparison
+```{r chunk-06}
+# Prior annotations, joined on barcode. Load-bearing, not just a comparison.
+#
+# These two columns were extracted once from
+#   seu-obj-short-term-epi-V4-annotations-2024-03-24.RDS (35,981 cells)
+# which lived under another user's Minerva account. The whole object was 1.1 GB and only
+# these columns were ever read from it, so it is stored here as a CSV instead: the join
+# below is unchanged, and this notebook now runs without cluster access.
+meta_broad <- read.csv("../data/prior_annotations_epithelia_2024-03-24.csv",
+                       stringsAsFactors = FALSE) %>%
+  select(barcodes, cell_type_broad, cell_type_narrow)
+
+seu_obj_short_term_combined_processed@meta.data <- seu_obj_short_term_combined_processed@meta.data %>%
+  tibble::rownames_to_column("barcodes") %>%
+  dplyr::left_join(meta_broad, by = "barcodes") %>%
+  tibble::column_to_rownames("barcodes")
+
+DimPlot(seu_obj_short_term_combined_processed, group.by = "cell_type_broad", label = T)
+DimPlot(seu_obj_short_term_combined_processed, group.by = "cell_type_narrow", label = T)
+```
+
+```{r chunk-07}
+# Save RDS
+saveRDS(seu_obj_short_term_combined_processed, "../outputs/short-term_seu_obj_short_term_combined_processed.RDS")
+```
+
+# Plots
+```{r chunk-08}
+create.dir <- function(dir_path) {
+  if (!dir.exists(dir_path)) {
+    dir.create(dir_path, recursive = TRUE)
+  }
+}
+
+create.dir("../output/plots/UMAP")
+create.dir("../output/plots/Feature-Plot")
+create.dir("../output/markers")
+```
+
+## 1. UMAP
+```{r chunk-09}
+# Individual UMAP
+pdf(glue("../outputs/short-term_UMAP-All-Resolutions.pdf"), height = 8, width = 12)
+for (res in grep("^RNA_snn", colnames(seu_obj_short_term_combined_processed@meta.data), value = TRUE)) {
+  print(DimPlot(seu_obj_short_term_combined_processed, group.by = res)  + 
+          ggplot2::ggtitle(glue("Resolution: {res}")))
+}
+dev.off()
+
+pdf(glue("../outputs/short-term_UMAP-All-Resolutions-labeled.pdf"), height = 8, width = 12)
+for (res in grep("^RNA_snn", colnames(seu_obj_short_term_combined_processed@meta.data), value = TRUE)) {
+  print(DimPlot(seu_obj_short_term_combined_processed, group.by = res, label = T)  + 
+          ggplot2::ggtitle(glue("Resolution: {res}")))
+}
+dev.off()
+
+pdf(glue("../outputs/short-term_UMAP-All-Resolutions-compared-to-previous-celltypes.pdf"), height = 8, width = 16)
+for (res in grep("^RNA_snn", colnames(seu_obj_short_term_combined_processed@meta.data), value = TRUE)) {
+  a <- seu_obj_short_term_combined_processed %>% DimPlot(group.by = "cell_type_narrow")
+  b <- seu_obj_short_term_combined_processed %>% DimPlot(group.by = res)
+  print(a+b)
+}
+dev.off()
+
+# GroupBy UMAPs
+pdf("../outputs/short-term_UMAP-groupby-plots.pdf", height = 8, width = 12)
+DimPlot(seu_obj_short_term_combined_processed, group.by = "orig.ident") %>% print()
+DimPlot(seu_obj_short_term_combined_processed, group.by = "Location") %>% print()
+DimPlot(seu_obj_short_term_combined_processed, group.by = "Condition") %>% print()
+DimPlot(seu_obj_short_term_combined_processed, group.by = "Sample_ID") %>% print()
+DimPlot(seu_obj_short_term_combined_processed, group.by = "cell_type_broad") %>% print()
+DimPlot(seu_obj_short_term_combined_processed, group.by = "cell_type_narrow") %>% print()
+dev.off()
+
+DimPlot(seu_obj_short_term_combined_processed, group.by = "orig.ident") %>% print()
+DimPlot(seu_obj_short_term_combined_processed, group.by = "Location") %>% print()
+DimPlot(seu_obj_short_term_combined_processed, group.by = "Condition") %>% print()
+DimPlot(seu_obj_short_term_combined_processed, group.by = "Sample_ID") %>% print()
+DimPlot(seu_obj_short_term_combined_processed, group.by = "cell_type_broad") %>% print()
+DimPlot(seu_obj_short_term_combined_processed, group.by = "cell_type_narrow") %>% print()
+```
+
+## 2. Feature Plots
+### a. Onur Feature Plots
+```{r chunk-10}
+# Percent mt/ribo
+pdf("../outputs/short-term_mt-ribo-FeaturePlot.pdf")
+FeaturePlot(seu_obj_short_term_combined_processed, features = "percent.mt") %>% print()
+FeaturePlot(seu_obj_short_term_combined_processed, features = "percent.ribo") %>% print()
+dev.off()
+
+# Onur Feature Plots
+onur_markers_path <- "../data/Onur_Markers.xlsx"
+
+onur_markers_df <- readxl::read_xlsx(onur_markers_path, sheet = "Non-Immune")
+onur_markers_list <- as.list(onur_markers_df)
+
+for (cell_type in names(onur_markers_list)) {
+  
+  marker_list <- na.omit(onur_markers_list[[cell_type]])
+  pdf(glue("../outputs/short-term_{cell_type}-Feature-Plots.pdf"), height = 10, width = 12)
+  for (gene in marker_list) {
+    gene_trim <- trimws(gene)
+    
+    tryCatch({
+      # Try to plot the feature
+      Seurat::FeaturePlot(seu_obj_short_term_combined_processed, features = gene_trim) %>% print()
+    }, error = function(e) {
+      # Handle the error
+      message(glue("Error: {e$message} for gene {gene_trim}"))
+    })
+  }
+  dev.off()
+}
+```
+
+### 3. Crypt Location Feature Plots
+## Analysis
+```{r chunk-11}
+genes.of.interest <- list("Lgr5+ CBC" = c("Lgr5", "Ascl2", "Slc12a2", "Axin2", "Olfm4"), 
+                          "Isthmus progenitor" = c("Fgfbp1", "Mki67", "Cdk4", "Pcna"), 
+                          "Bottom-villus EC" = c("Krt19", "Fabp6"), 
+                          "Mid-villus EC" = c("Slc5a1", "Slc2a2"), 
+                          "Top-villus EC" = c("Ada", "Neat1"),
+                          "Secretory progenitor" = c("Atoh1"), 
+                          "Paneth" = c("Lyz1", "Defa17", "Defa22", "Defa24", "Ang4"), 
+                          "Goblet" = c("Muc2", "Clca1", "Tff3", "Agr2"), 
+                          "Enteroendocrine" = c("Chgb", "Clca1", "Tff3", "Agr2"), 
+                          "Microfold" = c("Ccl20", "Clu"),
+                          "Proliferation" = c("Mki67"))
+```
+
+### 1. Individual Feature Plots
+```{r chunk-12}
+seu_obj_short_term_combined_processed <- readRDS("../outputs/short-term_seu_obj_short_term_combined_processed.RDS")
+```
+
+```{r chunk-13}
+genes.of.interest <- list("Lgr5+ CBC" = c("Lgr5", "Ascl2", "Slc12a2", "Axin2", "Olfm4"), 
+                          "Isthmus progenitor" = c("Fgfbp1", "Mki67", "Cdk4", "Pcna"), 
+                          "Bottom-villus EC" = c("Krt19", "Fabp6"), 
+                          "Mid-villus EC" = c("Slc5a1", "Slc2a2"), 
+                          "Top-villus EC" = c("Ada", "Neat1"),
+                          "Secretory progenitor" = c("Atoh1"), 
+                          "Paneth" = c("Lyz1", "Defa17", "Defa22", "Defa24", "Ang4"), 
+                          "Goblet" = c("Muc2", "Clca1", "Tff3", "Agr2"), 
+                          "Enteroendocrine" = c("Chgb", "Clca1", "Tff3", "Agr2"), 
+                          "Microfold" = c("Ccl20", "Clu"),
+                          "Proliferation" = c("Mki67"))
+```
+
+```{r fig.height=8, fig.width=12}
+library(ggplot2)
+library(patchwork)
+
+for (celltype in names(genes.of.interest)) {
+  plots <- lapply(genes.of.interest[[celltype]], function(gene) {
+    FeaturePlot(seu_obj_short_term_combined_processed, features = gene) + ggtitle(gene)
+  })
+  
+  plot <- wrap_plots(plots) +  
+    plot_annotation(
+      title = celltype,
+      theme = theme(plot.title = element_text(hjust = 0.5, size = 20))
+    )
+  
+  # Print Plot
+  print(plot)
+  
+  # Save Plot
+  pdf(glue("../outputs/short-term_{celltype}-FeaturePlots.pdf"), height = 8, width = 12)
+  print(plot)
+  dev.off()
+}
+```
+
+### 2. UCell
+```{r chunk-14}
+library(UCell)
+
+seu_obj_short_term_combined_processed <- JoinLayers(seu_obj_short_term_combined_processed)
+seu_obj_short_term_combined_processed <- AddModuleScore_UCell(seu_obj_short_term_combined_processed, features = genes.of.interest, name = c('_UCell', '_UCell'))
+
+# Save Plots
+for (name in names(genes.of.interest)) {
+  print(paste0(name, "_UCell"))
+  
+  p <- FeaturePlot(seu_obj_short_term_combined_processed, features = paste0(name, "_UCell"))
+  #p <- VlnPlot(seu_obj_short_term_combined_processed, features = paste0(name, "_UCell"), group.by = "Final_Annotations")
+  pdf(glue("../outputs/short-term_{name}-UCell.pdf"), height = 8, width = 12)
+  p %>% print()
+  dev.off()
+}
+
+# Save RDS
+saveRDS(seu_obj_short_term_combined_processed , "../outputs/short-term_seu_obj_short_term_combined_processed-UCell-Added.RDS")
+```
+
+# Markers
+```{r chunk-15}
+source("../../helper-functions/processing-utils.R")
+
+presto_outs <- run.presto.specific.columns(seu_obj_short_term_combined_processed, RNA_cols = T)
+
+# Save
+writexl::write_xlsx(presto_outs$`Raw-Markers`, "../outputs/short-term_Raw-Markers.xlsx")
+writexl::write_xlsx(presto_outs$`Filtered-Markers`, "../outputs/short-term_Filtered-Markers.xlsx")
+writexl::write_xlsx(presto_outs$`Top-Markers`, "../outputs/short-term_Top-Markers.xlsx")
+```
+

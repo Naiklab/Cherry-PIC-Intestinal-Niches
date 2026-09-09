@@ -1,0 +1,323 @@
+---
+title: "Figure S5 — Master scRNA Reference (FINAL)"
+author: "Ikjot Sidhu"
+date: "`r Sys.Date()`"
+output:
+  html_notebook:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+## Purpose
+
+The integrated multi-dataset single-cell reference behind RCTD deconvolution — panels S5A
+and S5B.
+
+## Outputs
+
+| Panel | Output | Upstream source |
+|-------|--------|-----------------|
+| **S5A — dataset UMAP** | `figS5A_umap_dataset.pdf` | `Master-dataset-integration.Rmd` §10 (`dataset_label` → published citation) |
+| **S5B — cell-type UMAP (broad)** | `figS5B_umap_celltype_broad.pdf` | res-1.2 clusters → **`Broad`** column of the Aug-12 xlsx |
+| **S5C–E — marker dot plots** | *see note below* | `dotplot_markers_final.R` (Biomni package) |
+
+**Supporting (not published):** `supporting_umap_celltype_fine.pdf` — the fine
+Population-level version of S5B, kept as a QC cross-check on the Broad collapse.
+
+**Panels S5C–E are not produced here.** They come from `dotplot_markers_final.R` in
+`Biomni-code-external/` and are filed in `../outputs/` as `figS5C_dotplot_epithelia.*`,
+`figS5D_dotplot_stroma.*` and `figS5E_dotplot_immune.*`. The `dotplots` chunk at the end
+of this notebook makes an earlier, superseded version; its outputs are named
+`superseded_dotplot_*` and are not panels.
+
+## Inputs
+
+| File | Contents |
+|---|---|
+| `../data/Master.Obj.rds` | Integrated reference, 74,598 cells — already carries `umap`, `dataset_label`, `cell_class`, `cluster_annotation` |
+| `../data/…RCTD broad August 10th.csv` | Fine `Population` annotation, used for the supporting UMAP |
+| `../data/…RCTD broad Aug12.xlsx` | `Broad` annotation, used for panel S5B |
+
+Frozen. This notebook reads them; it does not rebuild them. Being scRNA, the object is
+unaffected by the spatial hi-res image swap.
+
+**Two annotation sources, deliberately.** Panel S5B groups by the `Broad` column of the
+Aug-12 xlsx, which matches the published legend. The Aug-10 CSV's `Population` column is
+the finer ~40-category annotation and is used only for the supporting fine UMAP. These are
+easy to confuse; §4 below sets out exactly how the Broad categories resolve.
+
+## Running this
+
+`Master.Obj.rds` is 5.8 GB and needs more memory than a laptop has, so this runs on a
+compute node:
+
+```
+OPENBLAS_NUM_THREADS=1 Rscript FigS5_scRNA_Reference_final.R
+```
+
+```{r setup, include=FALSE}
+.libPaths("/sc/arion/projects/naiklab/ikjot/R")
+library(Seurat)
+library(tidyverse)
+library(patchwork)
+library(readxl)          # Aug-12 xlsx: Broad annotation for panel S5B
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Pipeline provenance
+
+Full build of the reference object loaded below — public scRNA datasets → `Master.Obj.rds`
+— documented as code-of-record (not re-executed here; the figure runs from the frozen RDS).
+
+```{r pipeline-provenance, child='Preprocessing_scRNA_Reference_final.Rmd'}
+```
+
+# 1. Configuration & colours
+
+```{r config}
+rds_master <- "../data/Master.Obj.rds"
+out_dir    <- "../outputs"
+dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+op <- function(f) file.path(out_dir, f)
+
+# ---- FINALIZED annotation source: Aug-10th CSV ------------------------------
+# The saved object's cluster_annotation was mapped from an EARLIER annotation CSV
+# whose per-cluster labels differed from the finalized Aug-10th set (May-8th vs
+# later reassigned clusters 9/38/40: Myofibroblasts / Goblet cells / cDC1). The
+# Aug-10th file also has an encoding quirk for "Resident CD8aa IELs" (mojibake α +
+# double space). To keep labels AND colours consistent from ONE finalized source,
+# we (1) re-map cluster_annotation from res-1.2 cluster IDs using Aug-10th, and
+# (2) ASCII-sanitize BOTH the labels and the colour keys identically so the join
+# is exact (no silent grey fallback).
+sc_annot_file <- "../data/single cell seq combined datasets annotation res 1_2 With colors RCTD broad August 10th.csv"
+sc_annot  <- read.csv(sc_annot_file, stringsAsFactors = FALSE, check.names = FALSE)
+
+# Same normalisation the master-integration pipeline applied to Population labels,
+# plus the Aug-10th mojibake sequence for alpha ("Œ±" = U+0152 U+00B1 -> a) so the
+# CD8aa label renders cleanly and matches the sanitized colour key.
+sanitize_ascii <- function(x) {
+  x <- gsub("Œ±", "a", x)      # double-encoded alpha (mojibake) -> a
+  x <- gsub("α", "a", x)            # proper Greek alpha -> a
+  x <- gsub("—|–", "-", x)     # em/en dash -> hyphen
+  x <- iconv(x, to = "ASCII//TRANSLIT", sub = "")  # drop any remaining non-ASCII
+  gsub("\\s+", " ", trimws(x))                # collapse whitespace (fixes double spaces)
+}
+
+clnum_col <- names(sc_annot)[1]               # first column is the res-1.2 cluster '#'
+sc_annot$Population_clean <- sanitize_ascii(sc_annot$Population)
+
+# cluster '#' -> sanitized Population, and sanitized Population -> Hex
+cluster_to_pop <- setNames(sc_annot$Population_clean, as.character(sc_annot[[clnum_col]]))
+pop_color_map  <- setNames(trimws(sc_annot[["Hex Code"]]), sc_annot$Population_clean)
+pop_color_map  <- pop_color_map[!duplicated(names(pop_color_map))]
+
+# Curated cell-type marker list (Cell_Type -> markers) for the dot plots.
+marker_csv <- "../data/Custom-Marker-genes-only-from-Daniel.csv"
+markers_df <- read.csv(marker_csv, stringsAsFactors = FALSE) |>
+  transmute(Cell_Type = trimws(Cell_Type), Marker = trimws(Marker)) |>
+  filter(!is.na(Marker), Marker != "")
+```
+
+# 2. Load frozen reference object
+
+```{r load}
+Master.Obj <- readRDS(rds_master)
+cat("Cells:", ncol(Master.Obj), "| Reductions:", paste(Reductions(Master.Obj), collapse = ", "), "\n")
+cat("cell_class:\n"); print(table(Master.Obj$cell_class))
+
+# ---- Re-map cluster_annotation from res-1.2 IDs using the FINALIZED Aug-10th CSV ----
+res_col <- "SCT_snn_res.1.2"
+if (res_col %in% colnames(Master.Obj@meta.data)) {
+  cl <- as.character(Master.Obj@meta.data[[res_col]])
+  new_annot <- unname(cluster_to_pop[cl])
+  n_unmapped <- sum(is.na(new_annot))
+  if (n_unmapped > 0) warning(n_unmapped, " cells have a res-1.2 cluster with no Aug-10th label; kept as 'Unannotated'.")
+  new_annot[is.na(new_annot)] <- "Unannotated"
+  Master.Obj$cluster_annotation <- new_annot
+  cat("Re-mapped cluster_annotation from", res_col, "using Aug-10th labels.\n")
+} else {
+  # Fallback: object lacks res-1.2 column — sanitize its stored labels so they still
+  # join to the sanitized colour keys.
+  warning(res_col, " not found; sanitizing stored cluster_annotation for colour matching.")
+  Master.Obj$cluster_annotation <- sanitize_ascii(as.character(Master.Obj$cluster_annotation))
+}
+
+# Colour vector for the labels present; flag (don't silently grey) any without a colour.
+annotation_labels <- sort(unique(as.character(Master.Obj$cluster_annotation)))
+missing_col <- setdiff(annotation_labels, c(names(pop_color_map), "Unannotated"))
+if (length(missing_col) > 0)
+  warning("No Aug-10th colour for: ", paste(missing_col, collapse = ", "), " (using grey).")
+annotation_colors <- sapply(annotation_labels, function(lbl) {
+  hex <- pop_color_map[[lbl]]
+  if (!is.null(hex) && !is.na(hex) && hex != "NA" && hex != "") hex else "#808080"
+})
+annotation_colors <- setNames(annotation_colors, annotation_labels)
+```
+
+# 3. Panel S5A — dataset UMAP
+
+The object's stored `dataset_label` values are internal shorthand; the published S5A
+legend uses publication citations. The map below converts one to the other.
+
+Two things it handles that a plain `group.by` cannot:
+
+1. **Two unrelated sources were both labelled `Daniel_*`.** `Glisovic_Fibroblast` is
+   external published data — Glisovic N. *et al.*, *J Cell Sci* 2025;138(23):jcs264147,
+   GEO GSE269017 (→ cited "Glisovic et al 2025"; first author is **Neda** Glisovic).
+   The epithelial and immune objects are **Daniel Rosenblum's**, generated for this
+   manuscript (→ cited "Rosenblum et al 2026").
+2. **Two labels, one legend entry.** `Rosenblum_Epithelial` and `Rosenblum_Immune` both
+   map to "Rosenblum et al 2026", which is why 8 stored labels yield the 7 entries in the
+   published legend.
+
+`Master.Obj.rds` stores the corrected spellings (`Rosenblum_*`, `Niec_SpaceFold_SI`), and
+`Master-dataset-integration.Rmd` assigns them upstream. The legacy `Daniel_*` and
+`SpaceFold_SI` keys stay in the map below as a fallback so this notebook also runs against
+the pre-patch object backups.
+
+```{r umap_dataset, fig.width=10, fig.height=8}
+# stored dataset_label -> published S5A legend entry
+dataset_display <- c(
+  Glisovic_Fibroblast  = "Glisovic et al 2025",
+  Rosenblum_Epithelial = "Rosenblum et al 2026",
+  Rosenblum_Immune     = "Rosenblum et al 2026",
+  Daniel_Epithelial    = "Rosenblum et al 2026",   # legacy spelling in the frozen object
+  Daniel_Immune        = "Rosenblum et al 2026",   # legacy spelling in the frozen object
+  Niec_SpaceFold_SI    = "Niec et al 2022",
+  SpaceFold_SI         = "Niec et al 2022",        # legacy spelling in the frozen object
+  Degirmenci_2018      = "Degirmenci et al 2018",
+  Kinchen_2018         = "Kinchen et al 2018",
+  McCarthy_2020        = "McCarthy et al 2020",
+  Roulis_2020          = "Roulis et al 2020"
+)
+
+stored <- as.character(Master.Obj$dataset_label)
+unmapped <- setdiff(unique(stored), names(dataset_display))
+if (length(unmapped))
+  warning("dataset_label with no published-citation mapping: ", paste(unmapped, collapse = ", "))
+
+# Unmapped values fall through unchanged rather than becoming NA (visible, not silent).
+Master.Obj$dataset_citation <- ifelse(stored %in% names(dataset_display),
+                                      dataset_display[stored], stored)
+
+cat("Published S5A legend entries:", length(unique(Master.Obj$dataset_citation)),
+    "— published figure has 7\n")
+print(table(Master.Obj$dataset_citation))
+
+p_dataset <- DimPlot(Master.Obj, reduction = "umap", group.by = "dataset_citation",
+                     pt.size = 0.2) +
+  ggtitle("Master reference — dataset of origin")
+ggsave(op("figS5A_umap_dataset.pdf"), p_dataset, width = 10, height = 8)
+p_dataset
+```
+
+# 4. Panel S5B — cell-type UMAP (collapsed "Broad" annotation)
+
+Grouped by the `Broad` column of the Aug-12 xlsx: collapsed categories, a three-compartment
+side legend, no on-plot labels.
+
+The xlsx carries 26 non-Unknown broad categories (11 Epithelia, 7 Stroma, 8 Immune) and the
+published legend shows 25. Two adjustments below close that gap: `TA_cells` and
+`Early_progenitors` merge into a single "TA cells / Early progenitors" entry, and `Unknown`
+is dropped. The finer annotation is still written as a supporting UMAP.
+
+```{r broad_annotation}
+broad_xlsx <- "../data/single cell seq combined datasets annotation res 1_2 With colors RCTD broad Aug12.xlsx"
+broad_df   <- readxl::read_excel(broad_xlsx)
+
+# Same normalisation used for the Fig 3B/3C broad palette, so keys join exactly.
+norm_broad <- function(x) gsub("_+", "_", gsub("[^[:alnum:]]", "_", trimws(x)))
+
+broad_df$Broad_clean <- norm_broad(broad_df$Broad)
+
+# Published legend merges TA cells with Early progenitors into a single entry.
+broad_df$Broad_clean[broad_df$Broad_clean %in% c("TA_cells", "Early_progenitors")] <-
+  "TA_cells_Early_progenitors"
+
+clnum <- names(broad_df)[1]                       # res-1.2 cluster '#'
+cluster_to_broad <- setNames(broad_df$Broad_clean, as.character(broad_df[[clnum]]))
+broad_colors <- setNames(trimws(broad_df$`Broad Hex code`), broad_df$Broad_clean)
+broad_colors <- broad_colors[!duplicated(names(broad_colors))]
+broad_comp   <- setNames(trimws(broad_df$Compartment), broad_df$Broad_clean)
+broad_comp   <- broad_comp[!duplicated(names(broad_comp))]
+
+if (!res_col %in% colnames(Master.Obj@meta.data))
+  stop(res_col, " not found — cannot build the Broad annotation for S5B.")
+
+clb <- as.character(Master.Obj@meta.data[[res_col]])
+Master.Obj$broad_annotation <- unname(cluster_to_broad[clb])
+
+# Drop Unknown / unmapped from the panel (published legend excludes them).
+keep <- !is.na(Master.Obj$broad_annotation) & Master.Obj$broad_annotation != "Unknown"
+cat("Cells excluded from S5B (Unknown/unmapped):", sum(!keep), "of", ncol(Master.Obj), "\n")
+Master.Obj.b <- Master.Obj[, keep]
+
+# Order the legend Epithelia -> Stroma -> Immune, as published.
+present_b <- sort(unique(Master.Obj.b$broad_annotation))
+present_b <- present_b[order(match(broad_comp[present_b],
+                                   c("Epithelia", "Stroma", "Immune"), nomatch = 4L),
+                             present_b)]
+Master.Obj.b$broad_annotation <- factor(Master.Obj.b$broad_annotation, levels = present_b)
+
+missing_b <- setdiff(present_b, names(broad_colors))
+if (length(missing_b)) warning("No Broad hex for: ", paste(missing_b, collapse = ", "))
+cols_b <- vapply(present_b, function(b) {
+  h <- unname(broad_colors[b]); if (!is.na(h) && nzchar(h) && h != "NA") h else "#808080"
+}, character(1))
+
+cat("S5B broad categories:", length(present_b), "— published figure has 25\n")
+print(table(broad_comp[present_b]))
+```
+
+```{r umap_celltype, fig.width=14, fig.height=11}
+p_annot <- DimPlot(Master.Obj.b, reduction = "umap", group.by = "broad_annotation",
+                   cols = cols_b, label = FALSE, pt.size = 0.2) +
+  ggtitle("Master reference — cell-type annotation (broad)") +
+  theme(legend.position = "right", legend.text = element_text(size = 7))
+ggsave(op("figS5B_umap_celltype_broad.pdf"), p_annot, width = 16, height = 12)
+p_annot
+```
+
+## Supporting — fine (Population-level) annotation
+
+The pre-3-Sep version of panel S5B. Not published; kept because the finer labels are
+useful for checking that the Broad collapse did not merge anything unintended.
+
+```{r supporting_umap_celltype_fine, fig.width=16, fig.height=12}
+p_annot_fine <- DimPlot(Master.Obj, reduction = "umap", group.by = "cluster_annotation",
+                        cols = annotation_colors, label = TRUE, label.size = 3, repel = TRUE,
+                        pt.size = 0.2) +
+  ggtitle("Master reference — cell-type annotation (fine / Population)") +
+  theme(legend.position = "right", legend.text = element_text(size = 7))
+ggsave(op("supporting_umap_celltype_fine.pdf"), p_annot_fine, width = 16, height = 12)
+p_annot_fine
+```
+
+# 5. Epithelia / Stroma / Immune marker dot plots
+
+```{r dotplots, fig.width=20, fig.height=8}
+# Top-5 curated markers per cell type, flattened for DotPlot (faithful to §11f).
+marker_list <- split(markers_df$Marker, markers_df$Cell_Type)
+marker_list <- lapply(marker_list, function(x) head(x[x %in% rownames(Master.Obj)], 5))
+marker_list <- marker_list[vapply(marker_list, length, integer(1)) > 0]
+all_top_markers <- unique(unlist(marker_list))
+
+# Compartment grouping of cell_class: Stroma folds Fibroblast + Mesenchymal.
+compartment_of <- c(Epithelial = "Epithelia", Immune = "Immune",
+                    Fibroblast = "Stroma", Mesenchymal = "Stroma")
+Master.Obj$compartment <- unname(compartment_of[as.character(Master.Obj$cell_class)])
+
+for (comp in c("Epithelia", "Immune", "Stroma")) {
+  cells <- colnames(Master.Obj)[!is.na(Master.Obj$compartment) & Master.Obj$compartment == comp]
+  if (length(cells) == 0) next
+  sub <- Master.Obj[, cells]
+  Idents(sub) <- factor(sub$cluster_annotation)
+  dp <- DotPlot(sub, features = all_top_markers, group.by = "cluster_annotation") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 7),
+          axis.text.y = element_text(size = 8)) +
+    ggtitle(paste0("Marker expression — ", comp))
+  ggsave(op(paste0("superseded_dotplot_", tolower(comp), "_from_FigS5_Rmd.pdf")), dp, width = 20, height = 8, limitsize = FALSE)
+  print(dp)
+}
+```

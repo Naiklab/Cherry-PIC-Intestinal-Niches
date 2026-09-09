@@ -1,0 +1,100 @@
+---
+title: "DR26001 Stage 01a — Split epithelia from immune (short-term, 2024-02-09)"
+output:
+  html_notebook:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+Clusters the 2024-02-09 hashtag pool at `RNA_snn_res.0.5` and splits it on Ptprc/Epcam into an epithelial and an immune object.
+
+Paths are relative to this `scripts/` directory.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The 2024-02-09-RNA samples were not enriched for epithelia. As a result before combining them with the 2024-06-05 samples we want to separate epithelia from immune cells.
+We do this by doing FeaturePlots of Epcam (Epithelia) & Ptprc (Immune) & visually choosing which clusters in the lowest resolution (Resolution 0.1) have these features.
+
+# Load Packages
+```{r chunk-01}
+pacman::p_load("Seurat", "dplyr")
+```
+
+# Load Data
+```{r chunk-02}
+# This is the direct output of htp pipeline on the 2024-02-09-RNA Samples
+seu_obj <- readRDS("../../00-hashtag-pools/data/final-htp-seu-obj-2024-02-09-RNA.RDS")
+```
+
+# Analysis
+## View Cells per sample
+```{r chunk-03}
+table(seu_obj$Sample_ID)
+```
+
+## Double Check QC Stats
+```{r chunk-04}
+seu_obj$percent.mt %>% max()
+seu_obj$nFeature_RNA %>% max()
+seu_obj$nFeature_RNA %>% min()
+```
+
+# Plots
+```{r chunk-05}
+create.dir <- function(dir_path) {
+  if (!dir.exists(dir_path)) {
+    dir.create(dir_path, recursive = TRUE)
+  }
+}
+
+create.dir("../output/Separate-Epi-Immune-2024-02-09-RNA/plots")
+create.dir("../output/Separate-Epi-Immune-2024-02-09-RNA/RDS")
+```
+
+## Plot UMAP (Epcam vs PTPRC)
+Low Resolution UMAP
+```{r fig.width=16, fig.height=4}
+a <- DimPlot(seu_obj, group.by = "RNA_snn_res.0.5", label = T)
+b <- FeaturePlot(seu_obj, features = "Ptprc")
+c <- FeaturePlot(seu_obj, features = "Epcam")
+p <- a+b+c
+
+pdf("../outputs/short-term-2024-02-09_Resolution_0.5-Ptprc-Epcam-FeaturePlots.pdf", width = 16, height = 4)
+print(p)
+dev.off()
+
+print(p)
+
+# Violin Plot
+pdf("../outputs/short-term-2024-02-09_Resolution_0.5-Ptprc-Epcam-VlnPlots.pdf", width = 16, height = 4)
+print(VlnPlot(seu_obj, group.by = "RNA_snn_res.0.5", features = c("Ptprc", "Epcam"), assay = "RNA"))
+dev.off()
+
+print(VlnPlot(seu_obj, group.by = "RNA_snn_res.0.5", features = c("Ptprc", "Epcam"), assay = "RNA"))
+```
+
+# Separate Immune vs Epithelia
+```{r chunk-06}
+# Epi Clusters (Epcam)
+epithelia_clusters <- c(3,6,9,12,21,22,23)
+
+# Subset
+seu_obj_short_term_epi <- subset(seu_obj, subset = RNA_snn_res.0.5 %in% epithelia_clusters)
+seu_obj_short_term_immune <- subset(seu_obj, subset = RNA_snn_res.0.5 %in% epithelia_clusters, invert = T)
+
+# Remove Seurat Clustering columns
+seu_obj_short_term_epi@meta.data <- seu_obj_short_term_epi@meta.data %>%
+  select(-starts_with("RNA_snn_res"), -seurat_clusters)
+
+seu_obj_short_term_immune@meta.data <- seu_obj_short_term_immune@meta.data %>%
+  select(-starts_with("RNA_snn_res"), -seurat_clusters)
+
+# Save RDS
+saveRDS(seu_obj_short_term_epi, "../outputs/short-term-2024-02-09_seu-obj-short-term-epithelia-2024-02-09-RNA-RNA_snn_res.0.5.RDS")
+saveRDS(seu_obj_short_term_immune, "../outputs/short-term-2024-02-09_seu-obj-short-term-immune-2024-02-09-RNA-RNA_snn_res.0.5.RDS")
+```
+
+

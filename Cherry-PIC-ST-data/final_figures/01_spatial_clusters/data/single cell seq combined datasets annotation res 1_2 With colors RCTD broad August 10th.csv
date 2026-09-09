@@ -1,0 +1,44 @@
+#,Population,Hex Code,RCTD cell type name,Compartment,Broad,Broad Hex code
+0,Naive B cells,#880E4F,Naive_B_cells,Immune,B_cells,#880E4F
+1,Cytotoxic CD8aa IEL-1,#004D5E,Cytotoxic_CD8aa_IEL_1,Immune,Cd8aa _IEL,#004D5E
+2,Stem cells,#ef0a0a,Stem_cells,Epithelia,Stem_cells,#ef0a0a
+3,Cytotoxic CD8aa IEL-2,#0f9eb5,Cytotoxic_CD8aa_IEL_2,Immune,Cd8aa_IEL,#004D5E
+4,Activated interstitial fibroblasts,#4A1B0C,Activated_interstitial_fibroblasts,Stroma,Fibroblasts,#7B4F24
+5,Cytotoxic CD8aa IEL-3,#004D5E,Cytotoxic_CD8aa_IEL_3,Immune,Cd8aa_IEL,#004D5E
+6,CD34 interstitial fibroblasts,#7B4F24,CD34__interstitial_fibroblasts,Stroma,Fibroblasts,#7B4F24
+7,TA cells,#08519C,TA_cells,Epithelia,TA_cells,#2171B5
+8,Mid-villus proximal enterocytes 2,#876cd8,Mid_villus_proximal_enterocytes_2,Epithelia,Mid_villus_proximal_enterocytes,#876cd8
+9,Myofibroblasts,#8C564B,Myofibroblasts,Stroma,Myofibroblasts,#8c564b
+10,Resident CD8Œ±Œ±  IELs,#9EDAE5,Resident_CD8aa_IELs,Immune,Cd8aa_IEL,#004D5E
+11,Bottom-villus enterocytes,#4A2580,Bottom_villus_enterocytes,Epithelia,Bottom_villus_enterocytes,#4A2580
+12,Activated fibroblasts,#A0715E,Activated_fibroblasts,Stroma,Fibroblasts,#7B4F24
+13,Goblet cells,#006D2C,Goblet_cells,Epithelia,Goblet_cells,#006D2C
+14,Macrophages,#67000D,Macrophages,Immune,Macrophages,#67000D
+15,Plasma cells,#F8BBD0,Plasma_cells,Immune,Plasma_cells,#F8BBD0
+16,PDGFRA myofibroblasts,#C49C94,PDGFRA__myofibroblasts,Stroma,Myofibroblasts,#8c564b
+17,TA cells /Early progenitors,#2171B5,TA_cells___Early_progenitors,Epithelia,TA_cells,#2171B5
+18,Tip-villus enterocytes-1,#1A0533,Tip_villus_enterocytes_1,Epithelia,Tip_villus_enterocytes,#1A0533
+19,Il22 Innate like T- cells,#C6EEF2,IL22_Innate_like_T_cells,Immune,IL22_Innate_like_T_cells,#C6EEF2
+20,CD4 T cells,#098b91,CD4_T_cells,Immune,CD4_T_cells,#098b91
+21,Blood endothelial cells,#4A5900,Blood_endothelial_cells,Stroma,Blood_endothelial_cells,#4A5900
+22,Naive B cells,#880E4F,Naive_B_cells,Immune,B_cells,#880E4F
+23,Mid-villus proximal enterocytes,#6A51A3,Mid_villus_proximal_enterocytes,Epithelia,Mid_villus_proximal_enterocytes,#6A51A3
+24,Mid-villus distal enterocytes,#ff8c00,Mid_villus_distal_enterocytes,Epithelia,Mid_villus_distal_enterocytes,#ff8c00
+25,Pericytes,#BCBD22,Pericytes,Stroma,Pericytes,#BCBD22
+26,Lymphatic endothelial cells,#7A8C00,Lymphatic_endothelial_cells,Stroma,Lymphatic_endothelial_cells,#7A8C00
+27,GC B cells,#F06292,GC_B_cells,Immune,B_cells,#880E4F
+28,Tuft cells,#1c5e2c,Tuft_cells,Epithelia,Tuft_cells,#1c5e2c
+29,Early progenitors,#4292C6,Early_progenitors,Epithelia,Early_progenitors,#4292C6
+30,Enteric glia,#525252,Enteric_glia,Stroma,Enteric_glia,#525252
+31,Secretory progenitor,#0a351b,Secretory_progenitors,Epithelia,Secretory_progenitors,#0a351b
+32,Enteroendocrine cells,#74C476,Enteroendocrine_cells,Epithelia,Enteroendocrine_cells,#74C476
+33,Cytotoxic CD8aa IEL-4,#004D5E,Cytotoxic_CD8aa_IEL_4,Immune,Cd8aa_IEL,#004D5E
+34,Mix cluster remove,NA,Unknown,NA,Unknown,NA
+35,Tip-villus enterocytes-2,#9ECAE1,Tip_villus_enterocytes_2,Epithelia,Tip_villus_enterocytes,#9ECAE1
+36,Naive B cells,#880E4F,Naive_B_cells,Immune,B_cells,#880E4F
+37,Plasmacytoid dendritic cells,#FB6A4A,Plasmacytoid_dendritic_cells,Immune,Plasmacytoid_dendritic_cells,#FB6A4A
+38,Goblet cells,#006D2C,Goblet_cells,Epithelia,Goblet_cells,#006D2C
+39,Cycling cytotoxic CD8aa  IEL,#56D4E0,Cycling_cytotoxic_CD8aa_IEL,Immune,Cd8aa_IEL,#004D5E
+40,cDC1,#bc5e65,cDC1,Immune,cDC1,#bc5e65
+41,Unidentified ,NA,Unknown,NA,Unknown,NA
+42,PDGFRA telocyte-like fibroblasts,#DEB89A,PDGFRA__telocyte_like_fibroblasts,Stroma,PDGFRA__telocyte_like_fibroblasts,#4a1b0c

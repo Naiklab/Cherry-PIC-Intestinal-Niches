@@ -1,0 +1,841 @@
+gene,category,cell_type,population,pct_expr,mean_all,mean_expr,median_expr,max_expr,n_cells
+Defa3,ambient_paneth,Fibroblasts,non_epithelial,0.9,0.02,2.17,1,8,668
+Defa3,ambient_paneth,Endothelial,non_epithelial,1.7,0.02,1,1,1,116
+Defa3,ambient_paneth,Macrophages,non_epithelial,1,0.01,1.1,1,2,6917
+Defa3,ambient_paneth,Plasmablasts,non_epithelial,0,0,0,0,0,137
+Defa3,ambient_paneth,cDC1,non_epithelial,0.8,0.01,1,1,1,130
+Defa3,ambient_paneth,Paneth cells,epithelial_source,97.7,133.37,136.51,14,1349,174
+Defa3,ambient_paneth,Bottom-Villus enterocytes,epithelial_source,2.1,0.02,1.04,1,2,1247
+Defa3,ambient_paneth,Mid-villus enterocytes,epithelial_source,1.3,0.02,1.3,1,4,756
+Defa3,ambient_paneth,Upper-villus enterocytes,epithelial_source,2.9,0.03,1.13,1,2,514
+Defa3,ambient_paneth,Goblet cells,epithelial_source,3.8,3.59,94,1.5,550,157
+Defa5,ambient_paneth,Fibroblasts,non_epithelial,0.4,0.01,2.67,2,5,668
+Defa5,ambient_paneth,Endothelial,non_epithelial,0,0,0,0,0,116
+Defa5,ambient_paneth,Macrophages,non_epithelial,0.9,0.01,1.05,1,3,6917
+Defa5,ambient_paneth,Plasmablasts,non_epithelial,0.7,0.01,1,1,1,137
+Defa5,ambient_paneth,cDC1,non_epithelial,0.8,0.01,1,1,1,130
+Defa5,ambient_paneth,Paneth cells,epithelial_source,95.4,88.97,93.25,9,1042,174
+Defa5,ambient_paneth,Bottom-Villus enterocytes,epithelial_source,0.8,0.01,1,1,1,1247
+Defa5,ambient_paneth,Mid-villus enterocytes,epithelial_source,1.1,0.01,1,1,1,756
+Defa5,ambient_paneth,Upper-villus enterocytes,epithelial_source,1.9,0.02,1.1,1,2,514
+Defa5,ambient_paneth,Goblet cells,epithelial_source,1.3,0.03,2,2,3,157
+Defa17,ambient_paneth,Fibroblasts,non_epithelial,1.9,0.03,1.46,1,6,668
+Defa17,ambient_paneth,Endothelial,non_epithelial,0,0,0,0,0,116
+Defa17,ambient_paneth,Macrophages,non_epithelial,1.2,0.01,1.07,1,3,6917
+Defa17,ambient_paneth,Plasmablasts,non_epithelial,2.2,0.03,1.33,1,2,137
+Defa17,ambient_paneth,cDC1,non_epithelial,0,0,0,0,0,130
+Defa17,ambient_paneth,Paneth cells,epithelial_source,97.1,182.19,187.58,19,1694,174
+Defa17,ambient_paneth,Bottom-Villus enterocytes,epithelial_source,1.6,0.02,1.15,1,3,1247
+Defa17,ambient_paneth,Mid-villus enterocytes,epithelial_source,1.9,0.03,1.43,1,7,756
+Defa17,ambient_paneth,Upper-villus enterocytes,epithelial_source,4.3,0.05,1.14,1,3,514
+Defa17,ambient_paneth,Goblet cells,epithelial_source,5.1,5.66,111.12,1,871,157
+Defa21,ambient_paneth,Fibroblasts,non_epithelial,6.3,0.46,7.33,1.5,212,668
+Defa21,ambient_paneth,Endothelial,non_epithelial,7.8,0.11,1.44,1,4,116
+Defa21,ambient_paneth,Macrophages,non_epithelial,9.7,0.22,2.31,1,65,6917
+Defa21,ambient_paneth,Plasmablasts,non_epithelial,5.8,0.18,3,2,7,137
+Defa21,ambient_paneth,cDC1,non_epithelial,3.8,0.12,3.2,4,6,130
+Defa21,ambient_paneth,Paneth cells,epithelial_source,99.4,2433.21,2447.27,274,28948,174
+Defa21,ambient_paneth,Bottom-Villus enterocytes,epithelial_source,10.7,0.28,2.63,2,16,1247
+Defa21,ambient_paneth,Mid-villus enterocytes,epithelial_source,8.3,0.19,2.32,1,26,756
+Defa21,ambient_paneth,Upper-villus enterocytes,epithelial_source,17.9,0.6,3.37,2,62,514
+Defa21,ambient_paneth,Goblet cells,epithelial_source,15.3,1.51,9.88,3,172,157
+Defa22,ambient_paneth,Fibroblasts,non_epithelial,6.3,0.49,7.83,1,243,668
+Defa22,ambient_paneth,Endothelial,non_epithelial,6,0.1,1.71,1,5,116
+Defa22,ambient_paneth,Macrophages,non_epithelial,10.6,0.25,2.35,1,52,6917
+Defa22,ambient_paneth,Plasmablasts,non_epithelial,4.4,0.17,3.83,3,10,137
+Defa22,ambient_paneth,cDC1,non_epithelial,6.9,0.13,1.89,1,6,130
+Defa22,ambient_paneth,Paneth cells,epithelial_source,99.4,2336.03,2349.54,263,23791,174
+Defa22,ambient_paneth,Bottom-Villus enterocytes,epithelial_source,10.3,0.28,2.73,2,13,1247
+Defa22,ambient_paneth,Mid-villus enterocytes,epithelial_source,7.9,0.2,2.52,1,26,756
+Defa22,ambient_paneth,Upper-villus enterocytes,epithelial_source,16.1,0.52,3.22,2,45,514
+Defa22,ambient_paneth,Goblet cells,epithelial_source,18.5,0.77,4.17,2,48,157
+Defa23,ambient_paneth,Fibroblasts,non_epithelial,1.5,0.05,3.2,1,23,668
+Defa23,ambient_paneth,Endothelial,non_epithelial,0.9,0.01,1,1,1,116
+Defa23,ambient_paneth,Macrophages,non_epithelial,1.7,0.02,1.13,1,5,6917
+Defa23,ambient_paneth,Plasmablasts,non_epithelial,2.2,0.02,1,1,1,137
+Defa23,ambient_paneth,cDC1,non_epithelial,0,0,0,0,0,130
+Defa23,ambient_paneth,Paneth cells,epithelial_source,98.9,243.38,246.21,22,3567,174
+Defa23,ambient_paneth,Bottom-Villus enterocytes,epithelial_source,2.2,0.02,1.07,1,2,1247
+Defa23,ambient_paneth,Mid-villus enterocytes,epithelial_source,1.9,0.02,1.14,1,2,756
+Defa23,ambient_paneth,Upper-villus enterocytes,epithelial_source,5.1,0.06,1.23,1,2,514
+Defa23,ambient_paneth,Goblet cells,epithelial_source,3.8,0.04,1.17,1,2,157
+Defa24,ambient_paneth,Fibroblasts,non_epithelial,20.1,1.15,5.75,1,485,668
+Defa24,ambient_paneth,Endothelial,non_epithelial,20.7,0.46,2.21,1,20,116
+Defa24,ambient_paneth,Macrophages,non_epithelial,25.2,0.76,3,1,138,6917
+Defa24,ambient_paneth,Plasmablasts,non_epithelial,18.2,0.4,2.2,1,11,137
+Defa24,ambient_paneth,cDC1,non_epithelial,16.2,0.44,2.71,1,12,130
+Defa24,ambient_paneth,Paneth cells,epithelial_source,100,7328.23,7328.23,755.5,59205,174
+Defa24,ambient_paneth,Bottom-Villus enterocytes,epithelial_source,22.6,0.9,4,2,25,1247
+Defa24,ambient_paneth,Mid-villus enterocytes,epithelial_source,23.5,0.66,2.8,1,79,756
+Defa24,ambient_paneth,Upper-villus enterocytes,epithelial_source,34.8,1.71,4.92,2,90,514
+Defa24,ambient_paneth,Goblet cells,epithelial_source,42,197.25,469.21,3,25223,157
+Defa26,ambient_paneth,Fibroblasts,non_epithelial,0.7,0.02,2.6,1,8,668
+Defa26,ambient_paneth,Endothelial,non_epithelial,0,0,0,0,0,116
+Defa26,ambient_paneth,Macrophages,non_epithelial,0.8,0.01,1.13,1,3,6917
+Defa26,ambient_paneth,Plasmablasts,non_epithelial,0.7,0.01,1,1,1,137
+Defa26,ambient_paneth,cDC1,non_epithelial,0,0,0,0,0,130
+Defa26,ambient_paneth,Paneth cells,epithelial_source,94.8,79.69,84.04,11,815,174
+Defa26,ambient_paneth,Bottom-Villus enterocytes,epithelial_source,0.6,0.01,1,1,1,1247
+Defa26,ambient_paneth,Mid-villus enterocytes,epithelial_source,1.1,0.01,1.38,1,3,756
+Defa26,ambient_paneth,Upper-villus enterocytes,epithelial_source,1.8,0.02,1.11,1,2,514
+Defa26,ambient_paneth,Goblet cells,epithelial_source,2.5,1.17,46,3,177,157
+Defa29,ambient_paneth,Fibroblasts,non_epithelial,3,0.11,3.75,1,50,668
+Defa29,ambient_paneth,Endothelial,non_epithelial,3.4,0.05,1.5,1,3,116
+Defa29,ambient_paneth,Macrophages,non_epithelial,4.4,0.06,1.43,1,11,6917
+Defa29,ambient_paneth,Plasmablasts,non_epithelial,2.2,0.04,1.67,2,2,137
+Defa29,ambient_paneth,cDC1,non_epithelial,2.3,0.02,1,1,1,130
+Defa29,ambient_paneth,Paneth cells,epithelial_source,100,534.9,534.9,63.5,6224,174
+Defa29,ambient_paneth,Bottom-Villus enterocytes,epithelial_source,4.2,0.05,1.27,1,3,1247
+Defa29,ambient_paneth,Mid-villus enterocytes,epithelial_source,2.6,0.05,1.85,1,8,756
+Defa29,ambient_paneth,Upper-villus enterocytes,epithelial_source,6.8,0.12,1.83,1,8,514
+Defa29,ambient_paneth,Goblet cells,epithelial_source,7.6,0.26,3.42,1,25,157
+Defa30,ambient_paneth,Fibroblasts,non_epithelial,10.2,0.36,3.56,1,120,668
+Defa30,ambient_paneth,Endothelial,non_epithelial,8.6,0.13,1.5,1,3,116
+Defa30,ambient_paneth,Macrophages,non_epithelial,12.5,0.25,2.03,1,37,6917
+Defa30,ambient_paneth,Plasmablasts,non_epithelial,9.5,0.2,2.15,1,6,137
+Defa30,ambient_paneth,cDC1,non_epithelial,8.5,0.18,2.09,1,4,130
+Defa30,ambient_paneth,Paneth cells,epithelial_source,100,2735.97,2735.97,254,34303,174
+Defa30,ambient_paneth,Bottom-Villus enterocytes,epithelial_source,14.8,0.41,2.77,2,13,1247
+Defa30,ambient_paneth,Mid-villus enterocytes,epithelial_source,10.6,0.25,2.36,1,38,756
+Defa30,ambient_paneth,Upper-villus enterocytes,epithelial_source,20,0.66,3.3,2,57,514
+Defa30,ambient_paneth,Goblet cells,epithelial_source,19.7,1.21,6.13,2,112,157
+Defa36,ambient_paneth,Fibroblasts,non_epithelial,0.6,0.03,5.25,1,18,668
+Defa36,ambient_paneth,Endothelial,non_epithelial,0.9,0.01,1,1,1,116
+Defa36,ambient_paneth,Macrophages,non_epithelial,1,0.01,1.12,1,3,6917
+Defa36,ambient_paneth,Plasmablasts,non_epithelial,0.7,0.01,1,1,1,137
+Defa36,ambient_paneth,cDC1,non_epithelial,0.8,0.01,1,1,1,130
+Defa36,ambient_paneth,Paneth cells,epithelial_source,98.3,137.26,139.67,14,1131,174
+Defa36,ambient_paneth,Bottom-Villus enterocytes,epithelial_source,1.3,0.02,1.19,1,2,1247
+Defa36,ambient_paneth,Mid-villus enterocytes,epithelial_source,1.5,0.02,1.09,1,2,756
+Defa36,ambient_paneth,Upper-villus enterocytes,epithelial_source,2.9,0.03,1.13,1,2,514
+Defa36,ambient_paneth,Goblet cells,epithelial_source,3.2,1.45,45.4,1,218,157
+Reg3b,ambient_paneth,Fibroblasts,non_epithelial,6.9,0.08,1.22,1,3,668
+Reg3b,ambient_paneth,Endothelial,non_epithelial,6.9,0.07,1,1,1,116
+Reg3b,ambient_paneth,Macrophages,non_epithelial,4.4,0.05,1.15,1,5,6917
+Reg3b,ambient_paneth,Plasmablasts,non_epithelial,8.8,0.11,1.25,1,3,137
+Reg3b,ambient_paneth,cDC1,non_epithelial,6.9,0.07,1,1,1,130
+Reg3b,ambient_paneth,Paneth cells,epithelial_source,21.3,10.4,48.89,4,409,174
+Reg3b,ambient_paneth,Bottom-Villus enterocytes,epithelial_source,18.1,0.28,1.57,1,21,1247
+Reg3b,ambient_paneth,Mid-villus enterocytes,epithelial_source,46.6,24.63,52.89,2,2579,756
+Reg3b,ambient_paneth,Upper-villus enterocytes,epithelial_source,62.3,62.95,101.11,14,2794,514
+Reg3b,ambient_paneth,Goblet cells,epithelial_source,35.7,17.52,49.12,2,636,157
+Reg3g,ambient_paneth,Fibroblasts,non_epithelial,3.4,0.04,1.3,1,5,668
+Reg3g,ambient_paneth,Endothelial,non_epithelial,4.3,0.15,3.4,1,13,116
+Reg3g,ambient_paneth,Macrophages,non_epithelial,2.6,0.03,1.09,1,3,6917
+Reg3g,ambient_paneth,Plasmablasts,non_epithelial,2.2,0.02,1,1,1,137
+Reg3g,ambient_paneth,cDC1,non_epithelial,3.1,0.04,1.25,1,2,130
+Reg3g,ambient_paneth,Paneth cells,epithelial_source,68.4,30.72,44.92,4,568,174
+Reg3g,ambient_paneth,Bottom-Villus enterocytes,epithelial_source,12.1,0.19,1.56,1,18,1247
+Reg3g,ambient_paneth,Mid-villus enterocytes,epithelial_source,40.9,12.29,30.07,2,1661,756
+Reg3g,ambient_paneth,Upper-villus enterocytes,epithelial_source,67.3,25.29,37.57,6,1530,514
+Reg3g,ambient_paneth,Goblet cells,epithelial_source,45.9,19.24,41.96,5,449,157
+Itln1,ambient_paneth,Fibroblasts,non_epithelial,2.2,0.05,2.07,1,15,668
+Itln1,ambient_paneth,Endothelial,non_epithelial,0.9,0.01,1,1,1,116
+Itln1,ambient_paneth,Macrophages,non_epithelial,3.1,0.04,1.36,1,21,6917
+Itln1,ambient_paneth,Plasmablasts,non_epithelial,2.2,0.04,1.67,1,3,137
+Itln1,ambient_paneth,cDC1,non_epithelial,1.5,0.02,1,1,1,130
+Itln1,ambient_paneth,Paneth cells,epithelial_source,99.4,372.86,375.01,41,3102,174
+Itln1,ambient_paneth,Bottom-Villus enterocytes,epithelial_source,3.5,0.04,1.27,1,4,1247
+Itln1,ambient_paneth,Mid-villus enterocytes,epithelial_source,2.4,0.04,1.5,1,9,756
+Itln1,ambient_paneth,Upper-villus enterocytes,epithelial_source,8.9,0.13,1.43,1,9,514
+Itln1,ambient_paneth,Goblet cells,epithelial_source,14,14.41,102.82,2,2152,157
+Fabp1,ambient_enterocyte,Fibroblasts,non_epithelial,56.9,1.57,2.77,2,18,668
+Fabp1,ambient_enterocyte,Endothelial,non_epithelial,41.4,1.18,2.85,2,14,116
+Fabp1,ambient_enterocyte,Macrophages,non_epithelial,28.7,0.59,2.08,1,19,6917
+Fabp1,ambient_enterocyte,Plasmablasts,non_epithelial,61.3,1.85,3.02,2,31,137
+Fabp1,ambient_enterocyte,cDC1,non_epithelial,56.2,1.4,2.49,2,10,130
+Fabp1,ambient_enterocyte,Paneth cells,epithelial_source,9.8,0.2,2.06,1,12,174
+Fabp1,ambient_enterocyte,Bottom-Villus enterocytes,epithelial_source,66.4,3.06,4.62,4,31,1247
+Fabp1,ambient_enterocyte,Mid-villus enterocytes,epithelial_source,62.3,19.28,30.95,13,2144,756
+Fabp1,ambient_enterocyte,Upper-villus enterocytes,epithelial_source,69.3,730.19,1054.26,482,6287,514
+Fabp1,ambient_enterocyte,Goblet cells,epithelial_source,38.9,4.5,11.57,3,383,157
+Fabp2,ambient_enterocyte,Fibroblasts,non_epithelial,41.9,0.92,2.2,1,47,668
+Fabp2,ambient_enterocyte,Endothelial,non_epithelial,43.1,0.94,2.18,1,17,116
+Fabp2,ambient_enterocyte,Macrophages,non_epithelial,27.1,0.44,1.61,1,24,6917
+Fabp2,ambient_enterocyte,Plasmablasts,non_epithelial,46.7,0.89,1.91,1,12,137
+Fabp2,ambient_enterocyte,cDC1,non_epithelial,47.7,0.8,1.68,1,7,130
+Fabp2,ambient_enterocyte,Paneth cells,epithelial_source,57.5,2.19,3.81,2,42,174
+Fabp2,ambient_enterocyte,Bottom-Villus enterocytes,epithelial_source,80.4,2.78,3.46,2,55,1247
+Fabp2,ambient_enterocyte,Mid-villus enterocytes,epithelial_source,98.9,16.17,16.34,8,702,756
+Fabp2,ambient_enterocyte,Upper-villus enterocytes,epithelial_source,99,847.16,855.49,484,7316,514
+Fabp2,ambient_enterocyte,Goblet cells,epithelial_source,91.1,37.92,41.63,21,252,157
+Fabp6,ambient_enterocyte,Fibroblasts,non_epithelial,18.9,0.54,2.89,2,24,668
+Fabp6,ambient_enterocyte,Endothelial,non_epithelial,19.8,15.2,76.65,1,1716,116
+Fabp6,ambient_enterocyte,Macrophages,non_epithelial,29,0.71,2.44,1,54,6917
+Fabp6,ambient_enterocyte,Plasmablasts,non_epithelial,15.3,0.32,2.1,1,9,137
+Fabp6,ambient_enterocyte,cDC1,non_epithelial,10,0.3,3,1,18,130
+Fabp6,ambient_enterocyte,Paneth cells,epithelial_source,71.3,9.87,13.85,3,829,174
+Fabp6,ambient_enterocyte,Bottom-Villus enterocytes,epithelial_source,35.1,5.03,14.32,14,128,1247
+Fabp6,ambient_enterocyte,Mid-villus enterocytes,epithelial_source,45.9,174.74,380.69,34,9707,756
+Fabp6,ambient_enterocyte,Upper-villus enterocytes,epithelial_source,58.4,1503.16,2575.41,1998,15054,514
+Fabp6,ambient_enterocyte,Goblet cells,epithelial_source,47.8,81.09,169.75,5,4910,157
+Apoa1,ambient_enterocyte,Fibroblasts,non_epithelial,19.3,0.35,1.79,1,66,668
+Apoa1,ambient_enterocyte,Endothelial,non_epithelial,13.8,0.21,1.5,1,5,116
+Apoa1,ambient_enterocyte,Macrophages,non_epithelial,10.8,0.13,1.19,1,4,6917
+Apoa1,ambient_enterocyte,Plasmablasts,non_epithelial,16.8,0.24,1.43,1,4,137
+Apoa1,ambient_enterocyte,cDC1,non_epithelial,19.2,0.28,1.44,1,3,130
+Apoa1,ambient_enterocyte,Paneth cells,epithelial_source,17.8,0.28,1.55,1,4,174
+Apoa1,ambient_enterocyte,Bottom-Villus enterocytes,epithelial_source,38.3,0.62,1.63,1,18,1247
+Apoa1,ambient_enterocyte,Mid-villus enterocytes,epithelial_source,70,3.02,4.32,2,233,756
+Apoa1,ambient_enterocyte,Upper-villus enterocytes,epithelial_source,97.3,296.49,304.79,186,1942,514
+Apoa1,ambient_enterocyte,Goblet cells,epithelial_source,33.8,0.89,2.64,1,35,157
+Apoa4,ambient_enterocyte,Fibroblasts,non_epithelial,12.6,0.41,3.26,1,166,668
+Apoa4,ambient_enterocyte,Endothelial,non_epithelial,6.9,0.1,1.5,1,5,116
+Apoa4,ambient_enterocyte,Macrophages,non_epithelial,6.2,0.07,1.2,1,5,6917
+Apoa4,ambient_enterocyte,Plasmablasts,non_epithelial,13.1,0.15,1.11,1,2,137
+Apoa4,ambient_enterocyte,cDC1,non_epithelial,16.9,0.19,1.14,1,2,130
+Apoa4,ambient_enterocyte,Paneth cells,epithelial_source,2.9,0.03,1,1,1,174
+Apoa4,ambient_enterocyte,Bottom-Villus enterocytes,epithelial_source,18.4,0.24,1.32,1,7,1247
+Apoa4,ambient_enterocyte,Mid-villus enterocytes,epithelial_source,34.5,0.85,2.46,2,40,756
+Apoa4,ambient_enterocyte,Upper-villus enterocytes,epithelial_source,74.3,194.91,262.26,82,2035,514
+Apoa4,ambient_enterocyte,Goblet cells,epithelial_source,10.2,0.41,4,1,45,157
+Rbp2,ambient_enterocyte,Fibroblasts,non_epithelial,50.7,1.4,2.76,2,72,668
+Rbp2,ambient_enterocyte,Endothelial,non_epithelial,44,1.11,2.53,1,35,116
+Rbp2,ambient_enterocyte,Macrophages,non_epithelial,24.7,0.46,1.88,1,20,6917
+Rbp2,ambient_enterocyte,Plasmablasts,non_epithelial,57.7,1.66,2.89,2,19,137
+Rbp2,ambient_enterocyte,cDC1,non_epithelial,52.3,1.12,2.13,2,8,130
+Rbp2,ambient_enterocyte,Paneth cells,epithelial_source,18.4,0.33,1.81,1,13,174
+Rbp2,ambient_enterocyte,Bottom-Villus enterocytes,epithelial_source,65.7,2.49,3.8,3,31,1247
+Rbp2,ambient_enterocyte,Mid-villus enterocytes,epithelial_source,70.1,11.57,16.5,8,502,756
+Rbp2,ambient_enterocyte,Upper-villus enterocytes,epithelial_source,92.8,711.65,766.85,183,4795,514
+Rbp2,ambient_enterocyte,Goblet cells,epithelial_source,48.4,4.43,9.14,2,262,157
+Mttp,ambient_enterocyte,Fibroblasts,non_epithelial,19.6,0.29,1.48,1,18,668
+Mttp,ambient_enterocyte,Endothelial,non_epithelial,17.2,0.32,1.85,1,15,116
+Mttp,ambient_enterocyte,Macrophages,non_epithelial,6.9,0.08,1.15,1,10,6917
+Mttp,ambient_enterocyte,Plasmablasts,non_epithelial,13.9,0.15,1.05,1,2,137
+Mttp,ambient_enterocyte,cDC1,non_epithelial,10,0.15,1.46,1,3,130
+Mttp,ambient_enterocyte,Paneth cells,epithelial_source,5.2,0.12,2.33,1,10,174
+Mttp,ambient_enterocyte,Bottom-Villus enterocytes,epithelial_source,21.8,0.29,1.33,1,6,1247
+Mttp,ambient_enterocyte,Mid-villus enterocytes,epithelial_source,54.5,3.23,5.93,2,82,756
+Mttp,ambient_enterocyte,Upper-villus enterocytes,epithelial_source,98.1,80.8,82.4,45,406,514
+Mttp,ambient_enterocyte,Goblet cells,epithelial_source,22.3,1.32,5.91,2,46,157
+Apob,ambient_enterocyte,Fibroblasts,non_epithelial,6,0.11,1.9,1,16,668
+Apob,ambient_enterocyte,Endothelial,non_epithelial,3.4,0.11,3.25,1.5,9,116
+Apob,ambient_enterocyte,Macrophages,non_epithelial,2.6,0.03,1.24,1,9,6917
+Apob,ambient_enterocyte,Plasmablasts,non_epithelial,10.9,0.13,1.2,1,2,137
+Apob,ambient_enterocyte,cDC1,non_epithelial,5.4,0.05,1,1,1,130
+Apob,ambient_enterocyte,Paneth cells,epithelial_source,4.6,0.12,2.62,1.5,9,174
+Apob,ambient_enterocyte,Bottom-Villus enterocytes,epithelial_source,14.3,0.22,1.51,1,8,1247
+Apob,ambient_enterocyte,Mid-villus enterocytes,epithelial_source,44.6,2.22,4.97,2,61,756
+Apob,ambient_enterocyte,Upper-villus enterocytes,epithelial_source,97.9,68.66,70.16,54,310,514
+Apob,ambient_enterocyte,Goblet cells,epithelial_source,32.5,1.39,4.29,2,31,157
+Slc10a2,ambient_bile_acid,Fibroblasts,non_epithelial,0.6,0.01,1,1,1,668
+Slc10a2,ambient_bile_acid,Endothelial,non_epithelial,3.4,0.12,3.5,2,9,116
+Slc10a2,ambient_bile_acid,Macrophages,non_epithelial,1.1,0.01,1.1,1,2,6917
+Slc10a2,ambient_bile_acid,Plasmablasts,non_epithelial,0.7,0.01,1,1,1,137
+Slc10a2,ambient_bile_acid,cDC1,non_epithelial,0,0,0,0,0,130
+Slc10a2,ambient_bile_acid,Paneth cells,epithelial_source,4,0.26,6.57,1,37,174
+Slc10a2,ambient_bile_acid,Bottom-Villus enterocytes,epithelial_source,6.7,0.09,1.41,1,5,1247
+Slc10a2,ambient_bile_acid,Mid-villus enterocytes,epithelial_source,26.2,2.21,8.44,3,97,756
+Slc10a2,ambient_bile_acid,Upper-villus enterocytes,epithelial_source,52.7,28.47,54,38,365,514
+Slc10a2,ambient_bile_acid,Goblet cells,epithelial_source,9.6,0.8,8.4,1,44,157
+Slc51a,ambient_bile_acid,Fibroblasts,non_epithelial,2.5,0.03,1,1,1,668
+Slc51a,ambient_bile_acid,Endothelial,non_epithelial,2.6,0.13,5,1,13,116
+Slc51a,ambient_bile_acid,Macrophages,non_epithelial,1.8,0.02,1.06,1,3,6917
+Slc51a,ambient_bile_acid,Plasmablasts,non_epithelial,0.7,0.01,1,1,1,137
+Slc51a,ambient_bile_acid,cDC1,non_epithelial,1.5,0.02,1,1,1,130
+Slc51a,ambient_bile_acid,Paneth cells,epithelial_source,7.5,0.2,2.69,1,23,174
+Slc51a,ambient_bile_acid,Bottom-Villus enterocytes,epithelial_source,11.3,0.14,1.24,1,3,1247
+Slc51a,ambient_bile_acid,Mid-villus enterocytes,epithelial_source,34.1,4.46,13.06,2,139,756
+Slc51a,ambient_bile_acid,Upper-villus enterocytes,epithelial_source,96.1,40.26,41.89,18,308,514
+Slc51a,ambient_bile_acid,Goblet cells,epithelial_source,14,1.7,12.14,2,91,157
+Slc51b,ambient_bile_acid,Fibroblasts,non_epithelial,1,0.01,1.14,1,2,668
+Slc51b,ambient_bile_acid,Endothelial,non_epithelial,2.6,0.16,6,2,15,116
+Slc51b,ambient_bile_acid,Macrophages,non_epithelial,1.5,0.02,1.1,1,3,6917
+Slc51b,ambient_bile_acid,Plasmablasts,non_epithelial,0.7,0.01,1,1,1,137
+Slc51b,ambient_bile_acid,cDC1,non_epithelial,3.1,0.03,1,1,1,130
+Slc51b,ambient_bile_acid,Paneth cells,epithelial_source,4.6,0.12,2.62,1.5,10,174
+Slc51b,ambient_bile_acid,Bottom-Villus enterocytes,epithelial_source,7.8,0.1,1.32,1,4,1247
+Slc51b,ambient_bile_acid,Mid-villus enterocytes,epithelial_source,28.7,2.72,9.48,2,117,756
+Slc51b,ambient_bile_acid,Upper-villus enterocytes,epithelial_source,90.9,27.58,30.36,12,238,514
+Slc51b,ambient_bile_acid,Goblet cells,epithelial_source,14.6,1.25,8.57,1,65,157
+Cyp3a11,ambient_xenobiotic,Fibroblasts,non_epithelial,0.6,0.03,4.25,1,14,668
+Cyp3a11,ambient_xenobiotic,Endothelial,non_epithelial,0.9,0.01,1,1,1,116
+Cyp3a11,ambient_xenobiotic,Macrophages,non_epithelial,0.7,0.01,1.09,1,2,6917
+Cyp3a11,ambient_xenobiotic,Plasmablasts,non_epithelial,2.2,0.04,1.67,1,3,137
+Cyp3a11,ambient_xenobiotic,cDC1,non_epithelial,0.8,0.01,1,1,1,130
+Cyp3a11,ambient_xenobiotic,Paneth cells,epithelial_source,0,0,0,0,0,174
+Cyp3a11,ambient_xenobiotic,Bottom-Villus enterocytes,epithelial_source,2.3,0.03,1.28,1,5,1247
+Cyp3a11,ambient_xenobiotic,Mid-villus enterocytes,epithelial_source,4.5,0.06,1.41,1,7,756
+Cyp3a11,ambient_xenobiotic,Upper-villus enterocytes,epithelial_source,33.9,16.49,48.72,23.5,253,514
+Cyp3a11,ambient_xenobiotic,Goblet cells,epithelial_source,2.5,0.04,1.75,1.5,3,157
+Cyp3a13,ambient_xenobiotic,Fibroblasts,non_epithelial,5.4,0.08,1.5,1,13,668
+Cyp3a13,ambient_xenobiotic,Endothelial,non_epithelial,2.6,0.03,1,1,1,116
+Cyp3a13,ambient_xenobiotic,Macrophages,non_epithelial,1.9,0.02,1.09,1,3,6917
+Cyp3a13,ambient_xenobiotic,Plasmablasts,non_epithelial,3.6,0.04,1,1,1,137
+Cyp3a13,ambient_xenobiotic,cDC1,non_epithelial,3.1,0.04,1.25,1,2,130
+Cyp3a13,ambient_xenobiotic,Paneth cells,epithelial_source,7.5,0.16,2.08,1,9,174
+Cyp3a13,ambient_xenobiotic,Bottom-Villus enterocytes,epithelial_source,6.2,0.08,1.23,1,4,1247
+Cyp3a13,ambient_xenobiotic,Mid-villus enterocytes,epithelial_source,34.4,1.06,3.07,2,23,756
+Cyp3a13,ambient_xenobiotic,Upper-villus enterocytes,epithelial_source,96.7,41.04,42.44,21,333,514
+Cyp3a13,ambient_xenobiotic,Goblet cells,epithelial_source,44.6,1.32,2.97,2,14,157
+Cyp3a25,ambient_xenobiotic,Fibroblasts,non_epithelial,0.9,0.03,2.83,1,8,668
+Cyp3a25,ambient_xenobiotic,Endothelial,non_epithelial,0,0,0,0,0,116
+Cyp3a25,ambient_xenobiotic,Macrophages,non_epithelial,0.3,0,1.17,1,2,6917
+Cyp3a25,ambient_xenobiotic,Plasmablasts,non_epithelial,0,0,0,0,0,137
+Cyp3a25,ambient_xenobiotic,cDC1,non_epithelial,1.5,0.02,1.5,1.5,2,130
+Cyp3a25,ambient_xenobiotic,Paneth cells,epithelial_source,0.6,0.01,2,2,2,174
+Cyp3a25,ambient_xenobiotic,Bottom-Villus enterocytes,epithelial_source,2,0.02,1.08,1,2,1247
+Cyp3a25,ambient_xenobiotic,Mid-villus enterocytes,epithelial_source,5.3,0.08,1.45,1,4,756
+Cyp3a25,ambient_xenobiotic,Upper-villus enterocytes,epithelial_source,49,5.89,12.01,6,87,514
+Cyp3a25,ambient_xenobiotic,Goblet cells,epithelial_source,1.9,0.03,1.33,1,2,157
+Cyp2c65,ambient_xenobiotic,Fibroblasts,non_epithelial,1.8,0.02,1.33,1,3,668
+Cyp2c65,ambient_xenobiotic,Endothelial,non_epithelial,1.7,0.02,1,1,1,116
+Cyp2c65,ambient_xenobiotic,Macrophages,non_epithelial,0.8,0.01,1.05,1,3,6917
+Cyp2c65,ambient_xenobiotic,Plasmablasts,non_epithelial,2.9,0.03,1,1,1,137
+Cyp2c65,ambient_xenobiotic,cDC1,non_epithelial,2.3,0.03,1.33,1,2,130
+Cyp2c65,ambient_xenobiotic,Paneth cells,epithelial_source,0.6,0.01,1,1,1,174
+Cyp2c65,ambient_xenobiotic,Bottom-Villus enterocytes,epithelial_source,4.1,0.05,1.16,1,3,1247
+Cyp2c65,ambient_xenobiotic,Mid-villus enterocytes,epithelial_source,21.7,0.51,2.36,1,18,756
+Cyp2c65,ambient_xenobiotic,Upper-villus enterocytes,epithelial_source,74.9,10.05,13.42,8,87,514
+Cyp2c65,ambient_xenobiotic,Goblet cells,epithelial_source,26.1,0.54,2.05,1,7,157
+Cyp2c66,ambient_xenobiotic,Fibroblasts,non_epithelial,0.9,0.01,1.17,1,2,668
+Cyp2c66,ambient_xenobiotic,Endothelial,non_epithelial,1.7,0.02,1,1,1,116
+Cyp2c66,ambient_xenobiotic,Macrophages,non_epithelial,0.5,0.01,1.09,1,4,6917
+Cyp2c66,ambient_xenobiotic,Plasmablasts,non_epithelial,2.9,0.04,1.25,1,2,137
+Cyp2c66,ambient_xenobiotic,cDC1,non_epithelial,0,0,0,0,0,130
+Cyp2c66,ambient_xenobiotic,Paneth cells,epithelial_source,0.6,0.01,1,1,1,174
+Cyp2c66,ambient_xenobiotic,Bottom-Villus enterocytes,epithelial_source,1.4,0.02,1.33,1,3,1247
+Cyp2c66,ambient_xenobiotic,Mid-villus enterocytes,epithelial_source,7.7,0.11,1.38,1,4,756
+Cyp2c66,ambient_xenobiotic,Upper-villus enterocytes,epithelial_source,49.8,7.51,15.08,10,80,514
+Cyp2c66,ambient_xenobiotic,Goblet cells,epithelial_source,1.3,0.04,3,3,5,157
+Cyp2b10,ambient_xenobiotic,Fibroblasts,non_epithelial,3.4,0.05,1.48,1,9,668
+Cyp2b10,ambient_xenobiotic,Endothelial,non_epithelial,3.4,0.03,1,1,1,116
+Cyp2b10,ambient_xenobiotic,Macrophages,non_epithelial,0.8,0.01,1.07,1,2,6917
+Cyp2b10,ambient_xenobiotic,Plasmablasts,non_epithelial,2.2,0.02,1,1,1,137
+Cyp2b10,ambient_xenobiotic,cDC1,non_epithelial,1.5,0.02,1,1,1,130
+Cyp2b10,ambient_xenobiotic,Paneth cells,epithelial_source,3.4,0.03,1,1,1,174
+Cyp2b10,ambient_xenobiotic,Bottom-Villus enterocytes,epithelial_source,3.7,0.04,1.17,1,3,1247
+Cyp2b10,ambient_xenobiotic,Mid-villus enterocytes,epithelial_source,12,0.18,1.49,1,7,756
+Cyp2b10,ambient_xenobiotic,Upper-villus enterocytes,epithelial_source,47.5,18.09,38.11,18,238,514
+Cyp2b10,ambient_xenobiotic,Goblet cells,epithelial_source,6.4,0.06,1,1,1,157
+Ugt2a3,ambient_xenobiotic,Fibroblasts,non_epithelial,1.2,0.02,1.38,1,3,668
+Ugt2a3,ambient_xenobiotic,Endothelial,non_epithelial,0,0,0,0,0,116
+Ugt2a3,ambient_xenobiotic,Macrophages,non_epithelial,0.3,0,1,1,1,6917
+Ugt2a3,ambient_xenobiotic,Plasmablasts,non_epithelial,2.2,0.02,1,1,1,137
+Ugt2a3,ambient_xenobiotic,cDC1,non_epithelial,0,0,0,0,0,130
+Ugt2a3,ambient_xenobiotic,Paneth cells,epithelial_source,0,0,0,0,0,174
+Ugt2a3,ambient_xenobiotic,Bottom-Villus enterocytes,epithelial_source,2.3,0.03,1.24,1,2,1247
+Ugt2a3,ambient_xenobiotic,Mid-villus enterocytes,epithelial_source,9.7,0.17,1.71,1,9,756
+Ugt2a3,ambient_xenobiotic,Upper-villus enterocytes,epithelial_source,45.3,2.99,6.59,6,33,514
+Ugt2a3,ambient_xenobiotic,Goblet cells,epithelial_source,1.9,0.08,4.33,1,11,157
+Ugt2b34,ambient_xenobiotic,Fibroblasts,non_epithelial,4.6,0.06,1.19,1,3,668
+Ugt2b34,ambient_xenobiotic,Endothelial,non_epithelial,12.9,0.27,2.07,1,15,116
+Ugt2b34,ambient_xenobiotic,Macrophages,non_epithelial,2.8,0.03,1.11,1,2,6917
+Ugt2b34,ambient_xenobiotic,Plasmablasts,non_epithelial,1.5,0.02,1.5,1.5,2,137
+Ugt2b34,ambient_xenobiotic,cDC1,non_epithelial,6.9,0.09,1.33,1,3,130
+Ugt2b34,ambient_xenobiotic,Paneth cells,epithelial_source,23,0.51,2.22,1,9,174
+Ugt2b34,ambient_xenobiotic,Bottom-Villus enterocytes,epithelial_source,15.9,0.21,1.35,1,4,1247
+Ugt2b34,ambient_xenobiotic,Mid-villus enterocytes,epithelial_source,47,3.16,6.72,2,86,756
+Ugt2b34,ambient_xenobiotic,Upper-villus enterocytes,epithelial_source,94.7,25.44,26.85,20,115,514
+Ugt2b34,ambient_xenobiotic,Goblet cells,epithelial_source,72,3.93,5.46,3,38,157
+Ugt2b35,ambient_xenobiotic,Fibroblasts,non_epithelial,0.9,0.01,1.33,1,3,668
+Ugt2b35,ambient_xenobiotic,Endothelial,non_epithelial,0.9,0.01,1,1,1,116
+Ugt2b35,ambient_xenobiotic,Macrophages,non_epithelial,0.2,0,1.41,1,8,6917
+Ugt2b35,ambient_xenobiotic,Plasmablasts,non_epithelial,0,0,0,0,0,137
+Ugt2b35,ambient_xenobiotic,cDC1,non_epithelial,0.8,0.01,1,1,1,130
+Ugt2b35,ambient_xenobiotic,Paneth cells,epithelial_source,1.7,0.02,1,1,1,174
+Ugt2b35,ambient_xenobiotic,Bottom-Villus enterocytes,epithelial_source,2.3,0.03,1.1,1,2,1247
+Ugt2b35,ambient_xenobiotic,Mid-villus enterocytes,epithelial_source,15.3,0.31,2.01,1,9,756
+Ugt2b35,ambient_xenobiotic,Upper-villus enterocytes,epithelial_source,49,1.73,3.52,3,15,514
+Ugt2b35,ambient_xenobiotic,Goblet cells,epithelial_source,10.8,0.22,2,1,6,157
+Aldh1a2,preserve,Fibroblasts,non_epithelial,75.9,2.79,3.68,3,41,668
+Aldh1a2,preserve,Endothelial,non_epithelial,9.5,0.11,1.18,1,2,116
+Aldh1a2,preserve,Macrophages,non_epithelial,1.1,0.01,1.17,1,4,6917
+Aldh1a2,preserve,Plasmablasts,non_epithelial,0,0,0,0,0,137
+Aldh1a2,preserve,cDC1,non_epithelial,48.5,1.23,2.54,2,18,130
+Aldh1a2,preserve,Paneth cells,epithelial_source,0,0,0,0,0,174
+Aldh1a2,preserve,Bottom-Villus enterocytes,epithelial_source,0,0,0,0,0,1247
+Aldh1a2,preserve,Mid-villus enterocytes,epithelial_source,0.4,0.01,3,3,4,756
+Aldh1a2,preserve,Upper-villus enterocytes,epithelial_source,0.6,0.01,1.67,1,3,514
+Aldh1a2,preserve,Goblet cells,epithelial_source,0.6,0.02,3,3,3,157
+Aldh1a3,preserve,Fibroblasts,non_epithelial,68.9,5.44,7.9,5,58,668
+Aldh1a3,preserve,Endothelial,non_epithelial,22.4,0.41,1.85,1,11,116
+Aldh1a3,preserve,Macrophages,non_epithelial,0.2,0,1.08,1,2,6917
+Aldh1a3,preserve,Plasmablasts,non_epithelial,0,0,0,0,0,137
+Aldh1a3,preserve,cDC1,non_epithelial,0,0,0,0,0,130
+Aldh1a3,preserve,Paneth cells,epithelial_source,0,0,0,0,0,174
+Aldh1a3,preserve,Bottom-Villus enterocytes,epithelial_source,0.2,0,1,1,1,1247
+Aldh1a3,preserve,Mid-villus enterocytes,epithelial_source,0.8,0.04,4.67,1,13,756
+Aldh1a3,preserve,Upper-villus enterocytes,epithelial_source,1.6,0.07,4.38,1,26,514
+Aldh1a3,preserve,Goblet cells,epithelial_source,2.5,0.25,9.75,1.5,35,157
+Rbp1,preserve,Fibroblasts,non_epithelial,69.8,4.09,5.87,4,31,668
+Rbp1,preserve,Endothelial,non_epithelial,16.4,0.46,2.79,1,16,116
+Rbp1,preserve,Macrophages,non_epithelial,0.4,0,1.07,1,2,6917
+Rbp1,preserve,Plasmablasts,non_epithelial,0,0,0,0,0,137
+Rbp1,preserve,cDC1,non_epithelial,0,0,0,0,0,130
+Rbp1,preserve,Paneth cells,epithelial_source,1.1,0.03,2.5,2.5,4,174
+Rbp1,preserve,Bottom-Villus enterocytes,epithelial_source,0.2,0,1,1,1,1247
+Rbp1,preserve,Mid-villus enterocytes,epithelial_source,1.2,0.02,1.67,1,5,756
+Rbp1,preserve,Upper-villus enterocytes,epithelial_source,14.8,0.26,1.75,1,11,514
+Rbp1,preserve,Goblet cells,epithelial_source,5.7,0.17,3,1,15,157
+Lrat,preserve,Fibroblasts,non_epithelial,55.4,2.69,4.86,3,42,668
+Lrat,preserve,Endothelial,non_epithelial,2.6,0.03,1.33,1,2,116
+Lrat,preserve,Macrophages,non_epithelial,0.1,0,1,1,1,6917
+Lrat,preserve,Plasmablasts,non_epithelial,0,0,0,0,0,137
+Lrat,preserve,cDC1,non_epithelial,0,0,0,0,0,130
+Lrat,preserve,Paneth cells,epithelial_source,1.1,0.02,1.5,1.5,2,174
+Lrat,preserve,Bottom-Villus enterocytes,epithelial_source,0.4,0.01,1.4,1,3,1247
+Lrat,preserve,Mid-villus enterocytes,epithelial_source,5.8,0.09,1.57,1,10,756
+Lrat,preserve,Upper-villus enterocytes,epithelial_source,33.9,0.67,1.98,1,39,514
+Lrat,preserve,Goblet cells,epithelial_source,7,0.13,1.82,1,8,157
+Dhrs9,preserve,Fibroblasts,non_epithelial,0.1,0,1,1,1,668
+Dhrs9,preserve,Endothelial,non_epithelial,0.9,0.03,3,3,3,116
+Dhrs9,preserve,Macrophages,non_epithelial,0.2,0,1.23,1,2,6917
+Dhrs9,preserve,Plasmablasts,non_epithelial,0.7,0.01,1,1,1,137
+Dhrs9,preserve,cDC1,non_epithelial,13.1,0.21,1.59,1,4,130
+Dhrs9,preserve,Paneth cells,epithelial_source,0,0,0,0,0,174
+Dhrs9,preserve,Bottom-Villus enterocytes,epithelial_source,0.2,0,1.33,1,2,1247
+Dhrs9,preserve,Mid-villus enterocytes,epithelial_source,2.5,0.04,1.42,1,3,756
+Dhrs9,preserve,Upper-villus enterocytes,epithelial_source,21.2,0.41,1.92,1,27,514
+Dhrs9,preserve,Goblet cells,epithelial_source,1.9,0.1,5,2,12,157
+Cyp27a1,preserve,Fibroblasts,non_epithelial,32.5,0.47,1.44,1,5,668
+Cyp27a1,preserve,Endothelial,non_epithelial,3.4,0.04,1.25,1,2,116
+Cyp27a1,preserve,Macrophages,non_epithelial,27.1,0.42,1.55,1,11,6917
+Cyp27a1,preserve,Plasmablasts,non_epithelial,2.2,0.02,1,1,1,137
+Cyp27a1,preserve,cDC1,non_epithelial,30,0.51,1.69,2,4,130
+Cyp27a1,preserve,Paneth cells,epithelial_source,9.2,0.11,1.19,1,3,174
+Cyp27a1,preserve,Bottom-Villus enterocytes,epithelial_source,0.2,0,1,1,1,1247
+Cyp27a1,preserve,Mid-villus enterocytes,epithelial_source,3.3,0.04,1.16,1,2,756
+Cyp27a1,preserve,Upper-villus enterocytes,epithelial_source,30.7,0.54,1.77,1,8,514
+Cyp27a1,preserve,Goblet cells,epithelial_source,13.4,0.2,1.52,1,4,157
+Rxra,preserve,Fibroblasts,non_epithelial,35.8,0.44,1.24,1,4,668
+Rxra,preserve,Endothelial,non_epithelial,8.6,0.09,1.1,1,2,116
+Rxra,preserve,Macrophages,non_epithelial,19.5,0.25,1.28,1,6,6917
+Rxra,preserve,Plasmablasts,non_epithelial,3.6,0.05,1.4,1,3,137
+Rxra,preserve,cDC1,non_epithelial,8.5,0.1,1.18,1,2,130
+Rxra,preserve,Paneth cells,epithelial_source,12.1,0.17,1.43,1,4,174
+Rxra,preserve,Bottom-Villus enterocytes,epithelial_source,2.6,0.03,1.06,1,3,1247
+Rxra,preserve,Mid-villus enterocytes,epithelial_source,16.9,0.49,2.91,2,15,756
+Rxra,preserve,Upper-villus enterocytes,epithelial_source,82.5,2.37,2.87,2,12,514
+Rxra,preserve,Goblet cells,epithelial_source,33.1,0.64,1.92,1,11,157
+Abca1,preserve,Fibroblasts,non_epithelial,37.3,0.66,1.76,1,8,668
+Abca1,preserve,Endothelial,non_epithelial,25.9,0.45,1.73,1,7,116
+Abca1,preserve,Macrophages,non_epithelial,66.5,2.92,4.39,3,35,6917
+Abca1,preserve,Plasmablasts,non_epithelial,29.9,0.58,1.93,1,10,137
+Abca1,preserve,cDC1,non_epithelial,8.5,0.38,4.55,3,16,130
+Abca1,preserve,Paneth cells,epithelial_source,2.3,0.05,2,2,3,174
+Abca1,preserve,Bottom-Villus enterocytes,epithelial_source,1,0.01,1.08,1,2,1247
+Abca1,preserve,Mid-villus enterocytes,epithelial_source,2.8,0.03,1.1,1,2,756
+Abca1,preserve,Upper-villus enterocytes,epithelial_source,9.1,0.14,1.55,1,6,514
+Abca1,preserve,Goblet cells,epithelial_source,3.2,0.06,1.8,1,5,157
+Abcg1,preserve,Fibroblasts,non_epithelial,0.7,0.01,1.2,1,2,668
+Abcg1,preserve,Endothelial,non_epithelial,10.3,0.12,1.17,1,2,116
+Abcg1,preserve,Macrophages,non_epithelial,35.1,0.69,1.95,1,17,6917
+Abcg1,preserve,Plasmablasts,non_epithelial,10.9,0.15,1.33,1,3,137
+Abcg1,preserve,cDC1,non_epithelial,6.9,0.12,1.67,1,3,130
+Abcg1,preserve,Paneth cells,epithelial_source,1.1,0.01,1,1,1,174
+Abcg1,preserve,Bottom-Villus enterocytes,epithelial_source,0.3,0,1.5,1.5,2,1247
+Abcg1,preserve,Mid-villus enterocytes,epithelial_source,0.3,0,1,1,1,756
+Abcg1,preserve,Upper-villus enterocytes,epithelial_source,0.6,0.01,1,1,1,514
+Abcg1,preserve,Goblet cells,epithelial_source,3.2,0.05,1.6,1,4,157
+Apoe,preserve,Fibroblasts,non_epithelial,82.6,9.1,11.01,6,87,668
+Apoe,preserve,Endothelial,non_epithelial,56.9,9.03,15.88,2,317,116
+Apoe,preserve,Macrophages,non_epithelial,98.9,162.69,164.53,100,1524,6917
+Apoe,preserve,Plasmablasts,non_epithelial,51.8,17.45,33.68,3,595,137
+Apoe,preserve,cDC1,non_epithelial,39.2,6.56,16.73,1,727,130
+Apoe,preserve,Paneth cells,epithelial_source,28.2,1.01,3.59,1,51,174
+Apoe,preserve,Bottom-Villus enterocytes,epithelial_source,27.4,0.79,2.87,1,30,1247
+Apoe,preserve,Mid-villus enterocytes,epithelial_source,27.9,0.49,1.75,1,27,756
+Apoe,preserve,Upper-villus enterocytes,epithelial_source,37.4,1.19,3.19,1,78,514
+Apoe,preserve,Goblet cells,epithelial_source,32.5,1.06,3.25,1,82,157
+Lpl,preserve,Fibroblasts,non_epithelial,46,1.8,3.91,2,55,668
+Lpl,preserve,Endothelial,non_epithelial,12.1,0.16,1.36,1,3,116
+Lpl,preserve,Macrophages,non_epithelial,14,0.5,3.58,2,88,6917
+Lpl,preserve,Plasmablasts,non_epithelial,2.2,0.07,3,4,4,137
+Lpl,preserve,cDC1,non_epithelial,0,0,0,0,0,130
+Lpl,preserve,Paneth cells,epithelial_source,1.1,0.02,1.5,1.5,2,174
+Lpl,preserve,Bottom-Villus enterocytes,epithelial_source,0.6,0.01,1,1,1,1247
+Lpl,preserve,Mid-villus enterocytes,epithelial_source,1.7,0.03,1.77,1,6,756
+Lpl,preserve,Upper-villus enterocytes,epithelial_source,0.8,0.02,2.5,2,5,514
+Lpl,preserve,Goblet cells,epithelial_source,3.2,0.06,1.8,2,3,157
+Cd36,preserve,Fibroblasts,non_epithelial,2.5,0.03,1.24,1,3,668
+Cd36,preserve,Endothelial,non_epithelial,21.6,0.71,3.28,2,13,116
+Cd36,preserve,Macrophages,non_epithelial,37.1,1.89,5.09,2,80,6917
+Cd36,preserve,Plasmablasts,non_epithelial,8,0.16,2,1,7,137
+Cd36,preserve,cDC1,non_epithelial,56.2,3.78,6.74,4,50,130
+Cd36,preserve,Paneth cells,epithelial_source,1.1,0.02,1.5,1.5,2,174
+Cd36,preserve,Bottom-Villus enterocytes,epithelial_source,1.4,0.01,1.06,1,2,1247
+Cd36,preserve,Mid-villus enterocytes,epithelial_source,1.3,0.01,1,1,1,756
+Cd36,preserve,Upper-villus enterocytes,epithelial_source,18.5,0.47,2.54,2,16,514
+Cd36,preserve,Goblet cells,epithelial_source,1.9,0.04,2.33,2,4,157
+Fabp5,preserve,Fibroblasts,non_epithelial,3.6,0.04,1.21,1,4,668
+Fabp5,preserve,Endothelial,non_epithelial,27.6,1.09,3.94,3,17,116
+Fabp5,preserve,Macrophages,non_epithelial,45.7,4.83,10.58,4,276,6917
+Fabp5,preserve,Plasmablasts,non_epithelial,9.5,0.47,4.92,3,24,137
+Fabp5,preserve,cDC1,non_epithelial,23.8,1.15,4.81,2,28,130
+Fabp5,preserve,Paneth cells,epithelial_source,2.9,0.06,2,1,5,174
+Fabp5,preserve,Bottom-Villus enterocytes,epithelial_source,8.2,0.3,3.68,2,40,1247
+Fabp5,preserve,Mid-villus enterocytes,epithelial_source,8.5,0.21,2.48,2,15,756
+Fabp5,preserve,Upper-villus enterocytes,epithelial_source,19.8,0.5,2.52,2,21,514
+Fabp5,preserve,Goblet cells,epithelial_source,30.6,0.81,2.65,1,11,157
+Stard5,preserve,Fibroblasts,non_epithelial,24.1,0.32,1.34,1,5,668
+Stard5,preserve,Endothelial,non_epithelial,9.5,0.1,1.09,1,2,116
+Stard5,preserve,Macrophages,non_epithelial,30.1,0.51,1.7,1,9,6917
+Stard5,preserve,Plasmablasts,non_epithelial,29.2,0.71,2.42,1,11,137
+Stard5,preserve,cDC1,non_epithelial,13.8,0.16,1.17,1,2,130
+Stard5,preserve,Paneth cells,epithelial_source,9.2,0.1,1.06,1,2,174
+Stard5,preserve,Bottom-Villus enterocytes,epithelial_source,1.2,0.01,1.07,1,2,1247
+Stard5,preserve,Mid-villus enterocytes,epithelial_source,7.5,0.13,1.77,1,6,756
+Stard5,preserve,Upper-villus enterocytes,epithelial_source,20.6,0.37,1.8,1,7,514
+Stard5,preserve,Goblet cells,epithelial_source,22.9,0.36,1.56,1,8,157
+Abcc3,preserve,Fibroblasts,non_epithelial,19.8,0.32,1.61,1,4,668
+Abcc3,preserve,Endothelial,non_epithelial,5.2,0.06,1.17,1,2,116
+Abcc3,preserve,Macrophages,non_epithelial,55.4,1.42,2.57,2,20,6917
+Abcc3,preserve,Plasmablasts,non_epithelial,2.9,0.1,3.5,3,6,137
+Abcc3,preserve,cDC1,non_epithelial,5.4,0.08,1.43,1,2,130
+Abcc3,preserve,Paneth cells,epithelial_source,4,0.07,1.86,1,7,174
+Abcc3,preserve,Bottom-Villus enterocytes,epithelial_source,2.1,0.02,1.08,1,2,1247
+Abcc3,preserve,Mid-villus enterocytes,epithelial_source,17.1,0.49,2.86,2,16,756
+Abcc3,preserve,Upper-villus enterocytes,epithelial_source,80.9,3.99,4.94,4,25,514
+Abcc3,preserve,Goblet cells,epithelial_source,54.8,2.43,4.43,3,19,157
+Cd14,doublet_annotation,Fibroblasts,non_epithelial,3.1,0.03,1,1,1,668
+Cd14,doublet_annotation,Endothelial,non_epithelial,11.2,0.27,2.38,2,5,116
+Cd14,doublet_annotation,Macrophages,non_epithelial,52.1,2.97,5.69,3,88,6917
+Cd14,doublet_annotation,Plasmablasts,non_epithelial,5.8,0.35,6,5.5,16,137
+Cd14,doublet_annotation,cDC1,non_epithelial,36.2,1.93,5.34,4,32,130
+Cd14,doublet_annotation,Paneth cells,epithelial_source,3.4,0.03,1,1,1,174
+Cd14,doublet_annotation,Bottom-Villus enterocytes,epithelial_source,0.6,0.01,1.14,1,2,1247
+Cd14,doublet_annotation,Mid-villus enterocytes,epithelial_source,3.6,0.04,1.19,1,2,756
+Cd14,doublet_annotation,Upper-villus enterocytes,epithelial_source,16.3,0.23,1.4,1,4,514
+Cd14,doublet_annotation,Goblet cells,epithelial_source,15.3,0.18,1.17,1,2,157
+C5ar1,doublet_annotation,Fibroblasts,non_epithelial,6.4,0.07,1.09,1,3,668
+C5ar1,doublet_annotation,Endothelial,non_epithelial,11.2,0.18,1.62,1,3,116
+C5ar1,doublet_annotation,Macrophages,non_epithelial,66.8,2.75,4.11,3,33,6917
+C5ar1,doublet_annotation,Plasmablasts,non_epithelial,3.6,0.18,5,3,10,137
+C5ar1,doublet_annotation,cDC1,non_epithelial,3.8,0.06,1.6,1,4,130
+C5ar1,doublet_annotation,Paneth cells,epithelial_source,1.1,0.03,2.5,2.5,3,174
+C5ar1,doublet_annotation,Bottom-Villus enterocytes,epithelial_source,1,0.01,1,1,1,1247
+C5ar1,doublet_annotation,Mid-villus enterocytes,epithelial_source,1.3,0.02,1.4,1,4,756
+C5ar1,doublet_annotation,Upper-villus enterocytes,epithelial_source,0.8,0.01,1,1,1,514
+C5ar1,doublet_annotation,Goblet cells,epithelial_source,1.3,0.01,1,1,1,157
+C3ar1,doublet_annotation,Fibroblasts,non_epithelial,0.6,0.01,1,1,1,668
+C3ar1,doublet_annotation,Endothelial,non_epithelial,6.9,0.09,1.38,1,2,116
+C3ar1,doublet_annotation,Macrophages,non_epithelial,69.3,3.02,4.36,3,33,6917
+C3ar1,doublet_annotation,Plasmablasts,non_epithelial,8.8,0.36,4.17,2.5,15,137
+C3ar1,doublet_annotation,cDC1,non_epithelial,9.2,0.09,1,1,1,130
+C3ar1,doublet_annotation,Paneth cells,epithelial_source,1.1,0.01,1,1,1,174
+C3ar1,doublet_annotation,Bottom-Villus enterocytes,epithelial_source,1.2,0.01,1.07,1,2,1247
+C3ar1,doublet_annotation,Mid-villus enterocytes,epithelial_source,0.8,0.01,1.17,1,2,756
+C3ar1,doublet_annotation,Upper-villus enterocytes,epithelial_source,1.2,0.02,1.33,1,2,514
+C3ar1,doublet_annotation,Goblet cells,epithelial_source,0.6,0.01,1,1,1,157
+Clec4d,doublet_annotation,Fibroblasts,non_epithelial,0.6,0.01,1.25,1,2,668
+Clec4d,doublet_annotation,Endothelial,non_epithelial,6.9,0.11,1.62,1,4,116
+Clec4d,doublet_annotation,Macrophages,non_epithelial,28.3,0.73,2.58,2,53,6917
+Clec4d,doublet_annotation,Plasmablasts,non_epithelial,1.5,0.05,3.5,3.5,4,137
+Clec4d,doublet_annotation,cDC1,non_epithelial,20,0.34,1.69,1,4,130
+Clec4d,doublet_annotation,Paneth cells,epithelial_source,0.6,0.01,1,1,1,174
+Clec4d,doublet_annotation,Bottom-Villus enterocytes,epithelial_source,0.4,0,1,1,1,1247
+Clec4d,doublet_annotation,Mid-villus enterocytes,epithelial_source,0.3,0,1,1,1,756
+Clec4d,doublet_annotation,Upper-villus enterocytes,epithelial_source,0,0,0,0,0,514
+Clec4d,doublet_annotation,Goblet cells,epithelial_source,0,0,0,0,0,157
+Clec4n,doublet_annotation,Fibroblasts,non_epithelial,0,0,0,0,0,668
+Clec4n,doublet_annotation,Endothelial,non_epithelial,6.9,0.11,1.62,1,3,116
+Clec4n,doublet_annotation,Macrophages,non_epithelial,60.6,1.95,3.22,2,34,6917
+Clec4n,doublet_annotation,Plasmablasts,non_epithelial,5.8,0.22,3.75,2.5,13,137
+Clec4n,doublet_annotation,cDC1,non_epithelial,48.5,1.96,4.05,3,12,130
+Clec4n,doublet_annotation,Paneth cells,epithelial_source,0.6,0.01,1,1,1,174
+Clec4n,doublet_annotation,Bottom-Villus enterocytes,epithelial_source,1.1,0.01,1.14,1,3,1247
+Clec4n,doublet_annotation,Mid-villus enterocytes,epithelial_source,0.4,0,1,1,1,756
+Clec4n,doublet_annotation,Upper-villus enterocytes,epithelial_source,1.9,0.03,1.3,1,3,514
+Clec4n,doublet_annotation,Goblet cells,epithelial_source,1.3,0.01,1,1,1,157
+Itgam,doublet_annotation,Fibroblasts,non_epithelial,8.8,0.16,1.78,1,6,668
+Itgam,doublet_annotation,Endothelial,non_epithelial,9.5,0.15,1.55,1,3,116
+Itgam,doublet_annotation,Macrophages,non_epithelial,60.8,2,3.3,2,39,6917
+Itgam,doublet_annotation,Plasmablasts,non_epithelial,5.1,0.12,2.29,1,5,137
+Itgam,doublet_annotation,cDC1,non_epithelial,51.5,1.94,3.76,3,16,130
+Itgam,doublet_annotation,Paneth cells,epithelial_source,0.6,0.01,1,1,1,174
+Itgam,doublet_annotation,Bottom-Villus enterocytes,epithelial_source,1.4,0.02,1.22,1,2,1247
+Itgam,doublet_annotation,Mid-villus enterocytes,epithelial_source,5,0.07,1.34,1,3,756
+Itgam,doublet_annotation,Upper-villus enterocytes,epithelial_source,19.8,0.29,1.46,1,4,514
+Itgam,doublet_annotation,Goblet cells,epithelial_source,11.5,0.16,1.39,1,3,157
+Itgax,doublet_annotation,Fibroblasts,non_epithelial,1.9,0.02,1.08,1,2,668
+Itgax,doublet_annotation,Endothelial,non_epithelial,11.2,0.16,1.38,1,4,116
+Itgax,doublet_annotation,Macrophages,non_epithelial,72.8,4.74,6.5,4,66,6917
+Itgax,doublet_annotation,Plasmablasts,non_epithelial,10.2,0.36,3.5,1.5,13,137
+Itgax,doublet_annotation,cDC1,non_epithelial,93.1,9.5,10.21,9,37,130
+Itgax,doublet_annotation,Paneth cells,epithelial_source,1.1,0.02,1.5,1.5,2,174
+Itgax,doublet_annotation,Bottom-Villus enterocytes,epithelial_source,2,0.02,1.24,1,3,1247
+Itgax,doublet_annotation,Mid-villus enterocytes,epithelial_source,1.9,0.02,1.21,1,2,756
+Itgax,doublet_annotation,Upper-villus enterocytes,epithelial_source,2.5,0.04,1.69,1,4,514
+Itgax,doublet_annotation,Goblet cells,epithelial_source,1.9,0.02,1,1,1,157
+Ptprc,doublet_annotation,Fibroblasts,non_epithelial,4.2,0.07,1.79,1,12,668
+Ptprc,doublet_annotation,Endothelial,non_epithelial,15.5,0.43,2.78,2,11,116
+Ptprc,doublet_annotation,Macrophages,non_epithelial,83.3,7.22,8.66,6,66,6917
+Ptprc,doublet_annotation,Plasmablasts,non_epithelial,88.3,3.39,3.84,3,35,137
+Ptprc,doublet_annotation,cDC1,non_epithelial,98.5,15.92,16.17,14,81,130
+Ptprc,doublet_annotation,Paneth cells,epithelial_source,2.3,0.05,2,1,5,174
+Ptprc,doublet_annotation,Bottom-Villus enterocytes,epithelial_source,2.6,0.03,1.09,1,2,1247
+Ptprc,doublet_annotation,Mid-villus enterocytes,epithelial_source,3.3,0.04,1.28,1,4,756
+Ptprc,doublet_annotation,Upper-villus enterocytes,epithelial_source,3.9,0.13,3.4,1,19,514
+Ptprc,doublet_annotation,Goblet cells,epithelial_source,3.8,0.08,2,1,4,157
+Tyrobp,doublet_annotation,Fibroblasts,non_epithelial,6,0.11,1.77,1,17,668
+Tyrobp,doublet_annotation,Endothelial,non_epithelial,15.5,0.59,3.78,2,24,116
+Tyrobp,doublet_annotation,Macrophages,non_epithelial,87.7,16.83,19.19,13,145,6917
+Tyrobp,doublet_annotation,Plasmablasts,non_epithelial,19,1.81,9.54,1.5,62,137
+Tyrobp,doublet_annotation,cDC1,non_epithelial,88.5,15.98,18.06,13,83,130
+Tyrobp,doublet_annotation,Paneth cells,epithelial_source,8.6,0.19,2.2,1,11,174
+Tyrobp,doublet_annotation,Bottom-Villus enterocytes,epithelial_source,9.9,0.23,2.35,2,14,1247
+Tyrobp,doublet_annotation,Mid-villus enterocytes,epithelial_source,4.8,0.07,1.47,1,4,756
+Tyrobp,doublet_annotation,Upper-villus enterocytes,epithelial_source,6.4,0.18,2.85,2,15,514
+Tyrobp,doublet_annotation,Goblet cells,epithelial_source,3.8,0.04,1.17,1,2,157
+Inpp5d,doublet_annotation,Fibroblasts,non_epithelial,1.5,0.03,1.7,1,5,668
+Inpp5d,doublet_annotation,Endothelial,non_epithelial,11.2,0.21,1.85,1,7,116
+Inpp5d,doublet_annotation,Macrophages,non_epithelial,68.3,2.41,3.53,3,24,6917
+Inpp5d,doublet_annotation,Plasmablasts,non_epithelial,83.9,2.91,3.46,3,18,137
+Inpp5d,doublet_annotation,cDC1,non_epithelial,90.8,7.42,8.18,6,48,130
+Inpp5d,doublet_annotation,Paneth cells,epithelial_source,1.7,0.04,2.33,3,3,174
+Inpp5d,doublet_annotation,Bottom-Villus enterocytes,epithelial_source,1,0.01,1.15,1,2,1247
+Inpp5d,doublet_annotation,Mid-villus enterocytes,epithelial_source,0.8,0.01,1.5,1,4,756
+Inpp5d,doublet_annotation,Upper-villus enterocytes,epithelial_source,1.6,0.04,2.75,1.5,11,514
+Inpp5d,doublet_annotation,Goblet cells,epithelial_source,3.2,0.27,8.4,2,24,157
+Cd74,doublet_annotation,Fibroblasts,non_epithelial,22.2,0.59,2.64,1,72,668
+Cd74,doublet_annotation,Endothelial,non_epithelial,25.9,4.54,17.57,3,177,116
+Cd74,doublet_annotation,Macrophages,non_epithelial,98,112.04,114.27,75,797,6917
+Cd74,doublet_annotation,Plasmablasts,non_epithelial,100,62.47,62.47,52,484,137
+Cd74,doublet_annotation,cDC1,non_epithelial,99.2,378.88,381.82,343,1253,130
+Cd74,doublet_annotation,Paneth cells,epithelial_source,19,0.79,4.18,1,84,174
+Cd74,doublet_annotation,Bottom-Villus enterocytes,epithelial_source,23.2,0.44,1.9,1,14,1247
+Cd74,doublet_annotation,Mid-villus enterocytes,epithelial_source,19.2,0.32,1.67,1,35,756
+Cd74,doublet_annotation,Upper-villus enterocytes,epithelial_source,25.3,1.8,7.12,1,512,514
+Cd74,doublet_annotation,Goblet cells,epithelial_source,27.4,1.55,5.65,1,103,157
+Gzmb,doublet_annotation,Fibroblasts,non_epithelial,0.1,0.03,23,23,23,668
+Gzmb,doublet_annotation,Endothelial,non_epithelial,0.9,0.01,1,1,1,116
+Gzmb,doublet_annotation,Macrophages,non_epithelial,0,0,2.33,2,3,6917
+Gzmb,doublet_annotation,Plasmablasts,non_epithelial,0,0,0,0,0,137
+Gzmb,doublet_annotation,cDC1,non_epithelial,0,0,0,0,0,130
+Gzmb,doublet_annotation,Paneth cells,epithelial_source,0,0,0,0,0,174
+Gzmb,doublet_annotation,Bottom-Villus enterocytes,epithelial_source,0,0,0,0,0,1247
+Gzmb,doublet_annotation,Mid-villus enterocytes,epithelial_source,0.3,0,1,1,1,756
+Gzmb,doublet_annotation,Upper-villus enterocytes,epithelial_source,0.2,0.06,30,30,30,514
+Gzmb,doublet_annotation,Goblet cells,epithelial_source,0,0,0,0,0,157
+Il7r,doublet_annotation,Fibroblasts,non_epithelial,0.9,0.03,2.83,3,5,668
+Il7r,doublet_annotation,Endothelial,non_epithelial,5.2,0.07,1.33,1,2,116
+Il7r,doublet_annotation,Macrophages,non_epithelial,21.5,0.83,3.85,2,42,6917
+Il7r,doublet_annotation,Plasmablasts,non_epithelial,2.9,0.07,2.5,2.5,4,137
+Il7r,doublet_annotation,cDC1,non_epithelial,46.2,2.63,5.7,4,26,130
+Il7r,doublet_annotation,Paneth cells,epithelial_source,0.6,0.01,2,2,2,174
+Il7r,doublet_annotation,Bottom-Villus enterocytes,epithelial_source,1,0.01,1.08,1,2,1247
+Il7r,doublet_annotation,Mid-villus enterocytes,epithelial_source,0.1,0,1,1,1,756
+Il7r,doublet_annotation,Upper-villus enterocytes,epithelial_source,0.8,0.01,1.25,1,2,514
+Il7r,doublet_annotation,Goblet cells,epithelial_source,0.6,0.01,1,1,1,157
+Igha,plasmablast_marker,Fibroblasts,non_epithelial,1.6,8.52,517.36,1,5681,668
+Igha,plasmablast_marker,Endothelial,non_epithelial,2.6,0.03,1,1,1,116
+Igha,plasmablast_marker,Macrophages,non_epithelial,2.3,0.7,30.24,1,3611,6917
+Igha,plasmablast_marker,Plasmablasts,non_epithelial,21.2,1106.31,5226.38,4590,14942,137
+Igha,plasmablast_marker,cDC1,non_epithelial,6.2,0.09,1.5,1,4,130
+Igha,plasmablast_marker,Paneth cells,epithelial_source,3.4,0.03,1,1,1,174
+Igha,plasmablast_marker,Bottom-Villus enterocytes,epithelial_source,1.8,0.64,36.41,1,721,1247
+Igha,plasmablast_marker,Mid-villus enterocytes,epithelial_source,1.6,0.02,1,1,1,756
+Igha,plasmablast_marker,Upper-villus enterocytes,epithelial_source,4.7,0.91,19.58,1,108,514
+Igha,plasmablast_marker,Goblet cells,epithelial_source,2.5,0.03,1,1,1,157
+Igkc,plasmablast_marker,Fibroblasts,non_epithelial,1.9,5.06,260.08,1,3364,668
+Igkc,plasmablast_marker,Endothelial,non_epithelial,0.9,0.01,1,1,1,116
+Igkc,plasmablast_marker,Macrophages,non_epithelial,1,0.38,39.73,1,2488,6917
+Igkc,plasmablast_marker,Plasmablasts,non_epithelial,89.8,560.97,624.82,6,6586,137
+Igkc,plasmablast_marker,cDC1,non_epithelial,0.8,0.01,1,1,1,130
+Igkc,plasmablast_marker,Paneth cells,epithelial_source,0.6,0.01,1,1,1,174
+Igkc,plasmablast_marker,Bottom-Villus enterocytes,epithelial_source,0.6,0.3,46.5,1,362,1247
+Igkc,plasmablast_marker,Mid-villus enterocytes,epithelial_source,0.9,0.01,1.43,1,4,756
+Igkc,plasmablast_marker,Upper-villus enterocytes,epithelial_source,2.1,0.89,41.64,1,103,514
+Igkc,plasmablast_marker,Goblet cells,epithelial_source,0.6,0.01,1,1,1,157
+Jchain,plasmablast_marker,Fibroblasts,non_epithelial,0.6,2.37,396.5,1,1583,668
+Jchain,plasmablast_marker,Endothelial,non_epithelial,0.9,0.01,1,1,1,116
+Jchain,plasmablast_marker,Macrophages,non_epithelial,1,0.12,11.93,1,607,6917
+Jchain,plasmablast_marker,Plasmablasts,non_epithelial,23.4,200.49,858.34,837.5,2569,137
+Jchain,plasmablast_marker,cDC1,non_epithelial,0.8,0.01,1,1,1,130
+Jchain,plasmablast_marker,Paneth cells,epithelial_source,0,0,0,0,0,174
+Jchain,plasmablast_marker,Bottom-Villus enterocytes,epithelial_source,0.7,0.08,10.78,1,86,1247
+Jchain,plasmablast_marker,Mid-villus enterocytes,epithelial_source,0.3,0,1,1,1,756
+Jchain,plasmablast_marker,Upper-villus enterocytes,epithelial_source,1.4,0.15,10.71,14,17,514
+Jchain,plasmablast_marker,Goblet cells,epithelial_source,1.9,0.02,1,1,1,157
+Iglv1,plasmablast_marker,Fibroblasts,non_epithelial,0.6,0.48,79.75,1,316,668
+Iglv1,plasmablast_marker,Endothelial,non_epithelial,0,0,0,0,0,116
+Iglv1,plasmablast_marker,Macrophages,non_epithelial,0.2,0,1.45,1,6,6917
+Iglv1,plasmablast_marker,Plasmablasts,non_epithelial,21.2,70.31,332.14,22,6205,137
+Iglv1,plasmablast_marker,cDC1,non_epithelial,0,0,0,0,0,130
+Iglv1,plasmablast_marker,Paneth cells,epithelial_source,0,0,0,0,0,174
+Iglv1,plasmablast_marker,Bottom-Villus enterocytes,epithelial_source,0.2,0.01,3.67,2,8,1247
+Iglv1,plasmablast_marker,Mid-villus enterocytes,epithelial_source,0,0,0,0,0,756
+Iglv1,plasmablast_marker,Upper-villus enterocytes,epithelial_source,0.8,0.01,1,1,1,514
+Iglv1,plasmablast_marker,Goblet cells,epithelial_source,0,0,0,0,0,157
+Iglc1,plasmablast_marker,Fibroblasts,non_epithelial,0.3,0.28,94.5,94.5,188,668
+Iglc1,plasmablast_marker,Endothelial,non_epithelial,0,0,0,0,0,116
+Iglc1,plasmablast_marker,Macrophages,non_epithelial,0.2,0,1.82,1,10,6917
+Iglc1,plasmablast_marker,Plasmablasts,non_epithelial,25.5,41.78,163.54,8,2458,137
+Iglc1,plasmablast_marker,cDC1,non_epithelial,0.8,0.01,1,1,1,130
+Iglc1,plasmablast_marker,Paneth cells,epithelial_source,0,0,0,0,0,174
+Iglc1,plasmablast_marker,Bottom-Villus enterocytes,epithelial_source,0.4,0.02,3.8,3,11,1247
+Iglc1,plasmablast_marker,Mid-villus enterocytes,epithelial_source,0,0,0,0,0,756
+Iglc1,plasmablast_marker,Upper-villus enterocytes,epithelial_source,1.2,0.02,1.67,1,4,514
+Iglc1,plasmablast_marker,Goblet cells,epithelial_source,0,0,0,0,0,157
+Csf1r,myeloid_marker,Fibroblasts,non_epithelial,4.5,0.06,1.23,1,4,668
+Csf1r,myeloid_marker,Endothelial,non_epithelial,10.3,0.32,3.08,2,14,116
+Csf1r,myeloid_marker,Macrophages,non_epithelial,87.3,9.61,11,7,99,6917
+Csf1r,myeloid_marker,Plasmablasts,non_epithelial,8,0.59,7.36,7,25,137
+Csf1r,myeloid_marker,cDC1,non_epithelial,21.5,1.02,4.71,1.5,67,130
+Csf1r,myeloid_marker,Paneth cells,epithelial_source,2.9,0.11,4,4,8,174
+Csf1r,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,2.9,0.03,1.17,1,3,1247
+Csf1r,myeloid_marker,Mid-villus enterocytes,epithelial_source,2.5,0.03,1.05,1,2,756
+Csf1r,myeloid_marker,Upper-villus enterocytes,epithelial_source,4.9,0.07,1.48,1,4,514
+Csf1r,myeloid_marker,Goblet cells,epithelial_source,0.6,0.01,1,1,1,157
+Cx3cr1,myeloid_marker,Fibroblasts,non_epithelial,25.3,0.57,2.24,1,16,668
+Cx3cr1,myeloid_marker,Endothelial,non_epithelial,13.8,0.25,1.81,1,8,116
+Cx3cr1,myeloid_marker,Macrophages,non_epithelial,73.4,3.43,4.68,3,51,6917
+Cx3cr1,myeloid_marker,Plasmablasts,non_epithelial,5.8,0.36,6.25,5.5,16,137
+Cx3cr1,myeloid_marker,cDC1,non_epithelial,10.8,0.32,2.93,2,11,130
+Cx3cr1,myeloid_marker,Paneth cells,epithelial_source,3.4,0.05,1.5,1,3,174
+Cx3cr1,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,3.5,0.07,1.91,1,8,1247
+Cx3cr1,myeloid_marker,Mid-villus enterocytes,epithelial_source,4.2,0.06,1.34,1,4,756
+Cx3cr1,myeloid_marker,Upper-villus enterocytes,epithelial_source,4.1,0.06,1.52,1,5,514
+Cx3cr1,myeloid_marker,Goblet cells,epithelial_source,4.5,0.04,1,1,1,157
+Trem2,myeloid_marker,Fibroblasts,non_epithelial,0,0,0,0,0,668
+Trem2,myeloid_marker,Endothelial,non_epithelial,3.4,0.05,1.5,1,3,116
+Trem2,myeloid_marker,Macrophages,non_epithelial,43,1.12,2.61,2,21,6917
+Trem2,myeloid_marker,Plasmablasts,non_epithelial,5.1,0.17,3.29,3,8,137
+Trem2,myeloid_marker,cDC1,non_epithelial,1.5,0.03,2,2,3,130
+Trem2,myeloid_marker,Paneth cells,epithelial_source,1.1,0.01,1,1,1,174
+Trem2,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,0.6,0.01,1,1,1,1247
+Trem2,myeloid_marker,Mid-villus enterocytes,epithelial_source,0,0,0,0,0,756
+Trem2,myeloid_marker,Upper-villus enterocytes,epithelial_source,1.4,0.01,1,1,1,514
+Trem2,myeloid_marker,Goblet cells,epithelial_source,0.6,0.01,1,1,1,157
+Mrc1,myeloid_marker,Fibroblasts,non_epithelial,2.1,0.03,1.21,1,3,668
+Mrc1,myeloid_marker,Endothelial,non_epithelial,10.3,0.18,1.75,1.5,3,116
+Mrc1,myeloid_marker,Macrophages,non_epithelial,74.8,6.47,8.64,6,99,6917
+Mrc1,myeloid_marker,Plasmablasts,non_epithelial,8.8,0.66,7.5,2.5,32,137
+Mrc1,myeloid_marker,cDC1,non_epithelial,6.2,0.21,3.38,1.5,14,130
+Mrc1,myeloid_marker,Paneth cells,epithelial_source,5.2,0.11,2.11,1,9,174
+Mrc1,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,2.3,0.02,1.07,1,2,1247
+Mrc1,myeloid_marker,Mid-villus enterocytes,epithelial_source,5.6,0.08,1.52,1,6,756
+Mrc1,myeloid_marker,Upper-villus enterocytes,epithelial_source,24.9,0.49,1.98,1,8,514
+Mrc1,myeloid_marker,Goblet cells,epithelial_source,3.2,0.03,1,1,1,157
+Msr1,myeloid_marker,Fibroblasts,non_epithelial,2.1,0.02,1.07,1,2,668
+Msr1,myeloid_marker,Endothelial,non_epithelial,9.5,0.13,1.36,1,3,116
+Msr1,myeloid_marker,Macrophages,non_epithelial,73.4,3.75,5.11,3,67,6917
+Msr1,myeloid_marker,Plasmablasts,non_epithelial,8.8,0.34,3.83,1.5,22,137
+Msr1,myeloid_marker,cDC1,non_epithelial,4.6,0.12,2.5,1,6,130
+Msr1,myeloid_marker,Paneth cells,epithelial_source,2.3,0.04,1.75,1,4,174
+Msr1,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,2.9,0.04,1.25,1,3,1247
+Msr1,myeloid_marker,Mid-villus enterocytes,epithelial_source,1.1,0.01,1,1,1,756
+Msr1,myeloid_marker,Upper-villus enterocytes,epithelial_source,2.5,0.03,1.15,1,2,514
+Msr1,myeloid_marker,Goblet cells,epithelial_source,0.6,0.01,1,1,1,157
+Clec10a,myeloid_marker,Fibroblasts,non_epithelial,0,0,0,0,0,668
+Clec10a,myeloid_marker,Endothelial,non_epithelial,0.9,0.01,1,1,1,116
+Clec10a,myeloid_marker,Macrophages,non_epithelial,21.1,0.34,1.63,1,15,6917
+Clec10a,myeloid_marker,Plasmablasts,non_epithelial,4.4,0.1,2.33,2,4,137
+Clec10a,myeloid_marker,cDC1,non_epithelial,25.4,0.73,2.88,1,17,130
+Clec10a,myeloid_marker,Paneth cells,epithelial_source,1.1,0.03,2.5,2.5,4,174
+Clec10a,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,0.1,0,1,1,1,1247
+Clec10a,myeloid_marker,Mid-villus enterocytes,epithelial_source,0.1,0,1,1,1,756
+Clec10a,myeloid_marker,Upper-villus enterocytes,epithelial_source,0,0,0,0,0,514
+Clec10a,myeloid_marker,Goblet cells,epithelial_source,0,0,0,0,0,157
+Mgl2,myeloid_marker,Fibroblasts,non_epithelial,0.4,0,1,1,1,668
+Mgl2,myeloid_marker,Endothelial,non_epithelial,0.9,0.01,1,1,1,116
+Mgl2,myeloid_marker,Macrophages,non_epithelial,42.1,1.22,2.9,2,44,6917
+Mgl2,myeloid_marker,Plasmablasts,non_epithelial,2.9,0.11,3.75,4,5,137
+Mgl2,myeloid_marker,cDC1,non_epithelial,54.6,2.78,5.08,4,22,130
+Mgl2,myeloid_marker,Paneth cells,epithelial_source,1.1,0.02,2,2,3,174
+Mgl2,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,0.4,0,1,1,1,1247
+Mgl2,myeloid_marker,Mid-villus enterocytes,epithelial_source,0.4,0,1,1,1,756
+Mgl2,myeloid_marker,Upper-villus enterocytes,epithelial_source,0,0,0,0,0,514
+Mgl2,myeloid_marker,Goblet cells,epithelial_source,1.3,0.01,1,1,1,157
+Fcer1g,myeloid_marker,Fibroblasts,non_epithelial,10,0.18,1.82,1,25,668
+Fcer1g,myeloid_marker,Endothelial,non_epithelial,19,0.57,3,1,23,116
+Fcer1g,myeloid_marker,Macrophages,non_epithelial,91.4,19.86,21.72,15,179,6917
+Fcer1g,myeloid_marker,Plasmablasts,non_epithelial,12.4,1.99,16.06,4,75,137
+Fcer1g,myeloid_marker,cDC1,non_epithelial,63.1,3.4,5.39,3.5,25,130
+Fcer1g,myeloid_marker,Paneth cells,epithelial_source,6.3,0.19,3,1,17,174
+Fcer1g,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,8.7,0.15,1.73,1,9,1247
+Fcer1g,myeloid_marker,Mid-villus enterocytes,epithelial_source,4.8,0.07,1.44,1,4,756
+Fcer1g,myeloid_marker,Upper-villus enterocytes,epithelial_source,10.1,0.23,2.29,1,22,514
+Fcer1g,myeloid_marker,Goblet cells,epithelial_source,5.7,0.08,1.33,1,2,157
+Tyrobp,myeloid_marker,Fibroblasts,non_epithelial,6,0.11,1.77,1,17,668
+Tyrobp,myeloid_marker,Endothelial,non_epithelial,15.5,0.59,3.78,2,24,116
+Tyrobp,myeloid_marker,Macrophages,non_epithelial,87.7,16.83,19.19,13,145,6917
+Tyrobp,myeloid_marker,Plasmablasts,non_epithelial,19,1.81,9.54,1.5,62,137
+Tyrobp,myeloid_marker,cDC1,non_epithelial,88.5,15.98,18.06,13,83,130
+Tyrobp,myeloid_marker,Paneth cells,epithelial_source,8.6,0.19,2.2,1,11,174
+Tyrobp,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,9.9,0.23,2.35,2,14,1247
+Tyrobp,myeloid_marker,Mid-villus enterocytes,epithelial_source,4.8,0.07,1.47,1,4,756
+Tyrobp,myeloid_marker,Upper-villus enterocytes,epithelial_source,6.4,0.18,2.85,2,15,514
+Tyrobp,myeloid_marker,Goblet cells,epithelial_source,3.8,0.04,1.17,1,2,157
+Itgam,myeloid_marker,Fibroblasts,non_epithelial,8.8,0.16,1.78,1,6,668
+Itgam,myeloid_marker,Endothelial,non_epithelial,9.5,0.15,1.55,1,3,116
+Itgam,myeloid_marker,Macrophages,non_epithelial,60.8,2,3.3,2,39,6917
+Itgam,myeloid_marker,Plasmablasts,non_epithelial,5.1,0.12,2.29,1,5,137
+Itgam,myeloid_marker,cDC1,non_epithelial,51.5,1.94,3.76,3,16,130
+Itgam,myeloid_marker,Paneth cells,epithelial_source,0.6,0.01,1,1,1,174
+Itgam,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,1.4,0.02,1.22,1,2,1247
+Itgam,myeloid_marker,Mid-villus enterocytes,epithelial_source,5,0.07,1.34,1,3,756
+Itgam,myeloid_marker,Upper-villus enterocytes,epithelial_source,19.8,0.29,1.46,1,4,514
+Itgam,myeloid_marker,Goblet cells,epithelial_source,11.5,0.16,1.39,1,3,157
+Itgax,myeloid_marker,Fibroblasts,non_epithelial,1.9,0.02,1.08,1,2,668
+Itgax,myeloid_marker,Endothelial,non_epithelial,11.2,0.16,1.38,1,4,116
+Itgax,myeloid_marker,Macrophages,non_epithelial,72.8,4.74,6.5,4,66,6917
+Itgax,myeloid_marker,Plasmablasts,non_epithelial,10.2,0.36,3.5,1.5,13,137
+Itgax,myeloid_marker,cDC1,non_epithelial,93.1,9.5,10.21,9,37,130
+Itgax,myeloid_marker,Paneth cells,epithelial_source,1.1,0.02,1.5,1.5,2,174
+Itgax,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,2,0.02,1.24,1,3,1247
+Itgax,myeloid_marker,Mid-villus enterocytes,epithelial_source,1.9,0.02,1.21,1,2,756
+Itgax,myeloid_marker,Upper-villus enterocytes,epithelial_source,2.5,0.04,1.69,1,4,514
+Itgax,myeloid_marker,Goblet cells,epithelial_source,1.9,0.02,1,1,1,157
+Stab1,myeloid_marker,Fibroblasts,non_epithelial,7.8,0.08,1.04,1,2,668
+Stab1,myeloid_marker,Endothelial,non_epithelial,16.4,0.24,1.47,1,4,116
+Stab1,myeloid_marker,Macrophages,non_epithelial,75.5,4.79,6.34,4,54,6917
+Stab1,myeloid_marker,Plasmablasts,non_epithelial,6.6,0.49,7.44,5,29,137
+Stab1,myeloid_marker,cDC1,non_epithelial,11.5,0.15,1.33,1,3,130
+Stab1,myeloid_marker,Paneth cells,epithelial_source,3.4,0.1,3,1,11,174
+Stab1,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,1.7,0.02,1.24,1,3,1247
+Stab1,myeloid_marker,Mid-villus enterocytes,epithelial_source,2.2,0.03,1.29,1,2,756
+Stab1,myeloid_marker,Upper-villus enterocytes,epithelial_source,17.5,0.26,1.49,1,4,514
+Stab1,myeloid_marker,Goblet cells,epithelial_source,1.3,0.01,1,1,1,157
+Gpnmb,myeloid_marker,Fibroblasts,non_epithelial,11.4,0.18,1.61,1,7,668
+Gpnmb,myeloid_marker,Endothelial,non_epithelial,10.3,0.29,2.83,1,13,116
+Gpnmb,myeloid_marker,Macrophages,non_epithelial,51.7,11.22,21.7,8,318,6917
+Gpnmb,myeloid_marker,Plasmablasts,non_epithelial,11.7,0.82,7,1.5,34,137
+Gpnmb,myeloid_marker,cDC1,non_epithelial,5.4,0.08,1.57,1,3,130
+Gpnmb,myeloid_marker,Paneth cells,epithelial_source,2.3,0.02,1,1,1,174
+Gpnmb,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,5.9,0.1,1.76,1,9,1247
+Gpnmb,myeloid_marker,Mid-villus enterocytes,epithelial_source,2.2,0.03,1.29,1,3,756
+Gpnmb,myeloid_marker,Upper-villus enterocytes,epithelial_source,4.5,0.09,2,1,8,514
+Gpnmb,myeloid_marker,Goblet cells,epithelial_source,3.8,0.06,1.67,1,4,157
+Cd68,myeloid_marker,Fibroblasts,non_epithelial,13.5,0.16,1.2,1,3,668
+Cd68,myeloid_marker,Endothelial,non_epithelial,8.6,0.18,2.1,1,6,116
+Cd68,myeloid_marker,Macrophages,non_epithelial,72.6,4.22,5.8,4,52,6917
+Cd68,myeloid_marker,Plasmablasts,non_epithelial,8.8,0.4,4.58,3.5,13,137
+Cd68,myeloid_marker,cDC1,non_epithelial,73.8,3.02,4.08,3,15,130
+Cd68,myeloid_marker,Paneth cells,epithelial_source,6.9,0.07,1.08,1,2,174
+Cd68,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,2.8,0.04,1.26,1,3,1247
+Cd68,myeloid_marker,Mid-villus enterocytes,epithelial_source,2.4,0.03,1.11,1,2,756
+Cd68,myeloid_marker,Upper-villus enterocytes,epithelial_source,4.9,0.07,1.36,1,4,514
+Cd68,myeloid_marker,Goblet cells,epithelial_source,4.5,0.06,1.29,1,2,157
+C5ar1,myeloid_marker,Fibroblasts,non_epithelial,6.4,0.07,1.09,1,3,668
+C5ar1,myeloid_marker,Endothelial,non_epithelial,11.2,0.18,1.62,1,3,116
+C5ar1,myeloid_marker,Macrophages,non_epithelial,66.8,2.75,4.11,3,33,6917
+C5ar1,myeloid_marker,Plasmablasts,non_epithelial,3.6,0.18,5,3,10,137
+C5ar1,myeloid_marker,cDC1,non_epithelial,3.8,0.06,1.6,1,4,130
+C5ar1,myeloid_marker,Paneth cells,epithelial_source,1.1,0.03,2.5,2.5,3,174
+C5ar1,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,1,0.01,1,1,1,1247
+C5ar1,myeloid_marker,Mid-villus enterocytes,epithelial_source,1.3,0.02,1.4,1,4,756
+C5ar1,myeloid_marker,Upper-villus enterocytes,epithelial_source,0.8,0.01,1,1,1,514
+C5ar1,myeloid_marker,Goblet cells,epithelial_source,1.3,0.01,1,1,1,157
+C3ar1,myeloid_marker,Fibroblasts,non_epithelial,0.6,0.01,1,1,1,668
+C3ar1,myeloid_marker,Endothelial,non_epithelial,6.9,0.09,1.38,1,2,116
+C3ar1,myeloid_marker,Macrophages,non_epithelial,69.3,3.02,4.36,3,33,6917
+C3ar1,myeloid_marker,Plasmablasts,non_epithelial,8.8,0.36,4.17,2.5,15,137
+C3ar1,myeloid_marker,cDC1,non_epithelial,9.2,0.09,1,1,1,130
+C3ar1,myeloid_marker,Paneth cells,epithelial_source,1.1,0.01,1,1,1,174
+C3ar1,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,1.2,0.01,1.07,1,2,1247
+C3ar1,myeloid_marker,Mid-villus enterocytes,epithelial_source,0.8,0.01,1.17,1,2,756
+C3ar1,myeloid_marker,Upper-villus enterocytes,epithelial_source,1.2,0.02,1.33,1,2,514
+C3ar1,myeloid_marker,Goblet cells,epithelial_source,0.6,0.01,1,1,1,157
+Dab2,myeloid_marker,Fibroblasts,non_epithelial,48.2,0.83,1.72,1,10,668
+Dab2,myeloid_marker,Endothelial,non_epithelial,11.2,0.13,1.15,1,2,116
+Dab2,myeloid_marker,Macrophages,non_epithelial,61.8,2.34,3.79,3,32,6917
+Dab2,myeloid_marker,Plasmablasts,non_epithelial,5.1,0.36,7.14,2,26,137
+Dab2,myeloid_marker,cDC1,non_epithelial,19.2,0.38,1.96,1,11,130
+Dab2,myeloid_marker,Paneth cells,epithelial_source,1.7,0.02,1,1,1,174
+Dab2,myeloid_marker,Bottom-Villus enterocytes,epithelial_source,1.8,0.02,1.17,1,3,1247
+Dab2,myeloid_marker,Mid-villus enterocytes,epithelial_source,2.6,0.04,1.45,1,3,756
+Dab2,myeloid_marker,Upper-villus enterocytes,epithelial_source,2.5,0.03,1,1,1,514
+Dab2,myeloid_marker,Goblet cells,epithelial_source,5.1,0.05,1,1,1,157

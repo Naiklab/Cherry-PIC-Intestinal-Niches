@@ -1,0 +1,102 @@
+---
+title: "DR26001 Stage 05b — Doublet and ambient-contamination QC"
+output:
+  html_notebook:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+scDblFinder doublet calls plus a contaminant-gene UCell score on the merged epithelial object.
+
+Paths are relative to this `scripts/` directory.
+
+# Load Required Libraries
+```{r chunk-01}
+# Set custom library path and load packages for doublet detection and gene-signature scoring
+# portable: only prepend these library paths when they actually exist
+for (.p in c("/Users/ikjot.sidhu/R/library")) if (dir.exists(.p)) .libPaths(c(.p, .libPaths()))
+library(scDblFinder)
+library(Seurat)
+library(tidyverse)
+library(UCell)
+```
+
+# Load Data and Convert to SingleCellExperiment
+```{r chunk-02}
+# Read in the processed epithelial Seurat object (immune cells removed)
+seu <- readRDS("../../04-merge-controls/outputs/epithelia_EP.CTRL_data.processed(no-immune).RDS")
+
+# Create a v3 assay from the current default assay (e.g., "RNA")
+# Required because scDblFinder works with the older Assay class
+seu[["RNA_v3"]] <- as(seu[["RNA"]], Class = "Assay")
+
+# Set the new v3 assay as the default for the conversion step
+DefaultAssay(seu) <- "RNA_v3"
+
+# Convert to SingleCellExperiment object for use with scDblFinder
+sce <- as.SingleCellExperiment(seu, assay = "RNA_v3")
+```
+
+# Run scDblFinder Doublet Detection
+```{r chunk-03}
+# Detect doublets per sample; the 'samples' argument ensures detection is run within each sample independently
+sce <- scDblFinder(sce, samples="orig.ident")
+```
+
+# Transfer Doublet Results Back to Seurat Object
+```{r chunk-04}
+# Get results from SCE object
+dbl_scores <- sce$scDblFinder.score
+dbl_class <- sce$scDblFinder.class
+
+# Add doublet score and singlet/doublet classification to Seurat object metadata
+seu <- AddMetaData(object = seu, metadata = dbl_scores, col.name = "scDblFinder_score")
+seu <- AddMetaData(object = seu, metadata = dbl_class, col.name = "scDblFinder_class")
+```
+
+# Inspect Doublet Classification and Filter
+```{r chunk-05}
+# View the distribution of scores or classification counts
+table(seu$scDblFinder_class)
+
+# Visualize in a UMAP plot
+DimPlot(seu, group.by = "scDblFinder_class")
+
+# Filter out doublets for downstream analysis
+seu_filtered <- subset(seu, subset = scDblFinder_class == "singlet")
+
+```
+# Plot Doublet Composition by Cell Type
+```{r chunk-06}
+# Summarise the proportion of singlets vs doublets within each cell-type label
+composition.df <- table(seu@meta.data$cell_type_labels, seu@meta.data$scDblFinder_class) %>% as.data.frame() %>% dplyr::rename(cell_type_labels=Var1, scDblFinder_class=Var2) 
+
+# Custom text styling for rotated x-axis labels
+black.bold.16.text <- element_text(face = "bold", color = "black", size = 14,angle = 90, vjust = 0.5, hjust=1)
+
+# Y-axis percentage breakpoints
+brks <- c(0, 0.25, 0.5, 0.75, 1)
+
+# Stacked bar chart showing % singlet/doublet composition per cell type
+#pdf(file="../outputs/PERCENTAGE_COMPOSTION_PLOT_GROUP_BY_LOCATION_EPITHELIA-ONLY.pdf",height = 14,width = 8)
+ggplot(composition.df,aes(x=cell_type_labels,y=Freq,fill=scDblFinder_class)) + geom_bar(stat="identity", position="fill")  + ggplot2::theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.text.x=black.bold.16.text) + scale_y_continuous(breaks = brks, labels = scales::percent(brks)) + ylab("% Composition of Location by Clusters")
+#dev.off()
+```
+Use UCell to calculate gene signature score for possible contaminant genes 
+```{r chunk-07}
+# Define a list of B-cell / immune contaminant marker genes to score
+contamin_genes <- list(Contaminant_genes=c("Ighg2b", "Iglv1", "Ighg3","Iglc2","Iglc3","Cd79a","Cd19", "Cd22","Ptprc"))
+# Calculate a per-cell UCell module score for the contaminant gene signature
+seu <- UCell::AddModuleScore_UCell(seu,features=contamin_genes)
+```
+
+# Visualise Contaminant Gene Scores by Doublet Classification
+```{r chunk-08}
+# Violin and dot plots to check whether doublets have higher contaminant gene expression
+VlnPlot(seu,group.by = "scDblFinder_class",features = c("Contaminant_genes_UCell"))
+DotPlot(seu,group.by = "scDblFinder_class",features = c("Contaminant_genes_UCell"))
+```
+
+

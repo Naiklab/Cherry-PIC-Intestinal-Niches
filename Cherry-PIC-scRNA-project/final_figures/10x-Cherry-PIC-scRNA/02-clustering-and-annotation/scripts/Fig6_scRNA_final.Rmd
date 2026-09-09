@@ -1,0 +1,392 @@
+---
+title: "Figure 6 — 10X scRNA-seq of Cherry-PIC Sorted Niches (FINAL)"
+author: "Ikjot Sidhu"
+date: "`r Sys.Date()`"
+output:
+  html_notebook:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+## Purpose
+
+10x scRNA of Cherry-PIC sorted niches — the annotated UMAP and cell-type composition
+panels, Figure 6B and 6C. The deconvolution panels 6D and 6E come from
+`../../03-deconvolution-with-ST-data/scripts/Fig6_Deconvolution_StemNiche_final.Rmd`.
+
+## Outputs
+
+| Panel | Output | Upstream source |
+|-------|--------|-----------------|
+| **Fig 6B** — annotated UMAP, broad cell type | `fig6B_umap_celltype_broad.pdf` | `03_annotation_and_doublet_filtering.Rmd` §7.1b |
+| **Fig 6C** — composition %, broad cell type, pooled by region (2 bars, no significance markers) | `fig6C_composition_stacked_broad.pdf` | `08_speckle_proportions.Rmd` §7.3.3, restructured (see §6 below) |
+| supporting — annotated UMAP, fine cell type | `supporting_umap_celltype_fine.pdf` | `03_annotation_and_doublet_filtering.Rmd` §7.1 |
+| supporting — composition %, fine cell type (per-replicate stacked bar) | `supporting_composition_stacked_fine.pdf` | `08_speckle_proportions.Rmd` §5.3 |
+| supporting — composition %, fine cell type (propeller FDR volcano) | `supporting_composition_volcano_fine.pdf` | `08_speckle_proportions.Rmd` §5.4 |
+| supporting — composition %, broad cell type (propeller FDR volcano) | `supporting_composition_volcano_broad.pdf` | `08_speckle_proportions.Rmd` §7.3.4 |
+
+**Mid-villus enterocytes are excluded from every panel above.** This is an analysis
+decision, not a QC filter — see §2.2. Fig 6B and 6C are the published panels; everything
+else carries a `supporting_` prefix and is kept for reference.
+
+## Inputs
+
+| File | Contents |
+|---|---|
+| `../data/DR26001_v2_annotated_seurat_singlets.rds` | Filtered, annotated object — carries `umap`, `cell_type`, `broad_cell_type` |
+| July-7th annotation xlsx | Cell-type colours, shared with every other plot in this project |
+
+Frozen. This is a separate copy from the working notebooks in `DR_scRNA_001/analysis/`;
+nothing here re-runs `03_annotation_and_doublet_filtering.Rmd` or
+`08_speckle_proportions.Rmd`.
+
+## Running this
+
+Runs on a laptop:
+
+```
+Rscript Fig6_scRNA_final.R
+```
+
+```{r setup, include=FALSE}
+for (.p in c("/sc/arion/projects/naiklab/ikjot/R")) if (dir.exists(.p)) .libPaths(c(.p, .libPaths()))
+library(Seurat)
+library(speckle)
+library(tidyverse)      # whole tidyverse, never individual sub-packages
+library(jsonlite)
+library(patchwork)
+library(readxl)
+library(ggrepel)
+
+set.seed(42)
+theme_set(theme_classic())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Pipeline provenance
+
+Full build of the object loaded below — CellRanger multi output →
+`DR26001_v2_annotated_seurat_singlets.rds` — documented as code-of-record (not
+re-executed here; the figure runs from the frozen RDS).
+
+```{r pipeline-provenance, child='Preprocessing_scRNA_Annotation_final.Rmd'}
+```
+
+# 1. Configuration & Colors
+
+```{r config}
+# ---- Frozen inputs (relative paths — this folder is self-contained) --------
+rds_singlets <- "../data/DR26001_v2_annotated_seurat_singlets.rds"
+ann_xlsx     <- "../data/New qc resolution 1 annotation  broad annotation and colors July07.xlsx"
+cells_json   <- "../data/cells_per_tag.json"
+out_dir      <- "../outputs"
+dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+op <- function(f) file.path(out_dir, f)
+
+save_pdf <- function(plot, path, width = 10, height = 7) {
+  pdf(path, width = width, height = height)
+  print(plot)
+  dev.off()
+  invisible(plot)
+}
+
+# ---- Official cell-type colors (same source as every other plot in this project) ----
+ann_df <- read_excel(ann_xlsx)
+
+ct_color_df <- ann_df[!duplicated(ann_df$Annotation), ]
+cell_type_colors <- setNames(
+  ifelse(ct_color_df$`Hex color` == "Remove" | is.na(ct_color_df$`Hex color`),
+         "#BEBEBE", paste0("#", ct_color_df$`Hex color`)),
+  ct_color_df$Annotation
+)
+
+broad_color_df <- ann_df[!duplicated(ann_df[["Broad annotation"]]), ]
+broad_color_df <- broad_color_df[!is.na(broad_color_df[["Broad annotation"]]), ]
+broad_cell_type_colors <- setNames(
+  ifelse(broad_color_df$`Hex color` == "Remove" | is.na(broad_color_df$`Hex color`),
+         "#BEBEBE", paste0("#", broad_color_df$`Hex color`)),
+  broad_color_df[["Broad annotation"]]
+)
+
+cat("Fine cell-type colors:", length(cell_type_colors), "\n")
+cat("Broad cell-type colors:", length(broad_cell_type_colors), "\n")
+```
+
+# 2. Load Frozen Object
+
+```{r load}
+seu <- readRDS(rds_singlets)
+cat("Cells:", ncol(seu), "| Genes:", nrow(seu), "\n")
+cat("Reductions:", paste(Reductions(seu), collapse = ", "), "\n")
+cat("\nCell-type counts (fine-grained):\n")
+print(sort(table(seu$cell_type), decreasing = TRUE))
+cat("\nCell-type counts (broad):\n")
+print(sort(table(seu$broad_cell_type, useNA = "ifany"), decreasing = TRUE))
+```
+
+## 2.1 Assign replicate / region (for composition panels)
+
+Each cell carries a raw CellRanger barcode (with `-1` suffix). In the merged
+Seurat object a `{sample}_` prefix was added by `merge(..., add.cell.ids = SAMPLES)`.
+Strip the prefix, then look up which HTO (OB1–OB4) each barcode belonged to.
+OB1/OB2 → Ileum; OB3/OB4 → Duodenum (biological replicates).
+
+```{r assign-replicate}
+tag_barcodes <- fromJSON(cells_json)
+
+bc2rep <- stack(tag_barcodes)
+names(bc2rep) <- c("raw_barcode", "replicate")
+bc2rep$replicate <- as.character(bc2rep$replicate)
+
+tissue_map <- c(OB1 = "Ileum", OB2 = "Ileum",
+                OB3 = "Duodenum", OB4 = "Duodenum")
+bc2rep$tissue <- tissue_map[bc2rep$replicate]
+
+raw_bc        <- sub("^[^_]+_", "", colnames(seu))
+rep_lookup    <- setNames(bc2rep$replicate, bc2rep$raw_barcode)
+tissue_lookup <- setNames(bc2rep$tissue,    bc2rep$raw_barcode)
+
+seu$replicate <- unname(rep_lookup[raw_bc])
+seu$region    <- unname(tissue_lookup[raw_bc])
+
+n_before <- ncol(seu)
+seu <- subset(seu, cells = colnames(seu)[!is.na(seu$replicate)])
+cat("Dropped", n_before - ncol(seu), "unmatched cells; retained", ncol(seu), "\n")
+cat("\nCells per replicate:\n"); print(table(seu$replicate))
+cat("\nCells per region:\n");    print(table(seu$region))
+```
+
+## 2.2 Exclude Mid-villus enterocytes
+
+An analysis decision applying to every Fig 6 panel, not a QC filter. The exclusion is
+applied on `broad_cell_type` rather than the fine `cell_type` so that any fine subtype
+sitting inside the "Mid-villus enterocytes" broad group is excluded as well, keeping the
+fine- and broad-level panels consistent with one another.
+
+```{r exclude_midvillus}
+n_before <- ncol(seu)
+seu <- seu[, is.na(seu$broad_cell_type) | seu$broad_cell_type != "Mid-villus enterocytes"]
+cat("Excluded", n_before - ncol(seu), "Mid-villus enterocytes cells; retained", ncol(seu), "\n")
+```
+
+---
+
+# 3. UMAP — Fine Cell Type
+
+```{r umap_fine, fig.width=14, fig.height=7}
+p_umap_fine <- DimPlot(seu,
+                       reduction  = "umap",
+                       group.by   = "cell_type",
+                       label      = TRUE,
+                       repel      = TRUE,
+                       label.size = 3.5,
+                       pt.size    = 1.5,
+                       cols       = cell_type_colors) +
+  ggtitle("Cherry-PIC sorted niches — cell-type annotation (fine)") +
+  theme(legend.text = element_text(size = 9))
+
+save_pdf(p_umap_fine, op("supporting_umap_celltype_fine.pdf"), width = 14, height = 7)
+p_umap_fine
+```
+
+# 4. UMAP — Broad Cell Type
+
+```{r umap_broad, fig.width=14, fig.height=7}
+p_umap_broad <- DimPlot(seu,
+                        reduction  = "umap",
+                        group.by   = "broad_cell_type",
+                        label      = TRUE,
+                        repel      = TRUE,
+                        label.size = 3.5,
+                        pt.size    = 1.5,
+                        cols       = broad_cell_type_colors) +
+  ggtitle("Cherry-PIC sorted niches — cell-type annotation (broad)") +
+  theme(legend.text = element_text(size = 9))
+
+save_pdf(p_umap_broad, op("fig6B_umap_celltype_broad.pdf"), width = 14, height = 7)
+p_umap_broad
+```
+
+---
+
+# 5. Composition % — Fine Cell Type
+
+## 5.1 Proportions per replicate + propeller() test
+
+`propeller()` uses arcsin-square-root transformed proportions with a limma
+empirical-Bayes model. With n = 2 replicates per group (OB1/OB2 = Ileum;
+OB3/OB4 = Duodenum), statistical testing is possible but power is limited —
+treat p-values as exploratory.
+
+```{r propeller_fine}
+prop_df <- as.data.frame(seu@meta.data) %>%
+  dplyr::count(region, replicate, cell_type, name = "n_cells") %>%
+  group_by(replicate) %>%
+  mutate(pct = n_cells / sum(n_cells) * 100) %>%
+  ungroup()
+
+prop_results <- propeller(clusters = seu$cell_type, sample = seu$replicate, group = seu$region)
+cat("propeller() results (sorted by FDR):\n")
+print(prop_results[order(prop_results$FDR), ])
+write.csv(prop_results, op("supporting_propeller_results_fine.csv"), row.names = TRUE)
+```
+
+## 5.2 Stacked bar — composition % per replicate
+
+```{r stacked_bar_fine, fig.width=9, fig.height=6}
+ct_order <- prop_df %>%
+  group_by(cell_type) %>% summarise(tot = sum(n_cells)) %>%
+  arrange(desc(tot)) %>% pull(cell_type)
+
+prop_df2 <- prop_df %>%
+  mutate(cell_type = factor(cell_type, levels = rev(ct_order)),
+         rep_label = paste0(replicate, "\n(", region, ")"))
+
+p_stack_fine <- ggplot(prop_df2, aes(x = rep_label, y = pct, fill = cell_type)) +
+  geom_col(width = 0.7) +
+  scale_fill_manual(values = cell_type_colors) +
+  labs(title = "Cell-type composition per replicate (fine)",
+       x = NULL, y = "% of cells", fill = "Cell type") +
+  theme(legend.text = element_text(size = 8), legend.key.size = unit(0.4, "cm"))
+
+save_pdf(p_stack_fine, op("supporting_composition_stacked_fine.pdf"), width = 9, height = 6)
+p_stack_fine
+```
+
+## 5.3 Volcano-style — proportion change (Duodenum vs Ileum)
+
+```{r volcano_fine, fig.width=10, fig.height=6}
+grp_cols <- grep("^PropMean\\.", colnames(prop_results), value = TRUE)
+stopifnot(length(grp_cols) == 2)
+
+vol_df <- prop_results %>%
+  rownames_to_column("cell_type") %>%
+  mutate(log2FC     = log2(.data[[grp_cols[2]]] + 1e-4) - log2(.data[[grp_cols[1]]] + 1e-4),
+         neg_logFDR = -log10(FDR + 1e-10),
+         sig        = FDR < 0.05)
+
+p_vol_fine <- ggplot(vol_df, aes(x = log2FC, y = neg_logFDR, colour = sig, label = cell_type)) +
+  geom_point(size = 3) +
+  ggrepel::geom_text_repel(size = 3, max.overlaps = 20) +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", colour = "grey50") +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  scale_colour_manual(values = c("FALSE" = "grey60", "TRUE" = "#D6604D"),
+                      labels = c("ns", "FDR < 0.05")) +
+  labs(title = "Proportion change: Duodenum vs Ileum (fine)",
+       x = paste0("log2(PropMean.", grp_cols[2], " / PropMean.", grp_cols[1], ")"),
+       y = "-log10(FDR)", colour = NULL) +
+  theme(legend.position = "top")
+
+save_pdf(p_vol_fine, op("supporting_composition_volcano_fine.pdf"), width = 10, height = 6)
+p_vol_fine
+```
+
+---
+
+# 6. Composition % — Broad Cell Type
+
+Same `propeller()` workflow as Section 5, grouped by `broad_cell_type` instead
+of fine `cell_type`. Cells with NA `broad_cell_type` (unannotated/low-quality
+clusters) are excluded.
+
+```{r propeller_broad}
+seu_broad <- seu[, !is.na(seu$broad_cell_type)]
+cat("Cells excluded (NA broad_cell_type):", ncol(seu) - ncol(seu_broad), "\n")
+
+prop_df_broad <- as.data.frame(seu_broad@meta.data) %>%
+  dplyr::count(region, replicate, broad_cell_type, name = "n_cells") %>%
+  group_by(replicate) %>%
+  mutate(pct = n_cells / sum(n_cells) * 100) %>%
+  ungroup()
+
+prop_results_broad <- propeller(clusters = seu_broad$broad_cell_type,
+                                sample = seu_broad$replicate, group = seu_broad$region)
+cat("propeller() results, broad cell types (sorted by FDR):\n")
+print(prop_results_broad[order(prop_results_broad$FDR), ])
+write.csv(prop_results_broad, op("supporting_propeller_results_broad.csv"), row.names = TRUE)
+```
+
+## 6.1 Stacked bar — composition % pooled by region (Fig 6C)
+
+Published Fig 6C pools the two replicates per region into a single bar for Duodenum and
+one for Ileum, rather than one bar per replicate. The plot carries no significance markers.
+The `propeller()` statistics are still computed in full and saved to
+`supporting_propeller_results_broad.csv`; the significant categories print below.
+
+```{r stacked_bar_broad, fig.width=9, fig.height=6}
+ct_order_broad <- prop_df_broad %>%
+  group_by(broad_cell_type) %>% summarise(tot = sum(n_cells)) %>%
+  arrange(desc(tot)) %>% pull(broad_cell_type)
+
+# Pool the two replicates per region into one bar each (region-level %, not
+# per-replicate) — matches the published panel structure.
+prop_df_region <- as.data.frame(seu_broad@meta.data) %>%
+  dplyr::count(region, broad_cell_type, name = "n_cells") %>%
+  group_by(region) %>%
+  mutate(pct = n_cells / sum(n_cells) * 100) %>%
+  ungroup() %>%
+  mutate(broad_cell_type = factor(broad_cell_type, levels = rev(ct_order_broad)))
+
+# Stats-only reference, not plotted: which categories are significant, and in
+# which region the proportion is higher — read straight off prop_results_broad.
+grp_cols_broad_sig <- grep("^PropMean\\.", colnames(prop_results_broad), value = TRUE)
+stopifnot(length(grp_cols_broad_sig) == 2)
+region_names_sig <- sub("^PropMean\\.", "", grp_cols_broad_sig)
+
+sig_broad <- prop_results_broad %>%
+  rownames_to_column("broad_cell_type") %>%
+  filter(FDR < 0.05) %>%
+  mutate(region = region_names_sig[max.col(cbind(.data[[grp_cols_broad_sig[1]]],
+                                                  .data[[grp_cols_broad_sig[2]]]))]) %>%
+  select(broad_cell_type, region)
+
+cat("Cell types significant at FDR < 0.05 (broad), with the higher-proportion region:\n")
+print(sig_broad)
+
+p_stack_broad <- ggplot(prop_df_region, aes(x = region, y = pct, fill = broad_cell_type)) +
+  geom_col(width = 0.5) +
+  scale_fill_manual(values = broad_cell_type_colors) +
+  labs(title = "Cell-type composition by region (broad)",
+       x = NULL, y = "% of cells", fill = "Cell type") +
+  theme(legend.text = element_text(size = 8), legend.key.size = unit(0.4, "cm"))
+
+save_pdf(p_stack_broad, op("fig6C_composition_stacked_broad.pdf"), width = 9, height = 6)
+p_stack_broad
+```
+
+## 6.2 Volcano-style — proportion change (Duodenum vs Ileum, broad)
+
+```{r volcano_broad, fig.width=10, fig.height=6}
+grp_cols_broad <- grep("^PropMean\\.", colnames(prop_results_broad), value = TRUE)
+stopifnot(length(grp_cols_broad) == 2)
+
+vol_df_broad <- prop_results_broad %>%
+  rownames_to_column("broad_cell_type") %>%
+  mutate(log2FC     = log2(.data[[grp_cols_broad[2]]] + 1e-4) - log2(.data[[grp_cols_broad[1]]] + 1e-4),
+         neg_logFDR = -log10(FDR + 1e-10),
+         sig        = FDR < 0.05)
+
+p_vol_broad <- ggplot(vol_df_broad, aes(x = log2FC, y = neg_logFDR, colour = sig, label = broad_cell_type)) +
+  geom_point(size = 3) +
+  ggrepel::geom_text_repel(size = 3, max.overlaps = 20) +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", colour = "grey50") +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  scale_colour_manual(values = c("FALSE" = "grey60", "TRUE" = "#D6604D"),
+                      labels = c("ns", "FDR < 0.05")) +
+  labs(title = "Proportion change: Duodenum vs Ileum (broad)",
+       x = paste0("log2(PropMean.", grp_cols_broad[2], " / PropMean.", grp_cols_broad[1], ")"),
+       y = "-log10(FDR)", colour = NULL) +
+  theme(legend.position = "top")
+
+save_pdf(p_vol_broad, op("supporting_composition_volcano_broad.pdf"), width = 10, height = 6)
+p_vol_broad
+```
+
+---
+
+# 7. Session Info
+
+```{r session_info}
+sessionInfo()
+```

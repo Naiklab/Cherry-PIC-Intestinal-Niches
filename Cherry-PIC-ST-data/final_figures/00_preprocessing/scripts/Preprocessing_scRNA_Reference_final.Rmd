@@ -1,0 +1,238 @@
+<!--
+Pre-processing Pipeline — Master scRNA Reference (FINAL, documentation).
+Designed to be included via `{r child=...}` in FigS5_scRNA_Reference_final.Rmd, so this
+file has NO YAML header (a child's YAML would render as stray text in the parent).
+To knit standalone: rmarkdown::render("Preprocessing_scRNA_Reference_final.Rmd").
+-->
+
+# Pre-processing Pipeline — Master scRNA Reference
+
+## Purpose
+
+**Reproducibility record** for the integrated master single-cell reference
+(`output/master_integration/rds/Master.Obj.rds`) — the RCTD deconvolution reference and
+the object behind Figure S5. Included at the top of `FigS5_scRNA_Reference_final.Rmd` via
+a `{r child=...}` chunk.
+
+**All chunks are `eval = FALSE`** — code-of-record, curated from the authoritative source
+`Master-dataset-integration.Rmd` (with per-dataset prep from
+`Reference-single-cell-datasets-analysis.Rmd` + `...-part2.Rmd`). Not re-run at figure time;
+the figure reads the frozen RDS. To rebuild, run the stages in order on a compute node.
+
+### Reference build DAG
+
+```
+8 public/lab scRNA datasets ──► per-dataset prep (SCT + CCA where needed) ──► merge
+   │                                                                           │
+   │  Rosenblum Epithelial / Immune (NaikLab, NovaSeqX, small intestine)       │
+   │  Glisovic Fibroblast (GSE269017, Drop-seq, colon)                         │
+   │  Niec 2022 SpaceFold SI (10x Chromium, small intestine)                   │
+   │  Degirmenci 2018 (GSE113043) · Kinchen 2018 (GSE114374)                   ▼
+   │  McCarthy 2020 (GSE130681) · Roulis 2020 (GSE142431, 5 sublibraries)   Master.Obj
+   ▼                                                                           │
+QC filter → standardize metadata → SCTransform per object → merge →           │
+PCA → Harmony (batch = dataset_label + sequencing_tech) → UMAP → cluster res1.2 → annotate
+   ▼
+Master.Obj.rds   ← RCTD reference (Stage 6 of the 8 µm pipeline) & Figure S5
+```
+
+`cell_class` maps to figure compartments: Epithelial → Epithelia, Immune → Immune,
+Fibroblast + Mesenchymal → Stroma. Figure S5 colours use the Aug-10th annotation CSV
+(Population → Hex Code); the object's `cluster_annotation` was mapped from the res-1.2
+annotation CSV.
+
+```{r ppref-doc-setup, include=FALSE}
+# Documentation notebook — every chunk below is marked eval=FALSE individually
+# (safe to include as a knitr child without disabling the parent's figure chunks).
+```
+
+---
+
+## Stage 0 — Per-dataset preparation (input objects)
+*(sources: `Reference-single-cell-datasets-analysis.Rmd`, `...-part2.Rmd`)*
+
+Before master integration, each mesenchymal/fibroblast reference is prepared and, where a
+dataset spans multiple libraries, integrated within itself: raw counts → label cleanup →
+`SCTransform` per library → `SelectIntegrationFeatures` → `PrepSCTIntegration` →
+`FindIntegrationAnchors` (CCA) → `IntegrateData` → PCA → clustering. The per-dataset objects
+are written to `Reference-Single-Cell-Data/rds-objects/` (`Fibroblast.Obj.rds`,
+`Degirmenci.Obj.rds`, `Kinchen.Obj.rds`, `McCarthy.Obj.rds`, `Roulis.Obj.C1A..C2C.rds`).
+The Rosenblum Epithelial/Immune objects and the Niec SpaceFold SI object arrive already processed.
+
+```{r ppref-load, eval=FALSE}
+.libPaths("/sc/arion/projects/naiklab/ikjot/R")
+library(Seurat); library(tidyverse); library(patchwork); library(harmony); library(clustree)
+
+# Lab-supplied processed objects (note: two different Daniels — see Stage 2 naming note)
+Fib.Obj    <- readRDS(fib_path)      # Glisovic fibroblast — public, GEO GSE269017
+Epi.Obj    <- readRDS(epi_path)      # Rosenblum epithelial, this manuscript (cell_type_labels/broad/narrow)
+Immune.Obj <- readRDS(immune_path)   # Rosenblum immune, this manuscript
+
+# Reference datasets prepared in Stage 0
+SpaceFold.Obj  <- readRDS("Reference-Single-Cell-Data/rds-objects/SI-data_SpaceFold-paper.RDS")
+rds_path <- "Reference-Single-Cell-Data/rds-objects"
+Degirmenci.Obj <- readRDS(file.path(rds_path, "Degirmenci.Obj.rds"))
+Kinchen.Obj    <- readRDS(file.path(rds_path, "Kinchen.Obj.rds"))
+McCarthy.Obj   <- readRDS(file.path(rds_path, "McCarthy.Obj.rds"))
+Roulis.Obj.1   <- readRDS(file.path(rds_path, "Roulis.Obj.C1A.rds"))
+Roulis.Obj.2   <- readRDS(file.path(rds_path, "Roulis.Obj.C1B.rds"))
+Roulis.Obj.3   <- readRDS(file.path(rds_path, "Roulis.Obj.C2A.rds"))
+Roulis.Obj.4   <- readRDS(file.path(rds_path, "Roulis.Obj.C2B.rds"))
+Roulis.Obj.5   <- readRDS(file.path(rds_path, "Roulis.Obj.C2C.rds"))
+```
+
+---
+
+## Stage 1 — Quality control (per dataset)
+
+Mitochondrial + ribosomal % computed on the RNA assay, then a common permissive filter is
+applied to every dataset (genes 200–8,000; UMIs 500–50,000; MT ≤ 15%).
+
+```{r ppref-qc, eval=FALSE}
+all_objects <- list(Fib.Obj = Fib.Obj, Epi.Obj = Epi.Obj, Immune.Obj = Immune.Obj,
+                    SpaceFold.Obj = SpaceFold.Obj, Degirmenci.Obj = Degirmenci.Obj,
+                    Kinchen.Obj = Kinchen.Obj, McCarthy.Obj = McCarthy.Obj,
+                    Roulis.Obj.1 = Roulis.Obj.1, Roulis.Obj.2 = Roulis.Obj.2,
+                    Roulis.Obj.3 = Roulis.Obj.3, Roulis.Obj.4 = Roulis.Obj.4,
+                    Roulis.Obj.5 = Roulis.Obj.5)
+
+for (nm in names(all_objects)) {
+  obj <- all_objects[[nm]]; DefaultAssay(obj) <- "RNA"
+  obj[["percent.mt"]]   <- if (any(grepl("^mt-|^Mt-|^MT-", rownames(obj))))   PercentageFeatureSet(obj, "^mt-|^Mt-|^MT-") else 0
+  obj[["percent.ribo"]] <- if (any(grepl("^Rp[sl]|^RP[SL]", rownames(obj))))  PercentageFeatureSet(obj, "^Rp[sl]|^RP[SL]") else 0
+  all_objects[[nm]] <- obj
+}
+
+qc <- list(min_features = 200, max_features = 8000, min_counts = 500, max_counts = 50000, max_mt = 15)
+all_objects <- lapply(all_objects, function(obj) subset(obj,
+  subset = nFeature_RNA >= qc$min_features & nFeature_RNA <= qc$max_features &
+           nCount_RNA  >= qc$min_counts   & nCount_RNA  <= qc$max_counts   &
+           percent.mt  <= qc$max_mt))
+list2env(all_objects, envir = environment())   # write filtered objects back by name
+```
+
+---
+
+## Stage 2 — Standardize metadata
+
+Every object gets a common set of columns so they survive the merge cleanly (originals are
+preserved). Key columns: `dataset_label`, `cell_class`, `sequencing_tech`, `tissue`,
+`orig_annotation`. `cell_class` is the compartment assignment used throughout.
+
+**Dataset labels.** Three of the input objects were once all labelled `Daniel_*`, which
+merged two unrelated sources. They are now distinguished:
+
+- `Glisovic_Fibroblast` — external published data. Glisovic N *et al.*, *J Cell Sci*
+  2025;138(23):jcs264147, GEO **GSE269017** (one sample, GSM8305126).
+- `Rosenblum_Epithelial` and `Rosenblum_Immune` — generated for this manuscript, not yet
+  deposited.
+
+`Master.Obj.rds` stores these corrected labels. They were applied to the saved object as a
+metadata-only patch, with cell count, assays and reductions asserted unchanged, so panels
+published from earlier versions remain reproducible. Integration was not re-run: Harmony,
+UMAP and `FindClusters` are stochastic, and a rebuild would shift the Figure S5 panels.
+
+```{r ppref-metadata, eval=FALSE}
+# Representative assignments (one block per dataset in the original; condensed here).
+Fib.Obj$dataset_label       <- "Glisovic_Fibroblast";  Fib.Obj$cell_class       <- "Fibroblast"
+Epi.Obj$dataset_label       <- "Rosenblum_Epithelial"; Epi.Obj$cell_class       <- "Epithelial"
+Immune.Obj$dataset_label    <- "Rosenblum_Immune";     Immune.Obj$cell_class    <- "Immune"
+SpaceFold.Obj$dataset_label <- "Niec_SpaceFold_SI"
+# Niec spans all three compartments; cell_class is derived from the authors' own
+# coarse annotation, not set to one value. See Master-dataset-integration.Rmd.
+SpaceFold.Obj$cell_class    <- niec_cell_class[as.character(SpaceFold.Obj$coarse_cluster_dbRM)]
+Degirmenci.Obj$dataset_label<- "Degirmenci_2018";     Degirmenci.Obj$cell_class<- "Mesenchymal"
+Kinchen.Obj$dataset_label   <- "Kinchen_2018";        Kinchen.Obj$cell_class   <- "Mesenchymal"
+McCarthy.Obj$dataset_label  <- "McCarthy_2020";       McCarthy.Obj$cell_class  <- "Mesenchymal"
+for (nm in paste0("Roulis.Obj.", 1:5)) {
+  obj <- get(nm); obj$dataset_label <- "Roulis_2020"; obj$cell_class <- "Mesenchymal"; assign(nm, obj)
+}
+# (sequencing_tech / tissue / dataset_id / orig_annotation set per dataset in the source.)
+```
+
+---
+
+## Stage 3 — SCTransform per object, then merge
+
+Each object is SCTransformed individually (memory-efficient vs. scaling the full merged
+matrix), then all are merged into one master object.
+
+```{r ppref-sct-merge, eval=FALSE}
+obj_names <- c("Fib.Obj","Epi.Obj","Immune.Obj","SpaceFold.Obj","Degirmenci.Obj",
+               "Kinchen.Obj","McCarthy.Obj","Roulis.Obj.1","Roulis.Obj.2",
+               "Roulis.Obj.3","Roulis.Obj.4","Roulis.Obj.5")
+for (nm in obj_names) {
+  obj <- get(nm); DefaultAssay(obj) <- "RNA"
+  assign(nm, SCTransform(obj, assay = "RNA", verbose = FALSE))
+}
+Master.Obj <- merge(Fib.Obj, y = lapply(obj_names[-1], get), merge.data = FALSE)
+```
+
+---
+
+## Stage 4 — PCA → Harmony batch correction
+
+Harmony (not CCA) is used at this scale: many batches, differing composition across
+datasets, and computational efficiency. Batch = dataset of origin + sequencing technology.
+
+```{r ppref-pca-harmony, eval=FALSE}
+DefaultAssay(Master.Obj) <- "SCT"
+Master.Obj <- FindVariableFeatures(Master.Obj, nfeatures = 3000)
+Master.Obj <- RunPCA(Master.Obj, assay = "SCT", verbose = FALSE)
+
+Master.Obj <- RunHarmony(Master.Obj,
+                         group.by.vars  = c("dataset_label", "sequencing_tech"),
+                         reduction      = "pca", reduction.save = "harmony",
+                         assay.use      = "SCT", verbose = FALSE)
+```
+
+---
+
+## Stage 5 — UMAP & clustering on the Harmony embedding (res 1.2)
+
+UMAP + neighbours on `harmony` (n_dims = 30 from the elbow plot), clustered over a range;
+**resolution 1.2 is the selected/default** for annotation.
+
+```{r ppref-umap-cluster, eval=FALSE}
+n_dims <- 30
+cluster_resolutions <- c(0.1,0.2,0.3,0.4,0.5,0.8,1,1.2,1.5,2,2.5,3)
+selected_resolution <- 1.2
+
+Master.Obj <- RunUMAP(Master.Obj, reduction = "harmony", dims = 1:n_dims, verbose = FALSE)
+Master.Obj <- FindNeighbors(Master.Obj, reduction = "harmony", dims = 1:n_dims, verbose = FALSE)
+Master.Obj <- FindClusters(Master.Obj, resolution = cluster_resolutions, verbose = FALSE)
+Master.Obj$seurat_clusters <- Master.Obj@meta.data[["SCT_snn_res.1.2"]]
+Idents(Master.Obj) <- "seurat_clusters"
+```
+
+---
+
+## Stage 6 — Annotate clusters → `cluster_annotation`, save `Master.Obj.rds`
+
+Res-1.2 clusters are mapped to Population labels via the annotation CSV; `cell_class` was
+already set per dataset (Stage 2).
+
+**Annotation-version note (important for Fig S5):** the saved object was mapped with the
+`apr 2nd` CSV. Per-cluster labels are identical between `apr 2nd` and the finalized
+`August 10th` CSV **except** for the `Resident CD8αα IELs` encoding (proper α in apr-2nd
+vs mojibake + double space in Aug-10th). The intermediate `May 8th` CSV differed at three
+clusters that were later reassigned (9 → Myofibroblasts, 38 → Goblet cells, 40 → cDC1).
+To guarantee consistency, `FigS5_scRNA_Reference_final.Rmd` **re-maps `cluster_annotation`
+from `SCT_snn_res.1.2` using the Aug-10th CSV and ASCII-sanitizes both the labels and the
+colour keys** — so the figure's labels and colours always come from the single finalized
+source, regardless of which CSV originally annotated the object.
+
+```{r ppref-annotate-save, eval=FALSE}
+annotation.file <- "single cell seq combined datasets annotation res 1_2 With colors RCTD apr 2nd.csv"
+annotations <- read.csv(annotation.file, stringsAsFactors = FALSE)
+annotations <- annotations[!is.na(annotations$X.) & annotations$X. != "", ]
+annotations$Population[is.na(annotations$Population) | annotations$Population == ""] <- "Unannotated"
+
+# Map res-1.2 cluster number -> Population label
+cluster_to_annot <- setNames(annotations$Population, as.character(annotations$X.))
+annot_vec <- cluster_to_annot[as.character(Master.Obj@meta.data[["SCT_snn_res.1.2"]])]
+annot_vec[is.na(annot_vec)] <- "Unannotated"
+Master.Obj@meta.data$cluster_annotation <- annot_vec
+
+saveRDS(Master.Obj, "output/master_integration/rds/Master.Obj.rds")
+```

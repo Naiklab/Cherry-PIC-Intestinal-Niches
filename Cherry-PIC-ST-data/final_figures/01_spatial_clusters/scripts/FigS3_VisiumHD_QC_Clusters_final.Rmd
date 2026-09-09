@@ -1,0 +1,240 @@
+---
+title: "Figure S3 — Visium HD QC & Spatial Cluster Annotation (8 µm, FINAL)"
+author: "Ikjot Sidhu"
+date: "`r Sys.Date()`"
+output:
+  html_notebook:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+## Purpose
+
+Per-sample QC and spatial cluster maps for the Visium HD 8 µm data — Figure S3.
+
+## Outputs
+
+| Panel | Upstream source |
+|-------|--------------------|
+| **S3 — spatial cluster UMAP + annotation** | `Spatial_Annotations_HiRes_8um.Rmd` (cluster/region/location) + annotated UMAP |
+| **S3 — per-replicate QC** (features / UMI / mito) | `QC_Plots_Final_8um.Rmd` |
+
+QC is computed on the **pre-filter** Space Ranger on-tissue matrices so the applied
+UMI cutoff line shows the spots it removed. `min.counts = 25` was **applied**;
+mitochondrial % was a guideline and is shown **without** a cutoff line (never applied).
+
+## Inputs
+
+| File | Contents |
+|---|---|
+| `../data/final_analysis_object_with_master_deconv_hires.RDS` | 8 µm object with hi-res images |
+| `../data/8um-binned-updated-annotations(res2) Apr 21 with exclusion.csv` | res-2 cluster → annotation, region, location |
+| `../data/rawdata/` | Per-sample Space Ranger on-tissue matrices, read pre-filter for QC |
+
+Frozen. This notebook reads them; it does not rebuild them.
+
+## Running this
+
+The 8 µm object needs more memory than a laptop has, so this runs on a compute node:
+
+```
+OPENBLAS_NUM_THREADS=1 Rscript FigS3_VisiumHD_QC_Clusters_final.R
+```
+
+```{r setup, include=FALSE}
+.libPaths("/sc/arion/projects/naiklab/ikjot/R")
+library(Seurat)             # Read10X_h5, spatial plotting
+library(tidyverse)
+library(patchwork)
+library(RColorBrewer)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Pipeline provenance
+
+Full build of the spatial object loaded below — raw Space Ranger →
+`..._with_master_deconv_hires.RDS` — documented as code-of-record (not re-executed here;
+the figure runs from the frozen RDS). The QC section below re-derives per-spot metrics
+from the raw on-tissue matrices independently.
+
+```{r pipeline-provenance, child='Preprocessing_VisiumHD_8um_final.Rmd'}
+```
+
+# 1. Configuration
+
+```{r config}
+rds_hires <- "../data/final_analysis_object_with_master_deconv_hires.RDS"
+ann_csv   <- "../data/8um-binned-updated-annotations(res2) Apr 21 with exclusion.csv"
+out_dir   <- "../outputs"
+dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+op   <- function(f) file.path(out_dir, f)
+ubar <- function(x) gsub("\\.", "_", x)
+cluster_col <- "sketch_snn_res.2"
+
+# ---- res-2 cluster -> annotation maps (all three levels) ----
+ann <- read.csv(ann_csv, stringsAsFactors = FALSE, check.names = TRUE)
+ann$Cluster  <- as.character(ann$Cluster)
+cluster_map  <- setNames(trimws(ann$Annotation),                ann$Cluster)
+region_map   <- setNames(trimws(ann$Spatial.region.annotation), ann$Cluster)
+location_map <- setNames(trimws(ann$Region.Annotation),         ann$Cluster)
+cluster_levels  <- unique(trimws(ann$Annotation))
+region_levels   <- unique(trimws(ann$Spatial.region.annotation))
+location_levels <- unique(trimws(ann$Region.Annotation))
+
+cluster_colors  <- setNames(trimws(ann$Granular.color), trimws(ann$Annotation))
+cluster_colors  <- cluster_colors[!duplicated(names(cluster_colors))][cluster_levels]
+gen_pal <- function(labels, base = "Paired")
+  setNames(colorRampPalette(brewer.pal(12, base))(length(labels)), labels)
+region_colors   <- gen_pal(region_levels, "Paired")
+location_colors <- setNames(c("#4292C6", "#ef8a62", "#7B4F24"), location_levels)
+
+# ---- QC parameters (from General_VisiumHD_Analysis_Workflow.Rmd) ----
+MIN_COUNTS <- 25          # applied UMI cutoff
+MT_PATTERN <- "^mt-|^MT-"
+samples <- tibble::tribble(
+  ~sample,      ~region,    ~folder,
+  "Duodenum-3", "Duodenum", "SHNA03_D3-7um_0_v1",
+  "Duodenum-4", "Duodenum", "SHNA03_D4-7um_0_v1",
+  "Ileum-2",    "Ileum",    "SHNA03_I2-7um_0_v1",
+  "Ileum-3",    "Ileum",    "SHNA03_I3-7um_0_v1"
+)
+sample_levels <- samples$sample
+samp_cols <- setNames(c("#6A51A3", "#9E7BC8", "#08519C", "#4292C6"), sample_levels)
+```
+
+# 2. Spatial cluster UMAP + annotation
+
+```{r load_spatial}
+merged.object <- readRDS(rds_hires)
+sample_images <- Images(merged.object)
+cl <- as.character(merged.object@meta.data[[cluster_col]])
+merged.object$cluster_annotation  <- factor(unname(cluster_map[cl]),  levels = cluster_levels)
+merged.object$region_annotation   <- factor(unname(region_map[cl]),   levels = region_levels)
+merged.object$location_annotation <- factor(unname(location_map[cl]), levels = location_levels)
+```
+
+```{r annotated_umap, fig.width=11, fig.height=9}
+umap_red <- intersect(c("umap.sketch", "full.umap.sketch", "umap"), Reductions(merged.object))[1]
+p_umap <- DimPlot(merged.object, reduction = umap_red, group.by = "cluster_annotation",
+                  cols = cluster_colors, raster = TRUE, raster.dpi = c(600, 600),
+                  pt.size = 1.2, label = FALSE) +
+  ggtitle("Spatial clusters (res 2) — annotated, 8 µm") +
+  theme_classic(base_size = 13) + theme(legend.text = element_text(size = 8))
+ggsave(op("figS3_cluster_umap_annotated.pdf"), p_umap, width = 11, height = 9)
+p_umap
+```
+
+```{r spatial_annotation_levels, fig.show='hide'}
+# Hi-res SpatialDimPlots for all three annotation levels (per sample + combined).
+plot_level <- function(group_by, cols, title, file_prefix) {
+  for (img in sample_images) {
+    p <- SpatialDimPlot(merged.object, images = img, group.by = group_by,
+                        label = FALSE, pt.size.factor = 1.25, cols = cols) +
+      scale_fill_manual(values = cols, na.value = "grey90", drop = FALSE) +
+      ggtitle(paste0(title, " - ", img, " (8 µm, hi-res)")) +
+      theme(legend.position = "right", legend.text = element_text(size = 8),
+            plot.title = element_text(size = 11))
+    ggsave(op(paste0(file_prefix, "_", ubar(img), ".pdf")), plot = p, height = 10, width = 13)
+  }
+  plots <- lapply(sample_images, function(img)
+    SpatialDimPlot(merged.object, images = img, group.by = group_by,
+                   label = FALSE, pt.size.factor = 1.25, cols = cols) +
+      scale_fill_manual(values = cols, na.value = "grey90", drop = FALSE) +
+      ggtitle(img) + theme(plot.title = element_text(size = 9)))
+  ggsave(op(paste0(file_prefix, "_all_samples.pdf")), height = 18, width = 17,
+         plot = wrap_plots(plots, ncol = 2, guides = "collect") +
+           plot_annotation(title = paste0(title, " - All Samples (8 µm, hi-res)")) &
+           theme(plot.title = element_text(size = 12), legend.position = "bottom",
+                 legend.text = element_text(size = 8)))
+}
+plot_level("cluster_annotation",  cluster_colors,  "Spatial Cluster Annotation (res 2)", "figS3_spatial_cluster")
+plot_level("region_annotation",   region_colors,   "Spatial Region Annotation (res 2)",  "figS3_spatial_region")
+plot_level("location_annotation", location_colors, "Location (Proximal/Distal)",         "figS3_spatial_location")
+```
+
+# 3. Per-replicate QC (raw counts, pre-filter, on-tissue)
+
+```{r qc_compute}
+# Per-spot QC from each raw on-tissue matrix (no log normalisation, linear axes).
+qc_one <- function(folder) {
+  h5 <- file.path("../data/rawdata", folder, "binned_outputs", "square_008um", "filtered_feature_bc_matrix.h5")
+  m <- Read10X_h5(h5)
+  if (is.list(m)) m <- m[["Gene Expression"]]
+  total   <- Matrix::colSums(m)
+  nfeat   <- Matrix::colSums(m > 0)
+  mt_rows <- grep(MT_PATTERN, rownames(m))
+  mt_pct  <- if (length(mt_rows) > 0) 100 * Matrix::colSums(m[mt_rows, , drop = FALSE]) / total else rep(0, ncol(m))
+  mt_pct[!is.finite(mt_pct)] <- 0
+  tibble(nCount = as.numeric(total), nFeature = as.numeric(nfeat), percent.mt = as.numeric(mt_pct))
+}
+qc <- samples %>% rowwise() %>% mutate(data = list(qc_one(folder))) %>% ungroup() %>%
+  select(sample, region, data) %>% unnest(data) %>%
+  mutate(sample = factor(sample, levels = sample_levels))
+```
+
+```{r qc_violins, fig.width=16, fig.height=6}
+mk_violin <- function(yvar, ylab, cutoff = NA, cutoff_lab = NULL) {
+  p <- ggplot(qc, aes(x = sample, y = .data[[yvar]], fill = sample)) +
+    geom_violin(scale = "width", trim = TRUE, alpha = 0.85, colour = "grey30") +
+    geom_boxplot(width = 0.12, outlier.shape = NA, fill = "white", alpha = 0.6) +
+    scale_fill_manual(values = samp_cols) + labs(x = NULL, y = ylab) +
+    theme_classic(base_size = 13) +
+    theme(legend.position = "none", axis.text.x = element_text(angle = 30, hjust = 1))
+  if (!is.na(cutoff)) {
+    p <- p + geom_hline(yintercept = cutoff, linetype = "solid", colour = "red", linewidth = 0.7)
+    if (!is.null(cutoff_lab))
+      p <- p + annotate("text", x = 0.6, y = cutoff, label = cutoff_lab, colour = "red",
+                        hjust = 0, vjust = -0.4, size = 3)
+  }
+  p
+}
+v_umi  <- mk_violin("nCount",   "UMI counts (raw)",     MIN_COUNTS, paste0("min UMI = ", MIN_COUNTS)) + ggtitle("UMI counts per spot")
+v_feat <- mk_violin("nFeature", "Feature counts (raw)", NA) + ggtitle("Features per spot")
+v_mt   <- mk_violin("percent.mt","Mitochondrial %",     NA) + ggtitle("Mitochondrial percent")  # no cutoff applied
+ggsave(op("figS3_qc_violin_umi.pdf"),      v_umi,  height = 6, width = 6)
+ggsave(op("figS3_qc_violin_features.pdf"), v_feat, height = 6, width = 6)
+ggsave(op("figS3_qc_violin_mito.pdf"),     v_mt,   height = 6, width = 6)
+ggsave(op("figS3_qc_violins_combined.pdf"),
+       (v_umi | v_feat | v_mt) + plot_annotation(title = "QC metrics per sample (8 µm, raw counts)"),
+       height = 6, width = 16)
+(v_umi | v_feat | v_mt)
+```
+
+```{r qc_scatter, fig.width=18, fig.height=5}
+x_max <- max(qc$nCount); y_max <- max(qc$nFeature)
+p_scatter <- ggplot(qc, aes(x = nCount, y = nFeature)) +
+  geom_point(size = 0.25, alpha = 0.4, colour = "#3B4A6B") +
+  geom_vline(xintercept = MIN_COUNTS, linetype = "solid", colour = "red", linewidth = 0.6) +
+  scale_x_continuous(limits = c(0, x_max)) + scale_y_continuous(limits = c(0, y_max)) +
+  facet_wrap(~ sample, nrow = 1) +
+  labs(x = "UMI counts (raw)", y = "Feature counts (raw)",
+       title = "Features vs UMI counts per replicate (8 µm, raw counts)",
+       subtitle = paste0("Red line = applied UMI cutoff (>= ", MIN_COUNTS, "); shared axes across replicates")) +
+  theme_bw(base_size = 12) + theme(panel.grid.minor = element_blank())
+ggsave(op("figS3_qc_scatter_features_vs_umi.pdf"), p_scatter, height = 5, width = 18)
+p_scatter
+```
+
+## Panel C, split into one file per sample
+
+The combined 4-facet version above was the only output this chunk produced — every
+other panel in this notebook (spatial cluster/region/location maps, QC violins) already
+writes both a combined file and one file per sample. This closes that gap, same shared
+axes and cutoff line as the combined version so any single sample is directly
+comparable to the composite.
+
+```{r qc_scatter_individual, fig.width=6, fig.height=5}
+for (s in sample_levels) {
+  p_s <- ggplot(filter(qc, sample == s), aes(x = nCount, y = nFeature)) +
+    geom_point(size = 0.25, alpha = 0.4, colour = "#3B4A6B") +
+    geom_vline(xintercept = MIN_COUNTS, linetype = "solid", colour = "red", linewidth = 0.6) +
+    scale_x_continuous(limits = c(0, x_max)) + scale_y_continuous(limits = c(0, y_max)) +
+    labs(x = "UMI counts (raw)", y = "Feature counts (raw)",
+         title = paste0("Features vs UMI counts — ", s, " (8 µm, raw counts)"),
+         subtitle = paste0("Red line = applied UMI cutoff (>= ", MIN_COUNTS, ")")) +
+    theme_bw(base_size = 12) + theme(panel.grid.minor = element_blank())
+  ggsave(op(paste0("figS3_qc_scatter_features_vs_umi_", ubar(s), ".pdf")), p_s, height = 5, width = 6)
+  cat("Saved:", s, "\n")
+}
+```

@@ -1,0 +1,189 @@
+---
+title: "Figure 3F — regional enterocyte gene programs, scRNA bubble plots"
+author: "Ikjot Sidhu"
+date: "`r Sys.Date()`"
+output:
+  html_notebook:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 3
+---
+
+## Purpose
+
+Proximal and distal small-intestine expression programs across enterocytes — Figure 3F.
+Reads the CTRL-only epithelial object and writes two PDFs.
+
+## Outputs
+
+Written to `../outputs/`. A `fig3F` prefix marks a published panel.
+
+| File | Panel |
+|---|---|
+| `fig3F_dotplot_proximal_program.pdf` | Proximal SI program, 10 genes |
+| `fig3F_dotplot_distal_program.pdf` | Distal SI program, 10 genes |
+
+## Inputs
+
+| File | Contents |
+|---|---|
+| `../outputs/epithelia_EP.CTRL_data.processed(no-immune).RDS` | CTRL-only, immune-excluded epithelia — 17,246 cells with `cell_type_labels` and `Location` |
+
+Frozen. This notebook reads it; it does not rebuild it. At 420 MB it loads in a few
+seconds, so this one runs comfortably on a laptop.
+
+The differential-expression table behind the gene selection is built upstream by
+`Analysis-part1-Epithelia.Rmd` (§9, Duodenum vs Ileum) and written to
+`epithelia_DE_Genes.Duodenum.Vs.Ileum-CTRL-cell-type-Enterocytes-only.csv`.
+
+## What is plotted
+
+Enterocytes only, split by `Location` (Duodenum vs Ileum). The object is already CTRL-only,
+so no further subsetting is applied.
+
+| Program | Genes |
+|---|---|
+| Proximal SI | Adh6a, Adh1, S100g, Papss2, Gstm3, Reg1, Rbp2, Fabp1, Prdm16, Ces2g |
+| Distal SI | Slc5a8, Slc10a2, Fgf15, Suox, Plb1, Tmigd1, Ly6a, Ifi27l2a, Hoxb9, Fabp6 |
+
+Every proximal gene is Duodenum-high in the DE table (positive `avg_log2FC`); every distal
+gene is Ileum-high.
+
+## Note — a different colour convention from the other dot plots
+
+Dot size is the percentage of cells expressing, and dot colour is **raw average expression**
+(log-normalized) on `rev(brewer.pal(11, "Spectral"))`. This deliberately differs from the
+Figure S4, S5 and S7 dot plots, which colour by a per-gene z-score on reversed inferno.
+The published Figure 3F legend shows the raw-expression scale.
+
+## Running this
+
+```
+Rscript Fig3F_DotPlots_final.R
+```
+
+```{r setup, include=FALSE}
+library(Seurat)
+library(tidyverse)
+library(RColorBrewer)
+library(patchwork)
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Setup
+
+```{r config}
+rds_obj <- "../outputs/epithelia_EP.CTRL_data.processed(no-immune).RDS"
+out_dir <- "../outputs"
+op <- function(f) file.path(out_dir, f)
+
+spectral_rev <- rev(brewer.pal(11, "Spectral"))
+
+genes_proximal <- c("Adh6a","Adh1","S100g","Papss2","Gstm3","Reg1","Rbp2","Fabp1","Prdm16","Ces2g")
+genes_distal   <- c("Slc5a8","Slc10a2","Fgf15","Suox","Plb1","Tmigd1","Ly6a","Ifi27l2a","Hoxb9","Fabp6")
+```
+
+```{r load}
+obj <- readRDS(rds_obj)
+cat("Cells:", ncol(obj), "| Genes:", nrow(obj), "\n")
+print(table(obj$cell_type_labels))
+print(table(obj$Location))
+
+entero <- subset(obj, cell_type_labels == "Enterocytes")
+DefaultAssay(entero) <- "RNA"
+cat("Enterocytes:", ncol(entero), "| by Location:\n")
+print(table(entero$Location))
+
+missing <- setdiff(c(genes_proximal, genes_distal), rownames(entero))
+if (length(missing)) warning("Genes not in object: ", paste(missing, collapse = ", "))
+cat("Missing genes:", length(missing), "of 20\n")
+```
+
+## Dot-plot builder
+
+Raw average expression per gene per region (not z-scored), % expressing sets dot size.
+Genes ordered top-to-bottom exactly as published; x-axis relabelled `Duo`/`Ile` to match
+the published axis text.
+
+```{r dotplot_fn}
+make_dotplot_3F <- function(obj, genes, title) {
+  genes <- intersect(genes, rownames(obj))
+  data_mat <- GetAssayData(obj, assay = "RNA", layer = "data")[genes, , drop = FALSE]
+  loc <- obj$Location
+  regions <- c("Duodenum", "Ileum")
+
+  avg_exp <- matrix(NA_real_, nrow = length(genes), ncol = length(regions),
+                    dimnames = list(genes, regions))
+  pct_exp <- avg_exp
+  for (r in regions) {
+    cells <- colnames(obj)[loc == r]
+    sub <- data_mat[, cells, drop = FALSE]
+    avg_exp[, r] <- Matrix::rowMeans(sub)
+    pct_exp[, r] <- Matrix::rowSums(sub > 0) / length(cells)
+  }
+
+  df <- merge(
+    as.data.frame(as.table(avg_exp), responseName = "avg_exp"),
+    as.data.frame(as.table(pct_exp), responseName = "pct_exp"),
+    by = c("Var1", "Var2")
+  )
+  colnames(df)[1:2] <- c("gene", "region")
+  df$gene <- factor(as.character(df$gene), levels = rev(genes))
+  df$region <- factor(ifelse(df$region == "Duodenum", "Duo", "Ile"), levels = c("Duo", "Ile"))
+
+  ggplot(df, aes(x = region, y = gene)) +
+    geom_point(aes(size = pct_exp, fill = avg_exp), shape = 21, stroke = 0.25, color = "black") +
+    scale_fill_gradientn(colors = spectral_rev, name = "Ave. exp.") +
+    scale_size_continuous(range = c(1, 6), name = "Prop. %", limits = c(0, 1),
+                          labels = scales::percent_format(accuracy = 1)) +
+    labs(x = NULL, y = NULL, title = title) +
+    theme_classic(base_size = 9) +
+    theme(
+      axis.text.x = element_text(size = 8),
+      axis.text.y = element_text(size = 8, face = "italic"),
+      plot.title = element_text(face = "bold", size = 10, hjust = 0.5),
+      legend.position = "right",
+      legend.text = element_text(size = 7),
+      legend.title = element_text(size = 8),
+      plot.margin = margin(6, 6, 6, 6)
+    )
+}
+```
+
+---
+
+# PART 1 — Manuscript panels
+
+## Fig 3F — Proximal SI program
+
+```{r fig3F_proximal, fig.width=3.2, fig.height=3.5}
+p_prox <- make_dotplot_3F(entero, genes_proximal, "Proximal SI program")
+ggsave(op("fig3F_dotplot_proximal_program.pdf"), p_prox, width = 3.2, height = 3.5)
+p_prox
+```
+
+## Fig 3F — Distal SI program
+
+```{r fig3F_distal, fig.width=3.2, fig.height=3.5}
+p_dist <- make_dotplot_3F(entero, genes_distal, "Distal SI program")
+ggsave(op("fig3F_dotplot_distal_program.pdf"), p_dist, width = 3.2, height = 3.5)
+p_dist
+```
+
+---
+
+# PART 2 — Supporting figures
+
+## Combined side-by-side, matching the published layout
+
+```{r supporting_combined, fig.width=6.5, fig.height=3.5}
+p_combined <- p_prox + p_dist
+ggsave(op("supporting_dotplot_proximal_distal_combined.pdf"), p_combined, width = 6.5, height = 3.5)
+p_combined
+```
+
+```{r session_info}
+sessionInfo()
+```

@@ -1,0 +1,64 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Cherry-PIC — what stays out of the repository
+#
+# The analysis objects and hi-res panels are far past GitHub's limits (100 MB hard
+# per file). Code, small inputs and small published panels are versioned here; the
+# heavy artefacts are deposited separately and pointed to from README.md.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Analysis objects ─────────────────────────────────────────────────────────
+# Seurat / AnnData / matrix formats. The largest single object is 5.8 GB.
+*.RDS
+*.rds
+*.h5ad
+*.h5
+*.loom
+*.mtx
+*.mtx.gz
+*.rda
+*.RData
+
+# ── Marker tables ────────────────────────────────────────────────────────────
+# wilcoxauc output. Raw tables run 400-660 MB, Filtered 13-27 MB. Both are
+# regenerable from the objects and go in the deposit. The Top tables are small
+# and stay in the repo.
+*Raw-Markers.xlsx
+*Filtered-Markers.xlsx
+
+
+# ── Rendered figures ─────────────────────────────────────────────────────────
+# Every outputs/ directory. Visium HD panels carry the tissue image and run
+# 40-240 MB each; even the "small" ones total hundreds of MB across the project.
+# All rendered figures live in the deposit, listed in README.md. The code that
+# makes them is versioned here, which is what a reader needs to reproduce them.
+**/outputs/
+
+# ── Manuscript figures ───────────────────────────────────────────────────────
+# The author's assembled figure PDFs — the manuscript, not the code.
+Individual figures/
+
+# ── Raw sequencing input ─────────────────────────────────────────────────────
+**/rawdata/
+
+# ── Vendor delivery ──────────────────────────────────────────────────────────
+# The original Biomni bundle, 1.9 GB of result tables and figures. Its SCRIPTS are
+# kept (they produce Figures S5C-E and the 6F/6G/S8 analyses); the bulk data goes
+# in the deposit. Directories are re-included first so the negations can apply.
+Biomni-code-external/Full-data/**
+!Biomni-code-external/Full-data/**/
+!Biomni-code-external/Full-data/**/*.R
+!Biomni-code-external/Full-data/**/*.py
+!Biomni-code-external/Full-data/**/*.md
+
+# ── Working scratch ──────────────────────────────────────────────────────────
+# Sync scripts, dated backups and superseded documents. Local bookkeeping.
+_sync/
+
+# ── R / OS noise ─────────────────────────────────────────────────────────────
+.Rhistory
+.Rproj.user/
+*.Rproj
+.Rapp.history
+Rplots.pdf
+.DS_Store
+Thumbs.db

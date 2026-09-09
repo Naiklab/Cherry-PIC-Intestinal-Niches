@@ -1,0 +1,263 @@
+---
+title: "Figure 6 — Stem Cell Niche RCTD Deconvolution, Hi-Res (FINAL)"
+author: "Ikjot Sidhu"
+date: "`r Sys.Date()`"
+output:
+  html_notebook:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+## Purpose
+
+RCTD deconvolution of the Visium HD data using the Cherry-PIC scRNA reference — panels 6D
+and 6E.
+
+## Outputs
+
+10X scRNA-seq of Cherry-PIC sorted niches — deconvolution panels (RCTD, fine
+`cell_type` reference, stem cell niche zones). UMAP/composition panels are a
+separate figure source; see `../../02-clustering-and-annotation/`.
+
+| Panel | Output | Upstream source |
+|-------|--------|-----------------|
+| **Fig 6D** — dominant cell type, hi-res spatial, Duodenum_3 | `fig6D_dominant_celltype_Duodenum_3_008um.pdf` | `04_RCTD_Deconvolution_StemCellNiche_8um.Rmd` §9 + hi-res swap (`14_RCTD_HiRes_Plots_StemNiche_8um.Rmd`) |
+| **Fig 6E** — dominant cell type, hi-res spatial, Ileum_3 | `fig6E_dominant_celltype_Ileum_3_008um.pdf` | same |
+| supporting — dominant cell type, Duodenum_4 / Ileum_2 (other replicate) | `supporting_dominant_celltype_*.pdf` | same |
+| supporting — per-cell-type proportion, all 4 samples (continuous viridis heatmaps; confirmed **not** in the published figure) | `supporting_proportion_*.pdf` | `04_RCTD_Deconvolution_StemCellNiche_8um.Rmd` §10 + hi-res swap |
+
+**Replicate routing.** Duodenum_3 and Ileum_3 are the published replicates, project-wide.
+Duodenum_4 and Ileum_2 are real data from the second biological replicate but are not
+printed. All four samples are processed; only the output prefix differs.
+
+## Inputs
+
+| File | Contents |
+|---|---|
+| `../data/niche_object_8um_with_DR_RCTD.RDS` | RCTD results in `DR_RCTD_*`, from the fine `cell_type` reference; 1.5 GB |
+| July-7th annotation xlsx | Cell-type colours, shared across the project |
+
+Frozen. The provenance section below records how the RCTD object was built. This is a
+separate copy from `DR_scRNA_001/analysis/`; nothing here re-runs
+`04_RCTD_Deconvolution_StemCellNiche_8um.Rmd` or `14_RCTD_HiRes_Plots_StemNiche_8um.Rmd`.
+
+## Running this
+
+The RCTD object plus four hi-res rasters (about 0.75 GB each) exceed the login-node memory
+limit, so this runs on a compute node:
+
+```
+OPENBLAS_NUM_THREADS=1 Rscript Fig6_Deconvolution_StemNiche_final.R
+```
+
+```{r setup, include=FALSE}
+for (.p in c("/sc/arion/projects/naiklab/ikjot/R")) if (dir.exists(.p)) .libPaths(c(.p, .libPaths()))
+library(Seurat)
+library(tidyverse)   # whole tidyverse, never individual sub-packages
+library(patchwork)
+library(viridis)
+library(readxl)
+library(png)          # readPNG() for the hi-res raster swap
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+set.seed(42)
+```
+
+## Pipeline provenance
+
+Full build of the object loaded below — 8µm Visium HD → niche-zone assignment →
+RCTD deconvolution → hi-res image swap — documented as code-of-record (not
+re-executed here; the figure runs from the frozen RDS + PNGs).
+
+```{r pipeline-provenance, child='Preprocessing_RCTD_StemNiche_final.Rmd'}
+```
+
+# 1. Configuration
+
+```{r config}
+# ---- Frozen inputs (relative paths — this folder is self-contained) --------
+niche_obj    <- "../data/niche_object_8um_with_DR_RCTD.RDS"
+ann_xlsx     <- "../data/New qc resolution 1 annotation  broad annotation and colors July07.xlsx"
+ct_order_xlsx <- "../data/Cluster order for bar plot 061726.xlsx"
+raw_data_dir <- "../data/rawdata"   # local copy of the 4 hi-res tissue PNGs
+out_dir      <- "../outputs"
+dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+
+# Map each SAMPLE FOLDER to its slice/image name (same as
+# Swap_LowRes_to_HiRes_Images.Rmd / 14_RCTD_HiRes_Plots_StemNiche_8um.Rmd).
+image.names <- list(
+  "SHNA03_D3-7um_0_v1" = "Duodenum-3",
+  "SHNA03_D4-7um_0_v1" = "Duodenum-4",
+  "SHNA03_I2-7um_0_v1" = "Ileum-2",
+  "SHNA03_I3-7um_0_v1" = "Ileum-3"
+)
+slot_to_folder <- setNames(names(image.names), make.names(unlist(image.names)))
+print(slot_to_folder)
+
+hires.image.name <- "tissue_hires_image.png"
+bin_um <- 8L
+
+# RCTD/Seurat metadata column names cannot contain spaces, "/", "+", etc., so
+# the same sanitization used when notebook 04 built DR_RCTD_* columns must be
+# applied to the raw annotation strings before they can be used as lookup keys.
+sanitize <- function(x) gsub("[^[:alnum:]]", "_", gsub("/", "-", x))
+
+# ---- Published-replicate routing -------------------------------------------
+# Duodenum_3 and Ileum_3 are the published Fig 6D/6E replicates, project-wide.
+# Duodenum_4 and Ileum_2 are the second biological replicate: real data, not a
+# printed panel, so they are written as supporting_ rather than fig6D_/fig6E_.
+image_prefix <- c(
+  "Duodenum.3.008um" = "fig6D_",
+  "Duodenum.4.008um" = "supporting_",
+  "Ileum.2.008um"    = "supporting_",
+  "Ileum.3.008um"    = "fig6E_"
+)
+
+cat("Output directory:", out_dir, "\n")
+```
+
+# 2. Load Official Colors
+
+```{r load_colors}
+ann_df <- read_excel(ann_xlsx)
+
+# Fine-grained (`cell_type`) palette — notebook 04 built its RCTD reference
+# from cell_type, so DR_RCTD_* names must be matched against this.
+ct_color_df <- ann_df[!duplicated(ann_df$Annotation), ]
+cell_type_colors_san <- setNames(
+  ifelse(ct_color_df$`Hex color` == "Remove" | is.na(ct_color_df$`Hex color`),
+         "#BEBEBE", paste0("#", ct_color_df$`Hex color`)),
+  sanitize(ct_color_df$Annotation)
+)
+
+ct_order_df  <- read_excel(ct_order_xlsx)
+ct_order_raw <- unique(ct_order_df$Annotation[!is.na(ct_order_df$Annotation)])
+
+cat("Fine cell-type colors loaded:", length(cell_type_colors_san), "\n")
+```
+
+# 3. Load RCTD Niche Object
+
+```{r load_rctd}
+cat("Loading frozen niche RCTD result (fine cell_type reference)...\n")
+niche_object <- readRDS(niche_obj)
+cat("Object:", ncol(niche_object), "spots x", nrow(niche_object), "genes\n")
+sample_images <- Images(niche_object)
+cat("Images:", paste(sample_images, collapse = ", "), "\n")
+```
+
+# 4. Swap Low-Res Images for Hi-Res
+
+```{r hires_swap}
+read_hires_raster <- function(folder, bin_um, data.dir, image.name) {
+  spatial.dir <- file.path(data.dir, folder, "binned_outputs",
+                           sprintf("square_%03dum", bin_um), "spatial")
+  png.path <- file.path(spatial.dir, image.name)
+  if (!file.exists(png.path)) stop("Hi-res image not found: ", png.path)
+  message("    reading ", png.path)
+  readPNG(png.path)
+}
+
+for (nm in sample_images) {
+  message("processing image slot: ", nm)
+  key <- sub("\\.0[0-9]+um$", "", nm)   # "Duodenum.3.008um" -> "Duodenum.3"
+  if (!key %in% names(slot_to_folder)) stop("No folder mapping for image slot '", nm, "'.")
+  folder <- slot_to_folder[[key]]
+
+  img <- niche_object@images[[nm]]
+  stopifnot("image" %in% slotNames(img), "scale.factors" %in% slotNames(img))
+  old_dim <- dim(img@image)
+
+  img@image <- read_hires_raster(folder, bin_um, raw_data_dir, hires.image.name)
+
+  sf <- img@scale.factors
+  sf$lowres <- sf$hires   # default SpatialPlot(image.scale="lowres") now renders hi-res
+  img@scale.factors <- sf
+
+  niche_object@images[[nm]] <- img
+  message("  raster ", paste(old_dim[1:2], collapse = "x"),
+          " -> ", paste(dim(img@image)[1:2], collapse = "x"))
+}
+cat("Hi-res image swap complete.\n")
+```
+
+# 5. Cell-Type Colors for This Object
+
+```{r color_setup}
+dr_rctd_cols <- grep("^DR_RCTD_", colnames(niche_object@meta.data), value = TRUE)
+dr_rctd_cols <- dr_rctd_cols[!dr_rctd_cols %in%
+                               c("DR_RCTD_dominant_celltype", "DR_RCTD_spot_class")]
+
+PLOT_EXCLUDE <- paste0("DR_RCTD_", c(
+  "Transcriptionally_diffuse_low_confidence_cells",
+  "High_mitochondrial_low_quality_cells",
+  "Low_confidence_sparse_marker_myeloid_like_cells"
+))
+dr_rctd_cols <- dr_rctd_cols[!dr_rctd_cols %in% PLOT_EXCLUDE]
+
+ct_order_cols <- paste0("DR_RCTD_", sanitize(ct_order_raw))
+dr_rctd_cols  <- c(intersect(ct_order_cols, dr_rctd_cols),
+                   setdiff(dr_rctd_cols, ct_order_cols))
+
+ct_names     <- gsub("^DR_RCTD_", "", dr_rctd_cols)
+dom_cts      <- unique(na.omit(niche_object$DR_RCTD_dominant_celltype))
+all_cts_plot <- unique(c(ct_names, dom_cts))
+all_cts_plot <- all_cts_plot[all_cts_plot != "Unknown"]
+
+ct_colors <- ifelse(all_cts_plot %in% names(cell_type_colors_san),
+                     cell_type_colors_san[all_cts_plot], "#808080")
+names(ct_colors) <- all_cts_plot
+ct_colors["Unknown"] <- "#D3D3D3"
+
+cat("Colors assigned:", length(ct_colors), "\n")
+cat("Proportion columns:", length(dr_rctd_cols), "\n")
+```
+
+# 6. Dominant Cell Type — Hi-Res Spatial Plots
+
+```{r spatial_dominant, fig.show='hide'}
+for (img in sample_images) {
+  p <- SpatialDimPlot(niche_object, images = img, group.by = "DR_RCTD_dominant_celltype",
+                      label = FALSE, pt.size.factor = 1.25, cols = ct_colors) +
+    ggtitle(paste0("Cherry-PIC sorted niches — Dominant Cell Type (", img, ")")) +
+    theme(legend.position = "right", legend.text = element_text(size = 7))
+
+  prefix <- image_prefix[[img]]
+  ggsave(file.path(out_dir, paste0(prefix, "dominant_celltype_", gsub("\\.", "_", img), ".pdf")),
+         plot = p, height = 12, width = 14)
+  cat("  Saved (", prefix, "):", img, "\n")
+}
+```
+
+# 7. Cell-Type Proportion — Hi-Res Spatial Plots
+
+Confirmed against the published PDF: these continuous per-cell-type viridis
+heatmaps do not appear anywhere in Figure 6 — always `supporting_`, regardless
+of replicate.
+
+```{r spatial_proportions, fig.show='hide'}
+for (col in dr_rctd_cols) {
+  ct_name <- gsub("^DR_RCTD_", "", col)
+  cmax <- max(niche_object@meta.data[[col]], na.rm = TRUE)
+  for (img in sample_images) {
+    p <- SpatialFeaturePlot(niche_object, features = col, images = img, pt.size.factor = 1.25) +
+      scale_fill_gradientn(colors = viridis::viridis(100),
+                           limits = c(0, cmax), na.value = "grey90") +
+      ggtitle(paste0(ct_name, " — ", img)) +
+      theme(legend.position = "right")
+
+    ggsave(file.path(out_dir, paste0("supporting_proportion_",
+                                     gsub("[^[:alnum:]]", "_", ct_name), "_",
+                                     gsub("\\.", "_", img), ".pdf")),
+           plot = p, height = 10, width = 12)
+  }
+  cat("  Saved:", ct_name, "\n")
+}
+cat("All hi-res deconvolution plots written to", out_dir, "\n")
+```
+
+# 8. Session Info
+
+```{r session_info}
+sessionInfo()
+```

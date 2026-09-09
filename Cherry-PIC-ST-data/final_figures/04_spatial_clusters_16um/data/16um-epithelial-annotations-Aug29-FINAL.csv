@@ -1,0 +1,25 @@
+Cluster,Annotation,Spatial.region.annotation,Region.Annotation,Compartment,Color
+0,Mid-villus distal enterocytes-1,Mid-villus distal enterocytes,Distal,Epithelia,#fb923c
+1,Mid-villus distal enterocytes-2,Mid-villus distal enterocytes,Distal,Epithelia,#fb923c
+2,Mid-villus distal enterocytes-3,Mid-villus distal enterocytes,Distal,Epithelia,#fb923c
+3,Mid-villus proximal enterocytes-1,Mid-villus proximal enterocytes,Proximal,Epithelia,#6a51a3
+7,Mid-villus distal enterocytes-4,Mid-villus distal enterocytes,Distal,Epithelia,#fb923c
+8,Mid-villus proximal enterocytes-2,Mid-villus proximal enterocytes,Proximal,Epithelia,#6a51a3
+9,Mid-villus proximal enterocytes-3,Mid-villus proximal enterocytes,Proximal,Epithelia,#6a51a3
+11,Bottom-villus proximal enterocytes,Bottom-villus proximal enterocytes,Proximal,Epithelia,#9e9ac8
+12,Activated mid-villus enterocytes,Mid-villus proximal enterocytes,Both,Epithelia,#9e9ac8
+13,Crypts,Crypts,Both,Epithelia,#cb181d
+14,Bottom-villus distal enterocytes,Bottom-villus distal enterocytes,Distal,Epithelia,#fee6ce
+15,Crypts proximal,Crypts,Proximal,Epithelia,#cb181d
+16,Tip-villus proximal enterocytes,Tip-villus proximal enterocytes,Proximal,Epithelia,#3f007d
+18,Crypts,Crypts,Both,Epithelia,#cb181d
+19,Crypts,Crypts,Both,Epithelia,#cb181d
+20,Tip-villus activated distal enterocytes,Tip-villus distal enterocytes,Distal,Epithelia,#a8360e
+21,Mid-villus proximal enterocytes-4,Mid-villus proximal enterocytes,Proximal,Epithelia,#6a51a3
+22,Mid-villus proximal enterocytes-5,Mid-villus proximal enterocytes,Proximal,Epithelia,#6a51a3
+23,Mid-villus proximal enterocytes-6,Mid-villus proximal enterocytes,Proximal,Epithelia,#6a51a3
+27,Tip-villus proximal activated enterocytes,Tip-villus proximal enterocytes,Proximal,Epithelia,#3f007d
+28,Mid-villus proximal enterocytes-7,Mid-villus proximal enterocytes,Proximal,Epithelia,#6a51a3
+30,Tuft cells,Tuft cells,Both,Epithelia,#00695c
+31,Tip-villus proximal enterocytes-2,Tip-villus proximal enterocytes,Proximal,Epithelia,#3f007d
+33,EEC,Enteroendocrine cells,Proximal,Epithelia,#525252

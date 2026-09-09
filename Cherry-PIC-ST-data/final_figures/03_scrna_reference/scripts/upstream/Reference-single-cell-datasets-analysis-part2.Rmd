@@ -1,0 +1,248 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library(Seurat)
+library(Matrix)
+library(tidyverse)
+library(patchwork)  # For combining plots
+```
+
+## HPC: Load saved objects (run this on HPC instead of steps 1-2)
+```{r}
+# Uncomment and run this block on the HPC after transferring the rds-objects/ folder
+Fibroblast.Obj <- readRDS("Reference-Single-Cell-Data/rds-objects/Fibroblast.Obj.rds")
+Degirmenci.Obj <- readRDS("Reference-Single-Cell-Data/rds-objects/Degirmenci.Obj.rds")
+Kinchen.Obj    <- readRDS("Reference-Single-Cell-Data/rds-objects/Kinchen.Obj.rds")
+McCarthy.Obj   <- readRDS("Reference-Single-Cell-Data/rds-objects/McCarthy.Obj.rds")
+Roulis.Obj.1   <- readRDS("Reference-Single-Cell-Data/rds-objects/Roulis.Obj.C1A.rds")
+Roulis.Obj.2   <- readRDS("Reference-Single-Cell-Data/rds-objects/Roulis.Obj.C1B.rds")
+Roulis.Obj.3   <- readRDS("Reference-Single-Cell-Data/rds-objects/Roulis.Obj.C2A.rds")
+Roulis.Obj.4   <- readRDS("Reference-Single-Cell-Data/rds-objects/Roulis.Obj.C2B.rds")
+Roulis.Obj.5   <- readRDS("Reference-Single-Cell-Data/rds-objects/Roulis.Obj.C2C.rds")
+```
+
+## 4. SCTransform each public dataset and add labels
+```{r}
+# SCTransform each public dataset individually — memory-efficient because
+# each object is scaled separately rather than as one large dense matrix.
+
+# Always run SCTransform fresh to ensure proper SCTAssay class
+# (needed for PrepSCTIntegration - Assay5 class won't work)
+cat("Running SCTransform on Fibroblast.Obj...\n")
+Fibroblast.Obj <- SCTransform(Fibroblast.Obj, verbose = FALSE)
+
+cat("Running SCTransform on remaining datasets...\n")
+Degirmenci.Obj <- SCTransform(Degirmenci.Obj, verbose = FALSE)
+Kinchen.Obj    <- SCTransform(Kinchen.Obj,    verbose = FALSE)
+McCarthy.Obj   <- SCTransform(McCarthy.Obj,   verbose = FALSE)
+Roulis.Obj.1   <- SCTransform(Roulis.Obj.1,   verbose = FALSE)
+Roulis.Obj.2   <- SCTransform(Roulis.Obj.2,   verbose = FALSE)
+Roulis.Obj.3   <- SCTransform(Roulis.Obj.3,   verbose = FALSE)
+Roulis.Obj.4   <- SCTransform(Roulis.Obj.4,   verbose = FALSE)
+Roulis.Obj.5   <- SCTransform(Roulis.Obj.5,   verbose = FALSE)
+
+# Verify all objects have SCTAssay (not Assay5)
+cat("\nVerifying SCTAssay class:\n")
+cat("Fibroblast.Obj SCT class:", class(Fibroblast.Obj[["SCT"]])[1], "\n")
+cat("Degirmenci.Obj SCT class:", class(Degirmenci.Obj[["SCT"]])[1], "\n")
+
+# Tag dataset of origin
+# GSE269017 (Glisovic N et al., J Cell Sci 2025;138(23):jcs264147; PMID 41170756).
+# Was "Danijela_GSE269017" — senior author Danijela Matic Vignjevic; renamed to the
+# first-author surname, matching this column's Surname_Accession convention
+# (Degirmenci_GSE113043, Kinchen_GSE114374, Roulis_GSE142431).
+# NB: the frozen object was built from an older revision that stored "Daniel_GSE269017".
+Fibroblast.Obj$dataset  <- "Glisovic_GSE269017"
+Degirmenci.Obj$dataset  <- "Degirmenci_GSE113043"
+Kinchen.Obj$dataset     <- "Kinchen_GSE114374"
+McCarthy.Obj$dataset    <- "McCarthy_GSE130681"
+Roulis.Obj.1$dataset    <- "Roulis_GSE142431"
+Roulis.Obj.2$dataset    <- "Roulis_GSE142431"
+Roulis.Obj.3$dataset    <- "Roulis_GSE142431"
+Roulis.Obj.4$dataset    <- "Roulis_GSE142431"
+Roulis.Obj.5$dataset    <- "Roulis_GSE142431"
+
+cat("\nSCTransform complete for all datasets!\n")
+```
+
+## 5. Select Integration Features and Prepare for SCT Integration
+```{r}
+# Create list of all objects for integration
+obj.list <- list(
+  Fibroblast = Fibroblast.Obj,
+  Degirmenci = Degirmenci.Obj,
+  Kinchen = Kinchen.Obj,
+  McCarthy = McCarthy.Obj,
+  Roulis1 = Roulis.Obj.1,
+  Roulis2 = Roulis.Obj.2,
+  Roulis3 = Roulis.Obj.3,
+  Roulis4 = Roulis.Obj.4,
+  Roulis5 = Roulis.Obj.5
+)
+
+# Select integration features across all datasets
+# This finds variable features that are shared across datasets
+cat("Selecting integration features...\n")
+integration.features <- SelectIntegrationFeatures(
+  object.list = obj.list,
+  nfeatures = 3000
+)
+
+cat("Selected", length(integration.features), "integration features\n")
+
+# Prepare SCT objects for integration
+# This is REQUIRED for SCTransform + CCA integration
+cat("\nRunning PrepSCTIntegration...\n")
+obj.list <- PrepSCTIntegration(
+  object.list = obj.list,
+  anchor.features = integration.features
+)
+
+cat("PrepSCTIntegration complete!\n")
+```
+
+## 6. Find Integration Anchors (CCA)
+```{r}
+# Find integration anchors using CCA
+# This is the key step that identifies corresponding cells across datasets
+cat("Finding integration anchors using CCA...\n")
+cat("This may take a while...\n")
+
+integration.anchors <- FindIntegrationAnchors(
+  object.list = obj.list,
+  normalization.method = "SCT",
+  anchor.features = integration.features,
+  dims = 1:30,
+  reduction = "cca",  # Use CCA for integration
+  verbose = TRUE
+)
+
+cat("\nIntegration anchors found!\n")
+cat("Number of anchors:", nrow(integration.anchors@anchors), "\n")
+```
+
+## 7. Integrate Data
+```{r}
+# Integrate the datasets
+cat("Integrating datasets...\n")
+
+Integrated.Obj <- IntegrateData(
+  anchorset = integration.anchors,
+  normalization.method = "SCT",
+  dims = 1:30,
+  verbose = TRUE
+)
+
+cat("\nIntegration complete!\n")
+cat("Total cells:", ncol(Integrated.Obj), "\n")
+cat("Assays:", paste(Assays(Integrated.Obj), collapse = ", "), "\n")
+
+# Clean up individual objects to save memory
+rm(obj.list, Fibroblast.Obj, Degirmenci.Obj, Kinchen.Obj, McCarthy.Obj,
+   Roulis.Obj.1, Roulis.Obj.2, Roulis.Obj.3, Roulis.Obj.4, Roulis.Obj.5,
+   integration.anchors)
+gc()
+```
+
+## 8. Run PCA on Integrated Assay
+```{r}
+# Set default assay to "integrated" for downstream analysis
+DefaultAssay(Integrated.Obj) <- "integrated"
+
+# Scale the integrated data (required before PCA)
+Integrated.Obj <- ScaleData(Integrated.Obj, verbose = FALSE)
+
+# Run PCA on the integrated assay
+Integrated.Obj <- RunPCA(Integrated.Obj, npcs = 50, verbose = FALSE)
+
+cat("PCA complete!\n")
+ElbowPlot(Integrated.Obj, ndims = 30)
+```
+
+## 9. Clustering on CCA-integrated embedding
+```{r}
+# Use PCA reduction from integrated assay for clustering
+Integrated.Obj <- FindNeighbors(Integrated.Obj,
+                                 reduction = "pca",
+                                 dims      = 1:20,
+                                 verbose   = FALSE)
+
+# Try multiple resolutions
+resolutions <- c(0.4, 0.6, 0.8, 1.0, 1.2)
+for (res in resolutions) {
+  Integrated.Obj <- FindClusters(Integrated.Obj, resolution = res, verbose = FALSE)
+  col_name <- paste0("integrated_snn_res.", res)
+  cat("Resolution", res, ":", length(unique(Integrated.Obj@meta.data[[col_name]])), "clusters\n")
+}
+
+# Set default to resolution 0.8
+Idents(Integrated.Obj) <- "integrated_snn_res.0.8"
+
+cat("\nUsing resolution 0.8:\n")
+cat("Number of clusters:", length(levels(Idents(Integrated.Obj))), "\n")
+table(Idents(Integrated.Obj))
+```
+
+## 10. UMAP on CCA-integrated embedding
+```{r}
+Integrated.Obj <- RunUMAP(Integrated.Obj,
+                           reduction = "pca",
+                           dims      = 1:20,
+                           verbose   = FALSE)
+
+# Coloured by cluster
+p1 <- DimPlot(Integrated.Obj, reduction = "umap", label = TRUE, pt.size = 0.3) +
+  ggtitle("Integrated fibroblast clusters (CCA, 20 PCs, resolution = 0.8)")
+
+# Coloured by dataset of origin
+p2 <- DimPlot(Integrated.Obj, reduction = "umap", group.by = "dataset", pt.size = 0.3) +
+  ggtitle("Dataset of origin")
+
+print(p1)
+print(p2)
+print(p1 + p2)
+```
+```{r}
+
+```
+
+## 11. Marker genes for integrated clusters
+```{r}
+# For marker analysis with SCT-integrated data, use the SCT assay
+# PrepSCTFindMarkers prepares the object for differential expression
+Integrated.Obj <- PrepSCTFindMarkers(Integrated.Obj)
+
+Integrated.markers <- FindAllMarkers(Integrated.Obj,
+                                      assay           = "SCT",
+                                      test.use        = "wilcox",
+                                      min.pct         = 0.15,
+                                      logfc.threshold = 0.25,
+                                      only.pos        = FALSE,
+                                      verbose         = FALSE)
+
+Integrated.markers.sig <- Integrated.markers %>%
+  dplyr::filter(p_val_adj < 0.05) %>%
+  dplyr::arrange(cluster, desc(avg_log2FC))
+
+# Top 10 markers per cluster
+top_integrated_markers <- Integrated.markers.sig %>%
+  dplyr::group_by(cluster) %>%
+  dplyr::slice_max(order_by = avg_log2FC, n = 10)
+
+print(top_integrated_markers)
+```
+
+## 12. Save integrated object
+```{r}
+# Save the final integrated object
+saveRDS(Integrated.Obj, "Reference-Single-Cell-Data/rds-objects/Fibroblast_Integrated_CCA.rds")
+cat("Saved integrated object to: Reference-Single-Cell-Data/rds-objects/Fibroblast_Integrated_CCA.rds\n")
+
+# Save markers table
+write.csv(Integrated.markers, 
+          "Reference-Single-Cell-Data/tables/fibroblast_integrated_markers.csv",
+          row.names = FALSE)
+cat("Saved markers to: Reference-Single-Cell-Data/tables/fibroblast_integrated_markers.csv\n")
+```

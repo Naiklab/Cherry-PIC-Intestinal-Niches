@@ -1,0 +1,296 @@
+---
+title: "DR26001 Stage 02b — Long-term epithelial clustering (2024-03-22)"
+output:
+  html_notebook:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+Reprocesses the long-term epithelial arm and transfers labels from the short-term object.
+
+Paths are relative to this `scripts/` directory.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Packages
+```{r chunk-01}
+pacman::p_load("dplyr", "Seurat", "glue", "ggplot2", "harmony", "presto")
+```
+
+# Load Data
+```{r chunk-02}
+seu_obj_epi_short_term <- readRDS("../outputs/short-term_seu_obj_short_term_combined_processed.RDS")
+seu_obj_epi_long_term_2024_03_22 <- readRDS("../../01-separate-epithelia-immune/outputs/long-term-2024-03-22_seu-obj-long-term-epithelia-2024-03-22-RNA-RNA_snn_res.0.5.RDS")
+
+# Split based on orig.ident (seq run) for Harmony
+# Join Layers (to then split)
+seu_obj_epi_long_term_2024_03_22 <- JoinLayers(seu_obj_epi_long_term_2024_03_22)
+
+# Resplit Layers
+seu_obj_epi_long_term_2024_03_22[["RNA"]] <- split(seu_obj_epi_long_term_2024_03_22[["RNA"]],
+                                              f = seu_obj_epi_long_term_2024_03_22$orig.ident)
+
+# Verify that layers are as I expect
+Layers(seu_obj_epi_long_term_2024_03_22)
+```
+
+# Reprocess Pipeline
+```{r chunk-03}
+multi_sample_pipeline <- function(merged_seu_obj, split_col = "orig.ident", res_cols = "RNA") {
+  
+  if (res_cols == "SCT") {
+    merged_seu_obj <- SCTransform(merged_seu_obj, verbose = FALSE)
+  } else {
+    merged_seu_obj <- NormalizeData(merged_seu_obj)
+    merged_seu_obj <- FindVariableFeatures(merged_seu_obj)
+    merged_seu_obj <- ScaleData(merged_seu_obj)
+  }
+  
+  merged_seu_obj <- RunPCA(merged_seu_obj)
+  merged_seu_obj <- RunHarmony(merged_seu_obj, assay.use = res_cols, group.by.vars = split_col)
+  merged_seu_obj <- RunUMAP(merged_seu_obj, reduction = "harmony", dims = 1:40)
+  merged_seu_obj <- FindNeighbors(merged_seu_obj, reduction = "harmony", dims = 1:40)
+  merged_seu_obj <- FindClusters(merged_seu_obj, resolution = c(1:10 / 10))
+  
+  return(merged_seu_obj)
+}
+```
+
+## Run Pipeline
+```{r chunk-04}
+seu_obj_epi_long_term_2024_03_22_processed <- multi_sample_pipeline(seu_obj_epi_long_term_2024_03_22, split_col = "orig.ident", res_cols = "RNA")
+
+# Add ribo genes just in case
+ribo_genes_mouse <- grep("^Rpl|^Rps", rownames(seu_obj_epi_long_term_2024_03_22_processed), value = TRUE)
+seu_obj_epi_long_term_2024_03_22_processed[["percent.ribo"]] <- PercentageFeatureSet(seu_obj_epi_long_term_2024_03_22_processed, features = ribo_genes_mouse)
+
+# View UMAP
+DimPlot(seu_obj_epi_long_term_2024_03_22_processed, group.by = "RNA_snn_res.0.1")
+```
+
+######## TRANSFER LABELS #########
+#Combined Analysis to Transfer Labels
+## b . Function
+```{r chunk-05}
+transfer_labels_function <- function(seu_obj_labeled, seu_obj_unlabeled) {
+  
+  # 1. Merge Seurat Objects
+  merged_seu_obj <- merge(seu_obj_labeled, seu_obj_unlabeled)
+  
+  DefaultAssay(merged_seu_obj) <- "RNA"
+  merged_seu_obj <- JoinLayers(merged_seu_obj)
+  
+  # 2. Remove Old RNA Columns
+  merged_seu_obj@meta.data <- merged_seu_obj@meta.data %>%
+    select(-starts_with("RNA_snn"), -seurat_clusters)
+  
+  # 3. Run Pipeline
+  merged_seu_obj <- multi_sample_pipeline(merged_seu_obj, split_col = "orig.ident")
+  
+  # 4. Transfer Labels
+  seu_obj.ref <- subset(merged_seu_obj, Time_Course %in% c("short_term"))
+  seu_obj.query <- subset(merged_seu_obj, Time_Course %in% c("long_term"))
+  
+  seu_obj.ref <- NormalizeData(seu_obj.ref)
+  seu_obj.query <- NormalizeData(seu_obj.query)
+  
+  seu_obj.anchors <- FindTransferAnchors(reference = seu_obj.ref, query = seu_obj.query, dims = 1:40, reference.reduction = "pca")
+  predictions <- TransferData(anchorset = seu_obj.anchors, refdata = seu_obj.ref$cell_type_broad, dims = 1:40)
+  seu_obj.query <- AddMetaData(seu_obj.query, metadata = predictions)
+  
+  return(seu_obj.query)
+}
+
+# Run Transfer Labels
+seu_obj_epi_long_term_2024_03_22_transfer_labels <- transfer_labels_function(seu_obj_epi_short_term, seu_obj_epi_long_term_2024_03_22_processed)
+
+seu_obj_epi_long_term_2024_03_22_processed$predicted_transfer_label <- seu_obj_epi_long_term_2024_03_22_transfer_labels$predicted.id
+```
+
+# Plots
+```{r chunk-06}
+create.dir <- function(dir_path) {
+  if (!dir.exists(dir_path)) {
+    dir.create(dir_path, recursive = TRUE)
+  }
+}
+
+create.dir("../output/Clustering-Analysis-LT-Epithelia/plots/UMAP")
+create.dir("../outputs/long-term_UCell-FeaturePlots")
+create.dir("../output/Clustering-Analysis-LT-Epithelia/markers")
+create.dir("../output/Clustering-Analysis-LT-Epithelia/RDS")
+```
+
+## 1. UMAP
+```{r chunk-07}
+# Individual UMAP
+pdf(glue("../outputs/long-term_UMAP-All-Resolutions.pdf"), height = 8, width = 12)
+for (res in grep("^RNA_snn", colnames(seu_obj_epi_long_term_2024_03_22_processed@meta.data), value = TRUE)) {
+  print(DimPlot(seu_obj_epi_long_term_2024_03_22_processed, group.by = res)  + 
+          ggplot2::ggtitle(glue("Resolution: {res}")))
+}
+dev.off()
+
+pdf(glue("../outputs/long-term_UMAP-All-Resolutions-labeled.pdf"), height = 8, width = 12)
+for (res in grep("^RNA_snn", colnames(seu_obj_epi_long_term_2024_03_22_processed@meta.data), value = TRUE)) {
+  print(DimPlot(seu_obj_epi_long_term_2024_03_22_processed, group.by = res, label = T)  + 
+          ggplot2::ggtitle(glue("Resolution: {res}")))
+}
+dev.off()
+
+pdf(glue("../outputs/long-term_UMAP-All-Resolutions-ST-Label-Transfer.pdf"), height = 8, width = 16)
+for (res in grep("^RNA_snn", colnames(seu_obj_epi_long_term_2024_03_22_processed@meta.data), value = TRUE)) {
+  a <- seu_obj_epi_long_term_2024_03_22_processed %>% DimPlot(group.by = "predicted_transfer_label")
+  b <- seu_obj_epi_long_term_2024_03_22_processed %>% DimPlot(group.by = res)
+  print(a+b)
+}
+dev.off()
+
+# GroupBy UMAPs
+pdf("../outputs/long-term_UMAP-groupby-plots.pdf", height = 8, width = 12)
+DimPlot(seu_obj_epi_long_term_2024_03_22_processed, group.by = "orig.ident") %>% print()
+DimPlot(seu_obj_epi_long_term_2024_03_22_processed, group.by = "Location") %>% print()
+DimPlot(seu_obj_epi_long_term_2024_03_22_processed, group.by = "Condition") %>% print()
+DimPlot(seu_obj_epi_long_term_2024_03_22_processed, group.by = "Sample_ID") %>% print()
+DimPlot(seu_obj_epi_long_term_2024_03_22_processed, group.by = "predicted_transfer_label") %>% print()
+dev.off()
+
+DimPlot(seu_obj_epi_long_term_2024_03_22_processed, group.by = "orig.ident") %>% print()
+DimPlot(seu_obj_epi_long_term_2024_03_22_processed, group.by = "Location") %>% print()
+DimPlot(seu_obj_epi_long_term_2024_03_22_processed, group.by = "Condition") %>% print()
+DimPlot(seu_obj_epi_long_term_2024_03_22_processed, group.by = "Sample_ID") %>% print()
+DimPlot(seu_obj_epi_long_term_2024_03_22_processed, group.by = "predicted_transfer_label") %>% print()
+```
+
+## 2. Feature Plots
+### a. Onur Feature Plots
+```{r chunk-08}
+# Percent mt/ribo
+"../output/Clustering-Analysis-LT-Epithelia/plots/"
+pdf("../outputs/long-term_mt-ribo-FeaturePlot.pdf")
+FeaturePlot(seu_obj_epi_long_term_2024_03_22_transfer_labels, features = "percent.mt") %>% print()
+FeaturePlot(seu_obj_epi_long_term_2024_03_22_transfer_labels, features = "percent.ribo") %>% print()
+dev.off()
+
+# Onur Feature Plots
+onur_markers_path <- "../data/Onur_Markers.xlsx"
+
+onur_markers_df <- readxl::read_xlsx(onur_markers_path, sheet = "Non-Immune")
+onur_markers_list <- as.list(onur_markers_df)
+
+for (cell_type in names(onur_markers_list)) {
+  
+  marker_list <- na.omit(onur_markers_list[[cell_type]])
+  pdf(glue("../outputs/long-term_{cell_type}-Feature-Plots.pdf"), height = 10, width = 12)
+  for (gene in marker_list) {
+    gene_trim <- trimws(gene)
+    
+    tryCatch({
+      # Try to plot the feature
+      Seurat::FeaturePlot(seu_obj_epi_long_term_2024_03_22_transfer_labels, features = gene_trim) %>% print()
+    }, error = function(e) {
+      # Handle the error
+      message(glue("Error: {e$message} for gene {gene_trim}"))
+    })
+  }
+  dev.off()
+}
+```
+
+### 3. Crypt Location Feature Plots
+## Analysis
+```{r chunk-09}
+genes.of.interest <- list("Lgr5+ CBC" = c("Lgr5", "Ascl2", "Slc12a2", "Axin2", "Olfm4"), 
+                          "Isthmus progenitor" = c("Fgfbp1", "Mki67", "Cdk4", "Pcna"), 
+                          "Bottom-villus EC" = c("Krt19", "Fabp6"), 
+                          "Mid-villus EC" = c("Slc5a1", "Slc2a2"), 
+                          "Top-villus EC" = c("Ada", "Neat1"),
+                          "Secretory progenitor" = c("Atoh1"), 
+                          "Paneth" = c("Lyz1", "Defa17", "Defa22", "Defa24", "Ang4"), 
+                          "Goblet" = c("Muc2", "Clca1", "Tff3", "Agr2"), 
+                          "Enteroendocrine" = c("Chgb", "Clca1", "Tff3", "Agr2"), 
+                          "Microfold" = c("Ccl20", "Clu"),
+                          "Proliferation" = c("Mki67"))
+```
+
+### 1. Individual Feature Plots
+```{r chunk-10}
+genes.of.interest <- list("Lgr5+ CBC" = c("Lgr5", "Ascl2", "Slc12a2", "Axin2", "Olfm4"), 
+                          "Isthmus progenitor" = c("Fgfbp1", "Mki67", "Cdk4", "Pcna"), 
+                          "Bottom-villus EC" = c("Krt19", "Fabp6"), 
+                          "Mid-villus EC" = c("Slc5a1", "Slc2a2"), 
+                          "Top-villus EC" = c("Ada", "Neat1"),
+                          "Secretory progenitor" = c("Atoh1"), 
+                          "Paneth" = c("Lyz1", "Defa17", "Defa22", "Defa24", "Ang4"), 
+                          "Goblet" = c("Muc2", "Clca1", "Tff3", "Agr2"), 
+                          "Enteroendocrine" = c("Chgb", "Clca1", "Tff3", "Agr2"), 
+                          "Microfold" = c("Ccl20", "Clu"),
+                          "Proliferation" = c("Mki67"))
+```
+
+```{r fig.height=8, fig.width=12}
+library(ggplot2)
+library(patchwork)
+
+for (celltype in names(genes.of.interest)) {
+  plots <- lapply(genes.of.interest[[celltype]], function(gene) {
+    FeaturePlot(seu_obj_epi_long_term_2024_03_22_processed, features = gene) + ggtitle(gene)
+  })
+  
+  plot <- wrap_plots(plots) +  
+    plot_annotation(
+      title = celltype,
+      theme = theme(plot.title = element_text(hjust = 0.5, size = 20))
+    )
+  
+  # Print Plot
+  print(plot)
+  
+  # Save Plot
+  pdf(glue("../outputs/long-term_{celltype}-FeaturePlots.pdf"), height = 8, width = 12)
+  print(plot)
+  dev.off()
+}
+```
+
+### 2. UCell
+```{r chunk-11}
+library(UCell)
+
+seu_obj_epi_long_term_2024_03_22_processed <- JoinLayers(seu_obj_epi_long_term_2024_03_22_processed)
+seu_obj_epi_long_term_2024_03_22_processed <- AddModuleScore_UCell(seu_obj_epi_long_term_2024_03_22_processed, features = genes.of.interest, name = c('_UCell', '_UCell'))
+
+# Save Plots
+for (name in names(genes.of.interest)) {
+  print(paste0(name, "_UCell"))
+  
+  p <- FeaturePlot(seu_obj_epi_long_term_2024_03_22_processed, features = paste0(name, "_UCell"))
+  #p <- VlnPlot(seu_obj_epi_long_term_2024_03_22_processed, features = paste0(name, "_UCell"), group.by = "Final_Annotations")
+  pdf(glue("../outputs/long-term_{name}-UCell.pdf"), height = 8, width = 12)
+  p %>% print()
+  dev.off()
+}
+
+# Save RDS
+saveRDS(seu_obj_epi_long_term_2024_03_22_processed, "../outputs/long-term_seu_obj_epi_long_term_2024_03_22_transfer_labels-UCell-Added.RDS")
+```
+
+# Markers
+```{r chunk-12}
+source("../../helper-functions/processing-utils.R")
+
+presto_outs <- run.presto.specific.columns(seu_obj_epi_long_term_2024_03_22_processed, RNA_cols = T)
+
+# Save
+writexl::write_xlsx(presto_outs$`Raw-Markers`, "../outputs/long-term_Raw-Markers.xlsx")
+writexl::write_xlsx(presto_outs$`Filtered-Markers`, "../outputs/long-term_Filtered-Markers.xlsx")
+writexl::write_xlsx(presto_outs$`Top-Markers`, "../outputs/long-term_Top-Markers.xlsx")
+```
+
+
+
+
+

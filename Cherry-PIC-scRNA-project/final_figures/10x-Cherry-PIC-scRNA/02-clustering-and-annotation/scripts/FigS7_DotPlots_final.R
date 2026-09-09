@@ -1,0 +1,147 @@
+## ----setup, include=FALSE-----------------------------------------------------
+for (.p in c("/sc/arion/projects/naiklab/ikjot/R")) if (dir.exists(.p)) .libPaths(c(.p, .libPaths()))
+
+library(Seurat)
+library(tidyverse)
+library(patchwork)
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+
+## ----config-------------------------------------------------------------------
+rds_singlets <- "../data/DR26001_v2_annotated_seurat_singlets.rds"
+out_dir <- "../outputs"
+dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+op <- function(f) file.path(out_dir, f)
+
+# Reversed inferno palette, same as the verified S5 dot plots.
+inferno_rev <- c("#FCFFA4", "#F7D13D", "#FB9A06", "#ED6925", "#CF4446",
+                 "#A52C60", "#781C6D", "#4A0C6B", "#1B0C42", "#000004")
+
+# Display-label overrides — object value -> published label (grouping is unchanged).
+display_label <- c(
+  "CLU+ reserve stem cells"           = "CLU+ regenerative cells",
+  "Blood vascular endothelial cells"  = "Endothelial cells",
+  "T_helper cells"                    = "T helper cells"
+)
+relabel <- function(x) ifelse(x %in% names(display_label), display_label[x], x)
+
+
+## ----load---------------------------------------------------------------------
+seu <- readRDS(rds_singlets)
+DefaultAssay(seu) <- "RNA"
+seu <- NormalizeData(seu, assay = "RNA", verbose = FALSE)
+cat("Cells:", ncol(seu), "| broad_cell_type levels:", length(unique(seu$broad_cell_type)), "\n")
+
+
+## ----marker_panels------------------------------------------------------------
+panel_A <- list(
+  genes = c("Clu","Sox9","Olfm4","Prom1","Krt19","Anxa1",
+           "Mki67","Top2a","Birc5","Stmn1","Cdk1",
+           "Fabp2","Fabp1","Rbp2","Apoa1","Aldob",
+           "Reg1","Lyz1","Defa24","Mmp7","Ang4","Itln1",
+           "Chga","Chgb","Neurod1","Tph1","Cpe",
+           "Muc2","Agr2","Tff3","Zg16","Clca1"),
+  # top -> bottom as published; ggplot needs bottom -> top, reversed below
+  cell_types_top_to_bottom = c("Goblet cells", "Enteroendocrine cells", "Paneth cells",
+                               "Bottom-Villus enterocytes", "TA cells/early progenitors",
+                               "CLU+ reserve stem cells")
+)
+
+panel_B <- list(
+  genes = c("Cd3e","Il7r","Tcf7","Lef1","Cd28","Cd8a","Cd3g","Itgae","Cd160","Nkg7","Ccl5",
+           "Jchain","Mzb1","Cd79a","Ighm","Ms4a1",
+           "Xcr1","Clec9a","Batf3","Zbtb46","Itgax","Flt3",
+           "Adgre1","Csf1r","C1qa","Mrc1","Cx3cr1",
+           "Pdgfra","Dcn","Col1a1","Cxcl12","Rspo3","Acta2",
+           "Pecam1","Cdh5","Kdr","Flt1","Emcn"),
+  cell_types_top_to_bottom = c("Endothelial cells", "Fibroblasts", "Macrophages", "cDC1",
+                               "Plamsablasts", "Cd8aa IEL", "T helper cells")
+)
+
+# Map published cell-type labels back to the object's broad_cell_type values.
+label_to_object <- setNames(names(display_label), display_label)
+to_object_value <- function(x) ifelse(x %in% names(label_to_object), label_to_object[x], x)
+
+panel_A$cell_types_object <- to_object_value(panel_A$cell_types_top_to_bottom)
+panel_B$cell_types_object <- to_object_value(panel_B$cell_types_top_to_bottom)
+
+missing_A <- setdiff(panel_A$genes, rownames(seu))
+missing_B <- setdiff(panel_B$genes, rownames(seu))
+if (length(missing_A)) warning("Panel A genes not in object: ", paste(missing_A, collapse = ", "))
+if (length(missing_B)) warning("Panel B genes not in object: ", paste(missing_B, collapse = ", "))
+cat("Panel A:", length(panel_A$genes), "genes,", length(panel_A$cell_types_object), "cell types —",
+    length(missing_A), "genes missing\n")
+cat("Panel B:", length(panel_B$genes), "genes,", length(panel_B$cell_types_object), "cell types —",
+    length(missing_B), "genes missing\n")
+
+
+## ----dotplot_fn---------------------------------------------------------------
+make_dotplot <- function(seu, genes, cell_types_object, cell_types_display, title) {
+  genes <- intersect(genes, rownames(seu))
+  data_mat <- GetAssayData(seu, assay = "RNA", layer = "data")[genes, , drop = FALSE]
+  ct <- seu$broad_cell_type
+
+  avg_exp <- matrix(NA_real_, nrow = length(genes), ncol = length(cell_types_object),
+                    dimnames = list(genes, cell_types_object))
+  pct_exp <- avg_exp
+  for (b in cell_types_object) {
+    cells <- colnames(seu)[!is.na(ct) & ct == b]
+    sub <- data_mat[, cells, drop = FALSE]
+    avg_exp[, b] <- Matrix::rowMeans(sub)
+    pct_exp[, b] <- Matrix::rowSums(sub > 0) / length(cells)
+  }
+
+  df <- merge(
+    as.data.frame(as.table(avg_exp), responseName = "avg_exp"),
+    as.data.frame(as.table(pct_exp), responseName = "pct_exp"),
+    by = c("Var1", "Var2")
+  )
+  colnames(df)[1:2] <- c("gene", "broad")
+  df$gene <- as.character(df$gene); df$broad <- as.character(df$broad)
+
+  # z-score per gene, across the cell types shown in this panel
+  df <- df %>% group_by(gene) %>% mutate(z_score = scale(avg_exp)[, 1]) %>% ungroup()
+  df <- df %>% filter(avg_exp > 0)   # no dot where a gene is not expressed at all
+
+  disp_map <- setNames(cell_types_display, cell_types_object)
+  df$broad_display <- disp_map[df$broad]
+  df$gene  <- factor(df$gene,  levels = genes)
+  df$broad_display <- factor(df$broad_display, levels = rev(cell_types_display))
+
+  z_max <- max(abs(df$z_score), na.rm = TRUE)
+  ggplot(df, aes(x = gene, y = broad_display)) +
+    geom_point(aes(size = pct_exp, fill = z_score), shape = 21, stroke = 0.25, color = "black") +
+    scale_fill_gradientn(colors = inferno_rev, limits = c(-z_max, z_max), name = "Z-score") +
+    scale_size_continuous(range = c(0.8, 5), name = "Percent\nexpressed", limits = c(0, 1)) +
+    labs(x = NULL, y = NULL, title = title) +
+    theme_classic(base_size = 8) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 6),
+      axis.text.y = element_text(size = 7),
+      plot.title = element_text(face = "bold", size = 10, hjust = 0.5),
+      legend.position = "right",
+      legend.text = element_text(size = 6),
+      legend.title = element_text(size = 7),
+      plot.margin = margin(6, 6, 6, 6)
+    )
+}
+
+
+## ----figS7A, fig.width=12, fig.height=3.5-------------------------------------
+p_A <- make_dotplot(seu, panel_A$genes, panel_A$cell_types_object,
+                    panel_A$cell_types_top_to_bottom, "Epithelia")
+ggsave(op("figS7A_dotplot_epithelia.pdf"), p_A, width = 12, height = 3.5)
+p_A
+
+
+## ----figS7B, fig.width=13, fig.height=4---------------------------------------
+p_B <- make_dotplot(seu, panel_B$genes, panel_B$cell_types_object,
+                    panel_B$cell_types_top_to_bottom, "Immune/Stroma")
+ggsave(op("figS7B_dotplot_immune_stroma.pdf"), p_B, width = 13, height = 4)
+p_B
+
+
+## ----session_info-------------------------------------------------------------
+sessionInfo()
+

@@ -1,0 +1,27 @@
+Cluster,Annotation,Spatial.region.annotation,Region.Annotation,Compartment,Color,Granular.annotation,Granular.color,,Exclude Duodenum,Exclude ileum
+0,Crypts,Crypts,Both,Epithelia,#f40d08,Crypts,#f40d08,#f40d08,,
+1,Mid-villus distal enterocytes-1,Mid-villus distal enterocytes,Distal,Epithelia,#08519C,Mid-villus distal enterocytes-1,#FDBA74,#FDBA74,Mid-villus distal enterocytes-1,
+2,Immune LP,Lamina propria,Both,Immune,#006D2C,Immune LP,#238B45,#600c06,,
+3,Mid-villus proximal enterocytes-1,Mid-villus proximal enterocytes,Proximal,Epithelia,#6A51A3,Mid-villus proximal enterocytes-1,#d6b8ff,#d6b8ff,,Mid-villus proximal enterocytes-1
+4,Mid-villus proximal enterocytes-2,Mid-villus proximal enterocytes,Proximal,Epithelia,#6A51A3,Mid-villus proximal enterocytes-2,#B98CFF,#B98CFF,,Mid-villus proximal enterocytes-2
+5,Mid-villus distal enterocytes-2,Mid-villus distal enterocytes,Distal,Epithelia,#08519C,Mid-villus distal enterocytes-2,#FB923C,#FB923C,Mid-villus distal enterocytes-2,
+6,Tip-villus distal enterocytes,Tip-villus distal enterocytes,Distal,Epithelia,#08306B,Tip-villus distal enterocytes,#a8360e,#a8360e,Tip-villus distal enterocytes,Tip-villus distal enterocytes
+7,Crypts,Crypts,Both,Epithelia,#f40d08,Crypts,#f40d08,#f40d08,,
+8,Bottom-villus proximal enterocytes,Bottom-villus proximal enterocytes,Proximal,Epithelia,#9E9AC8,Bottom-villus proximal enterocytes,#4A2580,#f2e5ff,,Bottom-villus proximal enterocytes
+9,Mid-villus proximal enterocytes-3,Mid-villus proximal enterocytes,Proximal,Epithelia,#6A51A3,Mid-villus proximal enterocytes-3,#9D63FF,#9D63FF,,Mid-villus proximal enterocytes-3
+10,Mid-villus proximal enterocytes-4,Mid-villus proximal enterocytes,Proximal,Epithelia,#6A51A3,Mid-villus proximal enterocytes-4,#7F3DFF,#7F3DFF,,Mid-villus proximal enterocytes-4
+11,Mid-villus distal enterocytes-3,Mid-villus distal enterocytes,Distal,Epithelia,#08519C,Mid-villus distal enterocytes-3,#F97316,#F97316,Mid-villus distal enterocytes-3,
+12,Muscularis,Muscularis,Both,Stroma,#A0715E,Muscularis,#4A1B0C,#4A1B0C,,
+13,Bottom-villus distal enterocytes,Bottom-villus distal enterocytes,Distal,Epithelia,#6BAED6,Bottom-villus distal enterocytes,#FEE6CE,#FEE6CE,Bottom-villus distal enterocytes,
+14,Mid-villus proximal enterocytes-4,Mid-villus proximal enterocytes,Proximal,Epithelia,#6A51A3,Mid-villus proximal enterocytes-4,#7F3DFF,#7F3DFF,,Mid-villus proximal enterocytes-4
+15,Tip-villus proximal enterocytes-1,Tip-villus proximal enterocytes,Proximal,Epithelia,#6A51A3,Tip-villus proximal enterocytes-1,#6426D9,#350089,,Tip-villus proximal enterocytes-1
+16,Crypts,Crypts,Both,Epithelia,#CB181D,Crypts,#f40d08,#f40d08,,
+17,Muscularis,Muscularis,Both,Stroma,#A0715E,Muscularis,#aa6831,#aa6831,,
+18,Muscularis,Muscularis,Both,Stroma,#A0715E,Muscularis,#aa6831,#aa6831,,
+19,Lamina propria,Lamina propria,Both,Immune,#006D2C,Lamina propria,#238B45,#600c06,,
+20,Peyer's patch,Peyer's patch,Both,Immune,#E91E8C,Peyer's patch,#74C476,#dbdbdb,Peyer's patch,Peyer's patch
+21,Tip-villus proximal enterocytes-2,Tip-villus proximal enterocytes,Proximal,Epithelia,#3F007D,Tip-villus proximal enterocytes-2,#4B1CA6,#55376d,Tip-villus proximal enterocytes-2,Tip-villus proximal enterocytes-2
+22,Brunner's gland,Brunner's gland,Proximal,Stroma,#A0715E,Brunner's gland,#C49C94,#4682b4,Brunner's gland,Brunner's gland
+23,Muscularis/Enteric plexus,Muscularis/Enteric plexus,Both,Stroma,#A0715E,Muscularis/Enteric plexus,#C49C94,#3cb371,,
+24,Tuft cells,Villus,Both,Epithelia,#FD8D3C,Tuft cells,#00695C,#383838,,
+25,Tip-villus activated proximal enterocytes,Tip-villus proximal enterocytes,Proximal,Epithelia,#3F007D,Tip-villus activated proximal enterocytes,#321270,#4d05a0,Tip-villus activated proximal enterocytes,Tip-villus activated proximal enterocytes

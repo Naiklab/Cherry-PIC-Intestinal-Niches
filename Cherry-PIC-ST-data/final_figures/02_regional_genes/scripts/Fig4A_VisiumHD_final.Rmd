@@ -1,0 +1,189 @@
+---
+title: "Figure 4A — regional gene expression, Visium HD (8 µm)"
+author: "Ikjot Sidhu"
+date: "`r Sys.Date()`"
+output:
+  html_notebook:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 3
+---
+
+## Purpose
+
+Regional marker-gene expression mapped in space — Figure 4A. Reads the frozen 8 µm object
+and writes one spatial map per gene per sample.
+
+## Outputs
+
+Hi-res spatial expression maps of four regional marker genes — **Fabp1, Reg1** (proximal /
+duodenum) and **Fabp6, Slc10a2** (distal / ileum, bile-acid transport) — across the four
+Visium HD samples. Everything is written to `../outputs/`.
+
+**Manuscript panel (Figure 4A)**
+
+The published panel shows exactly **one Duodenum image and one Ileum image per gene** —
+8 images total, not all four sample replicates.
+
+| Output | Gene | Region |
+|---|---|---|
+| `fig4A_spatial_Fabp1_Duodenum_3_008um.pdf` | Fabp1 | Duodenum |
+| `fig4A_spatial_Fabp1_Ileum_3_008um.pdf` | Fabp1 | Ileum |
+| `fig4A_spatial_Reg1_*` | Reg1 | both |
+| `fig4A_spatial_Fabp6_*` | Fabp6 | both |
+| `fig4A_spatial_Slc10a2_*` | Slc10a2 | both |
+
+**Published replicate.** Every representative spatial panel in this manuscript uses
+Duodenum_3 and Ileum_3. Duodenum_4 and Ileum_2 are the second biological replicate — real
+data, but not printed — so their outputs carry the `supporting_` prefix rather than
+`fig4A_`.
+>
+> Note for the eventual GEO submission: at deposition time these samples are renamed
+> `Duodenum_3` → `Duodenum_1`, `Ileum_3` → `Ileum_1` (and `Duodenum_4` → `Duodenum_2`,
+> `Ileum_2` stays `Ileum_2`). Not applied to any code or filename yet — GEO naming and
+> internal project naming are deliberately kept separate until submission.
+
+**Supporting — not in the published figure**
+
+| Output | What it is |
+|---|---|
+| `supporting_spatial_<gene>_all_samples.pdf` | all four samples for that gene on one row, for side-by-side QC comparison |
+| `supporting_spatial_<gene>_Duodenum_4_008um.pdf` | the other Duodenum replicate — real data, not the printed panel |
+| `supporting_spatial_<gene>_Ileum_2_008um.pdf` | the other Ileum replicate — real data, not the printed panel |
+
+These four files were previously named `fig4b_spatial_<gene>_all_samples.pdf` and sat
+alongside the panel outputs with no visual distinction. They are QC composites, not
+panel sources — the published figure never shows all four samples together.
+
+**Filename note.** This notebook and its outputs were previously named `Fig4B_*` /
+`fig4b_*`. That was wrong: this is manuscript panel **4A**. Figure 4B is RNAscope
+imaging and has no code — see the manuscript figure legends.
+
+## Inputs
+
+| File | What it carries |
+|---|---|
+| `../data/final_analysis_object_with_master_deconv_hires.RDS` | 8 µm object, hi-res tissue images |
+
+Frozen — this notebook reads it and does not rebuild it. See
+`Preprocessing_VisiumHD_8um_final.Rmd` for how it was built.
+
+## Running this
+
+Same object as the Figure 3 notebook, so the same memory note applies: ~4.3 GB on disk,
+needs well over 24 GB of RAM to load. Run on a compute node, BLAS threads capped:
+
+```
+OPENBLAS_NUM_THREADS=1 Rscript -e 'rmarkdown::render("Fig4A_VisiumHD_final.Rmd")'
+```
+
+```{r setup, include=FALSE}
+for (.p in c("/sc/arion/projects/naiklab/ikjot/R")) if (dir.exists(.p)) .libPaths(c(.p, .libPaths()))
+
+library(Seurat)
+library(tidyverse)
+library(patchwork)
+library(RColorBrewer)
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Setup
+
+```{r config}
+rds_hires <- "../data/final_analysis_object_with_master_deconv_hires.RDS"
+out_dir   <- "../outputs"
+dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+
+op   <- function(f) file.path(out_dir, f)     # path helper for outputs
+ubar <- function(x) gsub("\\.", "_", x)       # "Ileum.2.008um" -> "Ileum_2_008um"
+
+FIG4A_GENES <- c("Fabp1", "Reg1", "Fabp6", "Slc10a2")
+```
+
+```{r load}
+merged.object <- readRDS(rds_hires)
+sample_images <- Images(merged.object)
+
+genes_present <- intersect(FIG4A_GENES, rownames(merged.object))
+missing <- setdiff(FIG4A_GENES, genes_present)
+if (length(missing) > 0) warning("Genes not in data: ", paste(missing, collapse = ", "))
+cat("Genes plotted:", paste(genes_present, collapse = ", "), "\n")
+```
+
+---
+
+# PART 1 — Manuscript panel
+
+## Fig 4A — spatial expression per gene, per sample
+
+One panel per sample per gene. The colour scale is fixed per gene across all four
+samples (computed from the full range in the data), so the duodenum and ileum images
+for a given gene are directly comparable.
+
+Only Duodenum_3 and Ileum_3 are the published replicate (confirmed by the author,
+project-wide — see the note above); Duodenum_4 and Ileum_2 are real data but not the
+printed panel, so they're written under `supporting_` instead of `fig4A_`.
+
+```{r panel_4a_plots, fig.width=6, fig.height=6}
+PUBLISHED_REPLICATE <- c("Duodenum.3.008um", "Ileum.3.008um")
+
+for (gene in genes_present) {
+  gene_range <- range(FetchData(merged.object, vars = gene)[[gene]], na.rm = TRUE)
+
+  plots <- lapply(sample_images, function(img) {
+    p <- SpatialFeaturePlot(merged.object, features = gene, images = img,
+                            pt.size.factor = 1.25, crop = TRUE)
+    p[[1]] +
+      scale_fill_gradientn(colours = rev(brewer.pal(11, "Spectral")),
+                           limits = gene_range, name = "Expr") +
+      labs(title = paste0(gene, " — ", img)) +
+      theme(plot.title = element_text(size = 10, hjust = 0.5),
+            legend.key.size = unit(0.4, "cm"))
+  })
+  names(plots) <- sample_images
+
+  for (img in sample_images) {
+    prefix <- if (img %in% PUBLISHED_REPLICATE) "fig4A_spatial_" else "supporting_spatial_"
+    ggsave(op(paste0(prefix, gene, "_", ubar(img), ".pdf")),
+           plots[[img]], width = 6, height = 6)
+  }
+  cat("Saved 4A panels:", gene, "\n")
+}
+```
+
+---
+
+# PART 2 — Supporting figures
+
+Not part of Figure 4A. Kept because side-by-side comparison of all four samples is
+useful for review, even though the published panel only shows one representative per
+region.
+
+## All four samples, one row per gene
+
+```{r supporting_all_samples, fig.width=22, fig.height=6}
+for (gene in genes_present) {
+  gene_range <- range(FetchData(merged.object, vars = gene)[[gene]], na.rm = TRUE)
+
+  plots <- lapply(sample_images, function(img) {
+    p <- SpatialFeaturePlot(merged.object, features = gene, images = img,
+                            pt.size.factor = 1.25, crop = TRUE)
+    p[[1]] +
+      scale_fill_gradientn(colours = rev(brewer.pal(11, "Spectral")),
+                           limits = gene_range, name = "Expr") +
+      labs(title = paste0(gene, " — ", img)) +
+      theme(plot.title = element_text(size = 10, hjust = 0.5),
+            legend.key.size = unit(0.4, "cm"))
+  })
+
+  p_row <- wrap_plots(plots, nrow = 1, guides = "collect")
+  ggsave(op(paste0("supporting_spatial_", gene, "_all_samples.pdf")), p_row, width = 22, height = 6)
+  cat("Saved supporting row:", gene, "\n")
+}
+```
+
+```{r session_info}
+sessionInfo()
+```

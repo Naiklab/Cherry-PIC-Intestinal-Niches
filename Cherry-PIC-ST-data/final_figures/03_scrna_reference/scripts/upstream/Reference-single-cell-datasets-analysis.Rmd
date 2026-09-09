@@ -1,0 +1,784 @@
+---
+title: "Reference Single-Cell Datasets Integration"
+output: html_notebook
+---
+
+# Single-Cell Reference Data Integration Workflow
+
+This workflow integrates three single-cell datasets:
+1. **Epithelial cells** - From DR analysis
+2. **Immune cells** - From DR analysis  
+3. **SpaceFold SI data** - Published small intestine reference
+4. Fibroblast data (Multiple studies)
+
+Goals:
+- Combine datasets with batch effect removal
+- Harmonize cell type annotations
+- Create unified reference for spatial deconvolution
+
+## 1. Setup and Load Libraries
+
+```{r setup}
+# Use the user defined library
+.libPaths("/sc/arion/projects/naiklab/ikjot/R") 
+
+# Load required libraries
+library(Seurat)
+library(ggplot2)
+library(patchwork)
+library(dplyr)
+library(tidyr)
+library(RColorBrewer)
+library(ggpubr)
+
+# For integration
+library(harmony)  # If not installed: install.packages("harmony")
+
+# Set seed for reproducibility
+set.seed(42)
+
+# Create output directory
+dir.create("output_reference_integration", showWarnings = FALSE)
+dir.create("output_reference_integration/plots", showWarnings = FALSE)
+dir.create("output_reference_integration/RDS", showWarnings = FALSE)
+dir.create("output_reference_integration/tables", showWarnings = FALSE)
+```
+
+## 2. Load Reference Datasets
+
+```{r load_data}
+cat("Loading reference datasets...\n")
+
+# Epithelial cells 
+Epithelial.cells.DR.data <- readRDS("../../shared/Daniel-Single-Cell-for-Ikjot/Ikjot-analysis-folder/output/Clustering-Analysis-LT-ST-combined-Epithelia/RDS/EP.CTRL_data.processed.RDS")
+
+# Immune cells 
+Immune.cells.DR.data <- readRDS("../../shared/Daniel-Single-Cell-for-Ikjot/Ikjot-analysis-folder/output/Clustering-Analysis-LT-ST-combined-Immune/RDS/Immune.CTRL_data.filtered.RDS")
+
+# Single cell data from SpaceFold paper
+SpaceFold.SI.data <- readRDS("Reference-Single-Cell-Data/SI-data_SpaceFold-paper.RDS")
+
+cat("Datasets loaded successfully!\n")
+```
+
+## 3. Inspect Each Dataset
+
+```{r inspect_epithelial}
+cat("=== EPITHELIAL DATASET ===\n")
+cat("Cells:", ncol(Epithelial.cells.DR.data), "\n")
+cat("Genes:", nrow(Epithelial.cells.DR.data), "\n")
+cat("\nMetadata columns:\n")
+print(colnames(Epithelial.cells.DR.data@meta.data))
+
+# Check for cell type annotations
+potential_celltype_cols <- grep("cell.*type|annot|cluster|ident", 
+                                 colnames(Epithelial.cells.DR.data@meta.data), 
+                                 ignore.case = TRUE, value = TRUE)
+cat("\nPotential cell type columns:", paste(potential_celltype_cols, collapse = ", "), "\n")
+
+# Show unique values for potential cell type columns
+for (col in potential_celltype_cols[1:min(3, length(potential_celltype_cols))]) {
+  cat("\n", col, ":\n")
+  print(table(Epithelial.cells.DR.data@meta.data[[col]]))
+}
+```
+
+```{r inspect_immune}
+cat("=== IMMUNE DATASET ===\n")
+cat("Cells:", ncol(Immune.cells.DR.data), "\n")
+cat("Genes:", nrow(Immune.cells.DR.data), "\n")
+cat("\nMetadata columns:\n")
+print(colnames(Immune.cells.DR.data@meta.data))
+
+# Check for cell type annotations
+potential_celltype_cols <- grep("cell.*type|annot|cluster|ident", 
+                                 colnames(Immune.cells.DR.data@meta.data), 
+                                 ignore.case = TRUE, value = TRUE)
+cat("\nPotential cell type columns:", paste(potential_celltype_cols, collapse = ", "), "\n")
+
+for (col in potential_celltype_cols[1:min(3, length(potential_celltype_cols))]) {
+  cat("\n", col, ":\n")
+  print(table(Immune.cells.DR.data@meta.data[[col]]))
+}
+```
+
+```{r inspect_spacefold}
+cat("=== SPACEFOLD SI DATASET ===\n")
+cat("Cells:", ncol(SpaceFold.SI.data), "\n")
+cat("Genes:", nrow(SpaceFold.SI.data), "\n")
+cat("\nMetadata columns:\n")
+print(colnames(SpaceFold.SI.data@meta.data))
+
+# Check for cell type annotations
+potential_celltype_cols <- grep("cell.*type|annot|cluster|ident", 
+                                 colnames(SpaceFold.SI.data@meta.data), 
+                                 ignore.case = TRUE, value = TRUE)
+cat("\nPotential cell type columns:", paste(potential_celltype_cols, collapse = ", "), "\n")
+
+for (col in potential_celltype_cols[1:min(3, length(potential_celltype_cols))]) {
+  cat("\n", col, ":\n")
+  print(table(SpaceFold.SI.data@meta.data[[col]]))
+}
+```
+
+## 3.5 Clean Up Cell Type Labels
+
+Fix duplicate labels caused by whitespace or naming inconsistencies:
+
+```{r clean_celltypes}
+cat("=== CLEANING CELL TYPE LABELS ===\n")
+
+# Function to clean cell type labels
+clean_celltype_labels <- function(labels) {
+  labels <- as.character(labels)
+  # Trim leading/trailing whitespace
+  labels <- trimws(labels)
+  # Replace multiple spaces with single space
+  labels <- gsub("\\s+", " ", labels)
+  return(labels)
+}
+
+# Manual mapping for inconsistent naming conventions
+# Map variations to a single canonical name
+immune_label_fixes <- c(
+  # Whitespace variations
+  "B cells " = "B cells",
+  
+ # CD8aa variations - standardize to "CD8aa"
+  "CD8 aa" = "CD8aa",
+  "CD8aa IEL" = "CD8aa IEL",
+  "CD8aa TRM" = "CD8aa TRM",
+  "CD8 aa IEL" = "CD8aa IEL",
+  "CD8 aa TRM" = "CD8aa TRM",
+  
+  # CD4 T cell variations - standardize to "CD4 T cells"
+  "CD4 T cell" = "CD4 T cells",
+  
+  # gd T cell variations - standardize
+  "gd IEL" = "gd IEL",
+  "gd T cells" = "gd T cells"
+)
+
+# Function to apply label fixes
+fix_labels <- function(labels, fix_mapping) {
+  labels <- as.character(labels)
+  for (old_label in names(fix_mapping)) {
+    labels[labels == old_label] <- fix_mapping[old_label]
+  }
+  return(labels)
+}
+
+# Clean Immune dataset cell type labels
+cat("\nImmune cell_type_labels BEFORE cleaning:\n")
+print(sort(unique(Immune.cells.DR.data$cell_type_labels)))
+
+# Check for similar labels that might be duplicates
+cat("\nDetecting potential duplicates (sorted by label):\n")
+labels <- as.character(Immune.cells.DR.data$cell_type_labels)
+unique_labels <- sort(unique(labels))
+for (lab in unique_labels) {
+  nchar_lab <- nchar(lab)
+  count <- sum(labels == lab)
+  cat(sprintf("  '%s' (nchar=%d, n=%d)\n", lab, nchar_lab, count))
+}
+
+# Step 1: Clean whitespace
+Immune.cells.DR.data$cell_type_labels <- clean_celltype_labels(Immune.cells.DR.data$cell_type_labels)
+
+# Step 2: Apply manual fixes for naming inconsistencies
+Immune.cells.DR.data$cell_type_labels <- fix_labels(Immune.cells.DR.data$cell_type_labels, immune_label_fixes)
+
+cat("\nImmune cell_type_labels AFTER cleaning:\n")
+print(sort(unique(Immune.cells.DR.data$cell_type_labels)))
+cat("\nCell counts after cleaning:\n")
+print(sort(table(Immune.cells.DR.data$cell_type_labels), decreasing = TRUE))
+
+# Also clean other datasets if they have similar issues
+if ("cell_type_labels" %in% colnames(Epithelial.cells.DR.data@meta.data)) {
+  Epithelial.cells.DR.data$cell_type_labels <- clean_celltype_labels(Epithelial.cells.DR.data$cell_type_labels)
+}
+
+if ("cell_type_labels" %in% colnames(SpaceFold.SI.data@meta.data)) {
+  SpaceFold.SI.data$cell_type_labels <- clean_celltype_labels(SpaceFold.SI.data$cell_type_labels)
+}
+
+cat("\n=== Cell type labels cleaned! ===\n")
+cat("Final unique immune cell types:", length(unique(Immune.cells.DR.data$cell_type_labels)), "\n")
+```
+
+## 4. Standardize Metadata and Add Dataset Labels
+
+Based on inspection above, set the correct cell type column names:
+
+```{r standardize_metadata}
+# ============================================================================
+# SET THESE BASED ON INSPECTION RESULTS ABOVE
+# ============================================================================
+
+# Cell type column in each dataset (update after inspection)
+epithelial_celltype_col <- "celltype"  # UPDATE THIS
+immune_celltype_col <- "celltype"       # UPDATE THIS
+spacefold_celltype_col <- "celltype"    # UPDATE THIS
+
+# ============================================================================
+
+# Add dataset source labels
+Epithelial.cells.DR.data$dataset_source <- "DR_Epithelial"
+Immune.cells.DR.data$dataset_source <- "DR_Immune"
+SpaceFold.SI.data$dataset_source <- "Niec_SpaceFold_SI"
+
+# Add broad cell category
+Epithelial.cells.DR.data$cell_category <- "Epithelial"
+Immune.cells.DR.data$cell_category <- "Immune"
+SpaceFold.SI.data$cell_category <- "Mixed"  # May contain multiple types
+
+# Create unified cell type column
+Epithelial.cells.DR.data$original_celltype <- as.character(
+  Epithelial.cells.DR.data@meta.data[[epithelial_celltype_col]]
+)
+Immune.cells.DR.data$original_celltype <- as.character(
+  Immune.cells.DR.data@meta.data[[immune_celltype_col]]
+)
+SpaceFold.SI.data$original_celltype <- as.character(
+  SpaceFold.SI.data@meta.data[[spacefold_celltype_col]]
+)
+
+cat("Metadata standardized!\n")
+cat("\nEpithelial cell types:\n")
+print(table(Epithelial.cells.DR.data$original_celltype))
+cat("\nImmune cell types:\n")
+print(table(Immune.cells.DR.data$original_celltype))
+cat("\nSpaceFold cell types:\n")
+print(table(SpaceFold.SI.data$original_celltype))
+```
+
+## 5. Harmonize Cell Type Nomenclature
+
+Create mapping to unify cell type names across datasets:
+
+```{r harmonize_celltypes}
+# ============================================================================
+# CELL TYPE HARMONIZATION MAPPING
+# ============================================================================
+# Update these mappings based on the cell types found in each dataset
+# Map original names to unified names
+
+# Epithelial cell type mapping
+epithelial_mapping <- c(
+  # "original_name" = "unified_name"
+  # Example mappings - UPDATE BASED ON YOUR DATA:
+  "Enterocyte" = "Enterocyte",
+  "Goblet" = "Goblet_Cell",
+  "Paneth" = "Paneth_Cell",
+  "Stem" = "Stem_Cell",
+  "TA" = "Transit_Amplifying",
+  "Tuft" = "Tuft_Cell",
+  "Enteroendocrine" = "Enteroendocrine"
+  # Add more mappings as needed
+)
+
+# Immune cell type mapping
+immune_mapping <- c(
+  # Example mappings - UPDATE BASED ON YOUR DATA:
+  "T_cell" = "T_Cell",
+  "B_cell" = "B_Cell",
+  "Macrophage" = "Macrophage",
+  "Dendritic" = "Dendritic_Cell",
+  "NK" = "NK_Cell",
+  "ILC" = "ILC",
+  "Plasma" = "Plasma_Cell",
+  "Mast" = "Mast_Cell"
+  # Add more mappings as needed
+)
+
+# SpaceFold cell type mapping
+spacefold_mapping <- c(
+  # Example mappings - UPDATE BASED ON YOUR DATA:
+  # This will depend on what cell types are in the SpaceFold dataset
+  # Add mappings to match the unified nomenclature above
+)
+
+# ============================================================================
+
+# Apply mappings (with fallback to original name if not in mapping)
+apply_mapping <- function(celltypes, mapping) {
+  sapply(celltypes, function(ct) {
+    if (ct %in% names(mapping)) {
+      return(mapping[ct])
+    } else {
+      return(ct)  # Keep original if not in mapping
+    }
+  })
+}
+
+# Apply to each dataset
+Epithelial.cells.DR.data$unified_celltype <- apply_mapping(
+  Epithelial.cells.DR.data$original_celltype, 
+  epithelial_mapping
+)
+
+Immune.cells.DR.data$unified_celltype <- apply_mapping(
+  Immune.cells.DR.data$original_celltype, 
+  immune_mapping
+)
+
+SpaceFold.SI.data$unified_celltype <- apply_mapping(
+  SpaceFold.SI.data$original_celltype, 
+  spacefold_mapping
+)
+
+cat("Cell type harmonization complete!\n")
+cat("\nUnified cell types by dataset:\n")
+cat("\nEpithelial:\n")
+print(table(Epithelial.cells.DR.data$unified_celltype))
+cat("\nImmune:\n")
+print(table(Immune.cells.DR.data$unified_celltype))
+cat("\nSpaceFold:\n")
+print(table(SpaceFold.SI.data$unified_celltype))
+```
+
+## 6. Pre-Integration Processing
+
+Ensure all datasets are properly normalized before integration:
+
+```{r preprocess_datasets}
+cat("Pre-processing datasets for integration...\n")
+
+# Function to prepare dataset for integration (Seurat v5 compatible)
+prepare_for_integration <- function(obj, dataset_name) {
+  cat("Processing:", dataset_name, "\n")
+  
+  # Ensure we're working with RNA assay
+  DefaultAssay(obj) <- "RNA"
+  
+  # For Seurat v5: Join layers if there are multiple
+  layers <- Layers(obj, assay = "RNA")
+  cat("  Layers found:", paste(layers, collapse = ", "), "\n")
+  
+  if (length(layers) > 1) {
+    cat("  Joining layers for Seurat v5...\n")
+    obj <- JoinLayers(obj)
+  }
+  
+  # Check if already normalized
+  # Sample a small subset to check max value
+  tryCatch({
+    sample_data <- LayerData(obj, assay = "RNA", layer = "data")
+    # Get a small sample
+    n_cells <- min(100, ncol(sample_data))
+    n_genes <- min(100, nrow(sample_data))
+    max_val <- max(sample_data[1:n_genes, 1:n_cells])
+    
+    if (max_val > 100) {
+      cat("  Data appears to be counts (max =", round(max_val), "), normalizing...\n")
+      obj <- NormalizeData(obj, verbose = FALSE)
+    } else {
+      cat("  Data appears already normalized (max =", round(max_val, 2), ")\n")
+    }
+  }, error = function(e) {
+    cat("  Could not check normalization status, normalizing to be safe...\n")
+    obj <- NormalizeData(obj, verbose = FALSE)
+  })
+  
+  # Find variable features
+  cat("  Finding variable features...\n")
+  obj <- FindVariableFeatures(obj, selection.method = "vst", nfeatures = 3000, verbose = FALSE)
+  
+  cat("  Done!\n\n")
+  return(obj)
+}
+
+# Process each dataset
+Epithelial.cells.DR.data <- prepare_for_integration(Epithelial.cells.DR.data, "Epithelial")
+Immune.cells.DR.data <- prepare_for_integration(Immune.cells.DR.data, "Immune")
+SpaceFold.SI.data <- prepare_for_integration(SpaceFold.SI.data, "SpaceFold")
+
+cat("\nPre-processing complete!\n")
+```
+
+## 7. Merge Datasets
+
+```{r merge_datasets}
+cat("Merging datasets...\n")
+
+# Merge all three datasets
+integrated.data <- merge(
+  Epithelial.cells.DR.data,
+  y = list(Immune.cells.DR.data, SpaceFold.SI.data),
+  add.cell.ids = c("EP", "IM", "SF"),
+  project = "SI_Reference_Integration"
+)
+
+cat("Merged dataset:\n")
+cat("  Total cells:", ncol(integrated.data), "\n")
+cat("  Total genes:", nrow(integrated.data), "\n")
+
+cat("\nCells per dataset:\n")
+print(table(integrated.data$dataset_source))
+
+cat("\nCells per unified cell type:\n")
+print(sort(table(integrated.data$unified_celltype), decreasing = TRUE))
+
+# Clean up individual objects to save memory
+rm(Epithelial.cells.DR.data, Immune.cells.DR.data, SpaceFold.SI.data)
+gc()
+```
+
+## 8. Integration with Harmony (Batch Correction)
+
+```{r harmony_integration}
+cat("Running Harmony integration for batch correction...\n")
+
+# Join layers for Seurat v5
+integrated.data <- JoinLayers(integrated.data)
+
+# Standard pre-processing on merged data
+integrated.data <- NormalizeData(integrated.data, verbose = FALSE)
+integrated.data <- FindVariableFeatures(integrated.data, selection.method = "vst", 
+                                         nfeatures = 3000, verbose = FALSE)
+integrated.data <- ScaleData(integrated.data, verbose = FALSE)
+
+# Run PCA
+cat("Running PCA...\n")
+integrated.data <- RunPCA(integrated.data, npcs = 50, verbose = FALSE)
+
+# Visualize PCA before integration
+pdf("output_reference_integration/plots/pca_before_harmony.pdf", height = 10, width = 14)
+p1 <- DimPlot(integrated.data, reduction = "pca", group.by = "dataset_source") +
+  ggtitle("PCA - Before Harmony (by Dataset)")
+p2 <- DimPlot(integrated.data, reduction = "pca", group.by = "unified_celltype", 
+              label = TRUE, repel = TRUE, label.size = 2.5) +
+  ggtitle("PCA - Before Harmony (by Cell Type)") +
+  theme(legend.position = "none")
+print(p1 + p2)
+dev.off()
+
+# Run Harmony integration
+cat("Running Harmony...\n")
+integrated.data <- RunHarmony(
+  integrated.data,
+  group.by.vars = "dataset_source",
+  reduction = "pca",
+  dims.use = 1:30,
+  assay.use = "RNA",
+  plot_convergence = FALSE
+)
+
+cat("Harmony integration complete!\n")
+```
+
+## 9. Post-Integration Dimensional Reduction
+
+```{r post_harmony_umap}
+cat("Running UMAP on harmonized data...\n")
+
+# Run UMAP on harmony-corrected embeddings
+integrated.data <- RunUMAP(integrated.data, reduction = "harmony", dims = 1:30, verbose = FALSE)
+
+# Visualize after Harmony
+pdf("output_reference_integration/plots/umap_after_harmony.pdf", height = 10, width = 16)
+
+p1 <- DimPlot(integrated.data, reduction = "umap", group.by = "dataset_source") +
+  ggtitle("UMAP - After Harmony (by Dataset)")
+
+p2 <- DimPlot(integrated.data, reduction = "umap", group.by = "unified_celltype", 
+              label = TRUE, repel = TRUE, label.size = 2.5) +
+  ggtitle("UMAP - After Harmony (by Cell Type)") +
+  theme(legend.position = "right", legend.text = element_text(size = 6))
+
+p3 <- DimPlot(integrated.data, reduction = "umap", group.by = "cell_category") +
+  ggtitle("UMAP - After Harmony (by Category)")
+
+print(p1)
+print(p2)
+print(p3)
+print((p1 | p3) / p2)
+dev.off()
+
+cat("UMAP complete!\n")
+```
+
+## 10. Clustering on Integrated Data
+
+```{r clustering}
+cat("Clustering integrated data...\n")
+
+# Find neighbors using harmony reduction
+integrated.data <- FindNeighbors(integrated.data, reduction = "harmony", dims = 1:30, verbose = FALSE)
+
+# Cluster at multiple resolutions
+resolutions <- c(0.2, 0.4, 0.6, 0.8, 1.0, 1.2)
+
+for (res in resolutions) {
+  integrated.data <- FindClusters(integrated.data, resolution = res, verbose = FALSE)
+  cat("Resolution", res, ":", length(unique(integrated.data@meta.data[[paste0("RNA_snn_res.", res)]])), "clusters\n")
+}
+
+# Set default identity to resolution 0.6
+Idents(integrated.data) <- "RNA_snn_res.0.6"
+
+# Visualize clustering
+pdf("output_reference_integration/plots/clustering_umap.pdf", height = 12, width = 16)
+
+p1 <- DimPlot(integrated.data, reduction = "umap", group.by = "RNA_snn_res.0.4", 
+              label = TRUE, label.size = 4) +
+  ggtitle("Clusters (Resolution 0.4)")
+
+p2 <- DimPlot(integrated.data, reduction = "umap", group.by = "RNA_snn_res.0.6", 
+              label = TRUE, label.size = 4) +
+  ggtitle("Clusters (Resolution 0.6)")
+
+p3 <- DimPlot(integrated.data, reduction = "umap", group.by = "RNA_snn_res.0.8", 
+              label = TRUE, label.size = 4) +
+  ggtitle("Clusters (Resolution 0.8)")
+
+p4 <- DimPlot(integrated.data, reduction = "umap", group.by = "RNA_snn_res.1.0", 
+              label = TRUE, label.size = 4) +
+  ggtitle("Clusters (Resolution 1.0)")
+
+print((p1 | p2) / (p3 | p4))
+dev.off()
+
+cat("Clustering complete!\n")
+```
+
+## 11. Assess Integration Quality
+
+```{r integration_quality}
+cat("Assessing integration quality...\n")
+
+# Check dataset mixing within clusters
+cluster_col <- "RNA_snn_res.0.6"
+
+# Dataset composition per cluster
+dataset_by_cluster <- integrated.data@meta.data %>%
+  group_by(.data[[cluster_col]], dataset_source) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(.data[[cluster_col]]) %>%
+  mutate(proportion = n / sum(n))
+
+pdf("output_reference_integration/plots/integration_quality.pdf", height = 10, width = 14)
+
+# Stacked bar plot of dataset composition per cluster
+p1 <- ggplot(dataset_by_cluster, aes(x = .data[[cluster_col]], y = proportion, fill = dataset_source)) +
+  geom_bar(stat = "identity") +
+  theme_classic() +
+  labs(title = "Dataset Composition per Cluster", x = "Cluster", y = "Proportion") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(p1)
+
+# Cell type composition per cluster
+celltype_by_cluster <- integrated.data@meta.data %>%
+  group_by(.data[[cluster_col]], unified_celltype) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(.data[[cluster_col]]) %>%
+  mutate(proportion = n / sum(n))
+
+p2 <- ggplot(celltype_by_cluster, aes(x = .data[[cluster_col]], y = proportion, fill = unified_celltype)) +
+  geom_bar(stat = "identity") +
+  theme_classic() +
+  labs(title = "Cell Type Composition per Cluster", x = "Cluster", y = "Proportion") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.text = element_text(size = 6))
+
+print(p2)
+dev.off()
+
+# Save composition tables
+write.csv(dataset_by_cluster, "output_reference_integration/tables/dataset_composition_by_cluster.csv", row.names = FALSE)
+write.csv(celltype_by_cluster, "output_reference_integration/tables/celltype_composition_by_cluster.csv", row.names = FALSE)
+
+cat("Integration quality assessment complete!\n")
+```
+
+## 12. Refine Cell Type Annotations Based on Clustering
+
+```{r refine_annotations}
+# Find dominant cell type per cluster
+dominant_celltype_per_cluster <- integrated.data@meta.data %>%
+  group_by(.data[[cluster_col]], unified_celltype) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(.data[[cluster_col]]) %>%
+  slice_max(n, n = 1) %>%
+  select(cluster = 1, dominant_celltype = unified_celltype, n_cells = n)
+
+cat("Dominant cell type per cluster:\n")
+print(dominant_celltype_per_cluster)
+
+# You can use this to create refined annotations
+# Or manually review and assign based on marker genes
+
+# Save for manual review
+write.csv(dominant_celltype_per_cluster, 
+          "output_reference_integration/tables/dominant_celltype_per_cluster.csv", 
+          row.names = FALSE)
+```
+
+## 13. Find Marker Genes for Clusters
+
+```{r find_markers}
+cat("Finding marker genes for each cluster...\n")
+
+# Find markers for all clusters
+all_markers <- FindAllMarkers(
+  integrated.data,
+  only.pos = TRUE,
+  min.pct = 0.25,
+  logfc.threshold = 0.5,
+  verbose = FALSE
+)
+
+# Top markers per cluster
+top_markers <- all_markers %>%
+  group_by(cluster) %>%
+  slice_max(avg_log2FC, n = 10)
+
+cat("\nTop 5 markers per cluster:\n")
+top5 <- all_markers %>%
+  group_by(cluster) %>%
+  slice_max(avg_log2FC, n = 5)
+print(top5)
+
+# Save markers
+write.csv(all_markers, "output_reference_integration/tables/cluster_markers_all.csv", row.names = FALSE)
+write.csv(top_markers, "output_reference_integration/tables/cluster_markers_top10.csv", row.names = FALSE)
+
+# Visualize top markers
+pdf("output_reference_integration/plots/marker_dotplot.pdf", height = 12, width = 16)
+
+top3_genes <- all_markers %>%
+  group_by(cluster) %>%
+  slice_max(avg_log2FC, n = 3) %>%
+  pull(gene) %>%
+  unique()
+
+DotPlot(integrated.data, features = top3_genes, group.by = cluster_col) +
+  RotatedAxis() +
+  ggtitle("Top 3 Markers per Cluster")
+dev.off()
+
+cat("Marker analysis complete!\n")
+```
+
+## 14. Create Final Unified Cell Type Annotation
+
+After reviewing the clustering and markers, create final unified annotations:
+
+```{r final_annotations}
+# ============================================================================
+# MANUAL CLUSTER ANNOTATION
+# ============================================================================
+# Update this mapping after reviewing cluster markers and compositions
+# Map cluster numbers to final unified cell type names
+
+cluster_to_celltype <- c(
+  "0" = "Enterocyte",
+  "1" = "T_Cell",
+  "2" = "Stem_Cell",
+  "3" = "Goblet_Cell",
+  "4" = "Macrophage",
+  "5" = "B_Cell"
+  # Add all cluster annotations based on your analysis
+)
+
+# ============================================================================
+
+# Apply annotation
+integrated.data$final_celltype <- as.character(integrated.data@meta.data[[cluster_col]])
+
+# Map clusters to cell types (for clusters in the mapping)
+for (clust in names(cluster_to_celltype)) {
+  integrated.data$final_celltype[integrated.data$final_celltype == clust] <- cluster_to_celltype[clust]
+}
+
+# For unmapped clusters, use unified_celltype as fallback or keep cluster number
+# integrated.data$final_celltype[integrated.data$final_celltype %in% 0:100] <- 
+#   integrated.data$unified_celltype[integrated.data$final_celltype %in% 0:100]
+
+cat("Final cell type distribution:\n")
+print(table(integrated.data$final_celltype))
+
+# Visualize final annotations
+pdf("output_reference_integration/plots/final_celltype_umap.pdf", height = 10, width = 14)
+
+p <- DimPlot(integrated.data, reduction = "umap", group.by = "final_celltype",
+             label = TRUE, repel = TRUE, label.size = 3) +
+  ggtitle("Integrated Reference - Final Cell Type Annotations") +
+  theme(legend.position = "right", legend.text = element_text(size = 7))
+
+print(p)
+
+# Split by dataset to verify integration
+p_split <- DimPlot(integrated.data, reduction = "umap", group.by = "final_celltype",
+                   split.by = "dataset_source", label = FALSE) +
+  ggtitle("Final Cell Types Split by Dataset") +
+  theme(legend.position = "bottom", legend.text = element_text(size = 6))
+
+print(p_split)
+dev.off()
+```
+
+## 15. Save Integrated Reference
+
+```{r save_results}
+cat("Saving integrated reference dataset...\n")
+
+# Save full integrated object
+saveRDS(integrated.data, "output_reference_integration/RDS/integrated_reference_full.RDS")
+
+# Save a lighter version (without scaled data) for deconvolution
+integrated.data.light <- DietSeurat(
+  integrated.data,
+  layers = c("counts", "data"),
+  dimreducs = c("harmony", "umap"),
+  graphs = NULL
+)
+
+saveRDS(integrated.data.light, "output_reference_integration/RDS/integrated_reference_light.RDS")
+
+# Export cell type summary
+celltype_summary <- integrated.data@meta.data %>%
+  group_by(final_celltype, dataset_source) %>%
+  summarise(n_cells = n(), .groups = "drop") %>%
+  pivot_wider(names_from = dataset_source, values_from = n_cells, values_fill = 0) %>%
+  mutate(total = rowSums(across(where(is.numeric))))
+
+write.csv(celltype_summary, "output_reference_integration/tables/final_celltype_summary.csv", row.names = FALSE)
+
+cat("\n=== INTEGRATION COMPLETE ===\n")
+cat("Output files:\n")
+cat("  - RDS/integrated_reference_full.RDS\n")
+cat("  - RDS/integrated_reference_light.RDS\n")
+cat("  - tables/final_celltype_summary.csv\n")
+cat("  - plots/*.pdf\n")
+
+cat("\nFinal reference statistics:\n")
+cat("  Total cells:", ncol(integrated.data), "\n")
+cat("  Cell types:", length(unique(integrated.data$final_celltype)), "\n")
+print(table(integrated.data$final_celltype))
+```
+
+## 16. Session Information
+
+```{r session_info}
+sessionInfo()
+```
+
+---
+
+## Next Steps
+
+After running this workflow:
+
+1. **Review inspection results** (Section 3) to identify correct cell type columns
+2. **Update cell type mappings** (Section 5) based on your actual cell type names
+3. **Review integration quality** - check if batch effects are removed while preserving biology
+4. **Annotate clusters** (Section 14) based on marker genes and prior knowledge
+5. **Use integrated reference** for spatial deconvolution in the Visium HD workflow
+
+The integrated reference can be loaded in your main analysis:
+```r
+reference <- readRDS("output_reference_integration/RDS/integrated_reference_full.RDS")
+```
+

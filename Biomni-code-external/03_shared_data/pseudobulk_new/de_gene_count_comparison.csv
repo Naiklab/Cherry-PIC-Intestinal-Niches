@@ -1,0 +1,10 @@
+cell_type,old_total,new_total,old_sig,new_sig,old_up_ileum,new_up_ileum,old_up_duo,new_up_duo,sig_overlap,old_only_sig,new_only_sig
+Endothelial,7217,7217,1,1,1,1,0,0,1,0,0
+Macrophages,15509,15509,3350,3317,1462,1447,1888,1870,3311,39,6
+Fibroblasts,14180,14180,417,417,169,169,248,248,417,0,0
+Bottom-Villus EC,8002,8002,54,55,26,27,28,28,54,0,1
+Paneth,9046,9046,22,21,13,9,9,12,14,8,7
+Plasmablasts,8063,8063,195,192,158,156,37,36,192,3,0
+TA cells,11938,11938,394,396,246,247,148,149,394,0,2
+cDC,9714,9714,27,28,24,25,3,3,27,0,1
+Goblet,11518,11518,188,177,57,51,131,126,177,11,0
