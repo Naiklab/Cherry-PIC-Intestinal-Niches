@@ -188,9 +188,8 @@ BLAS/LAPACK: reference libRblas / libRlapack, LAPACK 3.12.0
 | viridis | 0.6.5 | | openxlsx | 4.2.8.1 |
 | knitr | 1.51 | | | |
 
-Versions are read from the analysis library and confirmed against `sessionInfo()` recorded
-in the render logs. Notebooks small enough to run outside the cluster were executed on
-R 4.5.2 with Seurat 5.4.0; no results depend on the difference.
+All analysis was run on the Minerva HPC cluster. Versions are read from the analysis library
+and confirmed against `sessionInfo()` recorded in the render logs.
 
 Python components (Figures 6F, 6G, S8) use pandas, numpy, matplotlib and matplotlib-venn.
 
