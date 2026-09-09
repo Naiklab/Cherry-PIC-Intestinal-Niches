@@ -18,8 +18,6 @@ This project produces no manuscript figure of its own. It feeds two downstream a
 DR26001-scRNA-project/
 ├── README.md
 ├── _REORGANIZATION_MANIFEST.tsv        # old path -> new path for all 214 moved files
-├── _quarantine/                        # see "Before this ships" below
-├── _duplicates-verified-identical/     # md5-identical second copies; safe to delete
 └── final_figures/
     └── DR26001-scRNA/
         ├── 00-hashtag-pools/           # 3 input objects, no scripts
@@ -142,20 +140,6 @@ They are subsets of `epithelia_EP.CTRL_data.processed(no-immune).RDS` on
 project** — `06-downstream-handoffs/scripts/` is empty and should hold it. It is a few
 lines, but worth writing down because it defines which clusters counted as "stem" and
 "TA" for every ligand–receptor result in Figures 6F, 6G and S8.
-
-## Before this ships
-
-**`_quarantine/Renviron.CONTAINS-LIVE-PASSWORD`** — a 429-line dump of an HPC RStudio
-Server session. Lines 75 and 284 contain a live password (`RSTUDIO_PASSWORD` /
-`SINGULARITYENV_PASSWORD`). **Rotate that password**, then delete the file. It also set
-`R_HOME` to `/hpc/packages/minerva-rocky9/...`, which broke `Rscript` for anyone opening
-the project locally; moving it out of the project root fixed that.
-
-`_quarantine/` also holds `RDataTmp` (10 MB), `Rhistory` and the RStudio `log/` directory.
-None are needed.
-
-**`_duplicates-verified-identical/`** — 1.2 GB of second copies, each md5-identical to the
-copy kept in the stage folders. Safe to delete once you have checked the manifest.
 
 ## Script cleanup (done)
 

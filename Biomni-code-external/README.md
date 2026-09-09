@@ -53,22 +53,8 @@ Rscript  scripts/plot_sender_all.R              # -> outputs/sender_summary_circ
 python3  scripts/plot_venn_region_overlap.py    # -> outputs/venn_region_overlap/
 ```
 
-**Verified 27 Aug 2026:** all three run clean and reproduce the shipped reference outputs
-byte-for-byte on the counts CSV.
-
-> ### Figure 6F — resolved
->
-> This package once differed from the published Figure 6F, which showed
-> **Duodenum 42 | shared 269 | Ileum 134** while the script produced **23 | 236 | 84**.
->
-> The manuscript subsequently adopted the script's methodology. Published Figure 6F now
-> shows **23 | 236 | 84**, matching `venn_region_overlap_counts.csv` exactly
-> (Stem cells, combined evidence: Duodenum 23, shared 236, Ileum 84). The script is the
-> version of record and no change is needed.
->
-> The region-uniqueness definition it uses — mature-epithelia senders excluded, and combined
-> evidence required to be a subset of the LIANA region-unique set — also governs Figures 6G
-> and S8, which share these inputs.
+All three run clean and reproduce the shipped reference outputs byte-for-byte on the
+counts CSV.
 
 ### Expected outputs (`outputs/`)
 
