@@ -168,19 +168,57 @@ notebooks document how those objects were made.
 
 ## Environment
 
-R **4.4.1**, Seurat **5.5.0**.
+Two environments were used. Notebooks reading the large spatial or atlas objects ran on the
+cluster; the smaller ones ran locally. The versions differ, so use the one matching the
+figure you are reproducing.
 
-| Purpose | Packages |
+### Cluster — Figures 3B–3D, 4A, S3, S4, S5A/B
+
+```
+R 4.4.1 (2024-06-14), x86_64-pc-linux-gnu, Rocky Linux 9.8
+BLAS/LAPACK: reference libRblas/libRlapack, LAPACK 3.12.0
+```
+
+| Package | Version | | Package | Version |
+|---|---|---|---|---|
+| Seurat | 5.5.0 | | spacexr (RCTD) | 2.2.1 |
+| SeuratObject | 5.4.0 | | harmony | 2.0.3 |
+| sp | 2.2-1 | | sctransform | 0.4.3 |
+| Matrix | 1.7-5 | | fgsea | 1.32.4 |
+| tidyverse | 2.0.0 | | msigdbr | 26.1.0 |
+| dplyr | 1.2.1 | | UCell | 2.10.1 |
+| ggplot2 | 4.0.3 | | speckle | 1.6.0 |
+| patchwork | 1.3.2 | | presto | 1.0.0 |
+| readxl | 1.5.0 | | nichenetr | 2.2.1.1 |
+| RColorBrewer | 1.1-3 | | liana | 0.1.14 |
+| knitr | 1.51 | | openxlsx | 4.2.8.1 |
+
+### Local — Figures 3E, 3F, 6B/6C, S7
+
+```
+R 4.5.2, aarch64-apple-darwin20
+```
+
+| Package | Version |
 |---|---|
-| Core | Seurat, SeuratObject, Matrix, tidyverse |
-| Spatial | spacexr (RCTD), sf |
-| Integration | harmony, sctransform |
-| Cell–cell communication | liana, nichenetr |
-| Pathways | fgsea, msigdbr, UCell |
-| Composition | speckle (propeller) |
-| Plotting | ggplot2, patchwork, RColorBrewer, viridis |
+| Seurat | 5.4.0 |
+| SeuratObject | 5.3.0 |
+| Matrix | 1.7.4 |
+| tidyverse | 2.0.0 |
+| dplyr | 1.2.0 |
+| ggplot2 | 4.0.2 |
+| patchwork | 1.3.2 |
+| harmony | 2.0.2 |
+| UCell | 2.14.0 |
+| RColorBrewer | 1.1.3 |
+| viridis | 0.6.5 |
 
 Python components (Figures 6F, 6G, S8) use pandas, numpy, matplotlib and matplotlib-venn.
+
+> Cluster versions are read from the analysis library and confirmed against the
+> `sessionInfo()` recorded in the render logs. Local versions are those currently installed;
+> the laptop-rendered figures were produced in early September 2026 and no `sessionInfo()`
+> was captured at the time, so minor drift since then cannot be ruled out.
 
 ---
 
