@@ -265,7 +265,16 @@ numerical output exactly.
 
 ```bash
 docker build -f .checks/Dockerfile -t cherry-pic:4.4.1 .
+docker run --rm -v "$PWD":/work -w /work cherry-pic:4.4.1 Rscript -e 'sessionInfo()'
 ```
+
+The build fails rather than completing quietly if R is not 4.4.1 or Seurat is not 5.5.0,
+and prints the linked BLAS and LAPACK so they can be checked rather than assumed. Expect a
+long first build — 575 packages, many compiled from source.
+
+> **Not yet built end to end.** The Dockerfile is written against `rocker/r-ver:4.4.1`
+> (multi-arch, so it builds natively on both Intel and Apple Silicon) and its inputs are
+> verified, but no image has been produced from it. Build it once before release.
 
 Package versions alone do not determine results: the OS, compiler and BLAS/LAPACK do too.
 The analysis ran on **Rocky Linux 9.8, R 4.4.1, reference `libRblas`/`libRlapack`,
