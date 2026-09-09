@@ -188,6 +188,33 @@ BLAS/LAPACK: reference libRblas / libRlapack, LAPACK 3.12.0
 | viridis | 0.6.5 | | openxlsx | 4.2.8.1 |
 | knitr | 1.51 | | | |
 
+Also used, by stage:
+
+| Package | Version | Used for |
+|---|---|---|
+| ComplexHeatmap | 2.22.0 | annotation heatmaps |
+| EnhancedVolcano | 1.24.0 | differential-expression volcanoes |
+| clustree | 0.5.1 | clustering-resolution trees |
+| scDblFinder | 1.20.2 | doublet detection |
+| pheatmap | 1.0.13 | marker heatmaps |
+| circlize | 0.4.18 | circular layouts |
+| ggpubr | 0.6.3 | statistical annotation on plots |
+| ggrepel | 0.9.8 | non-overlapping labels |
+| ggsci | 5.0.0 | palettes |
+| svglite | 2.2.2 | SVG output |
+| data.table | 1.18.4 | fast table I/O |
+| jsonlite | 2.0.0 | metadata I/O |
+| png | 0.1-9 | raster import |
+| glue | 1.8.1 | string construction |
+| stringr | 1.6.0 | string handling |
+| tibble | 3.3.1 | data frames |
+| tidyr | 1.3.2 | reshaping |
+| grid | base R | low-level graphics, used by the heatmap layouts |
+
+`Cell_type-reAnnotation.Rmd` additionally loads **SingleR** and **celldex** for reference-based
+label transfer. Neither is present in the analysis library, so that notebook's SingleR chunks
+were run in a separate session; its outputs are provided rather than regenerated.
+
 All analysis was run on the Minerva HPC cluster. Versions are read from the analysis library
 and confirmed against `sessionInfo()` recorded in the render logs.
 
@@ -209,6 +236,13 @@ are not expected to match: 6F counts distinct pairs, 6G counts each sender's con
 and S8 lists the region-unique pairs themselves.
 
 ---
+
+## Release checks
+
+`bash .checks/release_check.sh` verifies the repository against the documentation: that no
+credential patterns or oversized files are tracked, that every path named in a README exists,
+that each `.R` twin is current, that every `library()` call is documented, and that the figure
+index covers all 28 panels. Run it before any release.
 
 ## Citation
 
