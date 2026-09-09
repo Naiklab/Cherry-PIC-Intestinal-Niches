@@ -670,15 +670,6 @@
       "Source": "Repository",
       "Repository": "CRAN"
     },
-    "SeuratWrappers": {
-      "Package": "SeuratWrappers",
-      "Version": "0.4.0",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteUsername": "satijalab",
-      "RemoteRepo": "seurat-wrappers"
-    },
     "ShortRead": {
       "Package": "ShortRead",
       "Version": "1.64.0",
