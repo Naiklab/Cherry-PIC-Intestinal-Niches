@@ -1,0 +1,576 @@
+packagetversiontsource
+abind	1.4-8	Repository: CRAN
+amap	0.8-20	Repository: CRAN
+annotate	1.84.0	biocViews: Annotation, Pathways, GO
+AnnotationDbi	1.68.0	biocViews: Annotation, Microarray, Sequencing, GenomeAnnotation
+AnnotationFilter	1.30.0	biocViews: Annotation, Infrastructure, Software
+ape	5.8-1	Repository: CRAN
+apeglm	1.28.0	biocViews: ImmunoOncology, Sequencing, RNASeq, DifferentialExpression,
+aplot	0.2.9	Repository: CRAN
+aricode	1.1.0	Repository: CRAN
+arrow	24.0.0	Repository: https://apache.r-universe.dev
+ashr	2.2-66	RemoteType: github
+askpass	1.2.1	Repository: CRAN
+assertthat	0.2.1	Repository: CRAN
+assorthead	1.0.1	biocViews: SingleCell, QualityControl, Normalization,
+babelgene	22.9	Repository: CRAN
+backports	1.5.1	Repository: CRAN
+Banksy	1.2.0	biocViews: Clustering, Spatial, SingleCell, GeneExpression,
+base64enc	0.1-6	Repository: CRAN
+basilisk	1.19.0	biocViews: Infrastructure
+basilisk.utils	1.19.0	biocViews: Infrastructure
+BBmisc	1.13.1	Repository: CRAN
+bbmle	1.0.25.1	Repository: CRAN
+bdsmatrix	1.3-7	Repository: CRAN
+beachmat	2.22.0	biocViews: DataRepresentation, DataImport, Infrastructure
+beeswarm	0.4.0	Repository: RSPM
+BH	1.90.0-1	Repository: CRAN
+bigD	0.3.1	Repository: CRAN
+Biobase	2.66.0	biocViews: Infrastructure
+BiocBaseUtils	1.8.0	biocViews: Software, Infrastructure
+BiocFileCache	2.14.0	biocViews: DataImport
+BiocGenerics	0.52.0	biocViews: Infrastructure
+BiocIO	1.16.0	biocViews: Annotation,DataImport
+BiocManager	1.30.27	Repository: CRAN
+BiocNeighbors	2.0.1	biocViews: Clustering, Classification
+BiocParallel	1.40.2	biocViews: Infrastructure
+BiocSingular	1.22.0	biocViews: Software, DimensionReduction, PrincipalComponent
+BiocVersion	3.20.0	biocViews: Infrastructure
+biomaRt	2.62.1	biocViews: Annotation
+Biostrings	2.74.1	biocViews: SequenceMatching, Alignment, Sequencing, Genetics,
+bit	4.6.0	Repository: CRAN
+bit64	4.8.2	Repository: CRAN
+bitops	1.0-9	Repository: CRAN
+blob	1.3.0	Repository: CRAN
+bluster	1.16.0	biocViews: ImmunoOncology, Software, GeneExpression, Transcriptomics,
+boot	1.3-32	Repository: CRAN
+brew	1.0-10	Repository: CRAN
+brio	1.1.5	Repository: CRAN
+broom	1.0.13	Repository: CRAN
+BSgenome	1.74.0	biocViews: Genetics, Infrastructure, DataRepresentation,
+BSgenome.Hsapiens.UCSC.hg38	1.4.5	biocViews: AnnotationData, Genetics, BSgenome, Homo_sapiens
+bslib	0.11.0	Repository: CRAN
+cachem	1.1.0	Repository: CRAN
+Cairo	1.7-0	Repository: CRAN
+callr	3.8.0	Repository: CRAN
+car	3.1-5	Repository: CRAN
+carData	3.0-6	Repository: CRAN
+caret	7.0-1	Repository: CRAN
+caTools	1.18.3	Repository: CRAN
+cellranger	1.1.0	Repository: CRAN
+checkmate	2.3.4	Repository: CRAN
+ChIPseeker	1.42.1	biocViews: Annotation, ChIPSeq, Software, Visualization,
+circlize	0.4.18	Repository: CRAN
+classInt	0.4-11	Repository: CRAN
+cli	3.6.6	Repository: CRAN
+clipr	0.8.1	Repository: CRAN
+clock	0.7.4	Repository: CRAN
+clue	0.3-68	Repository: CRAN
+cluster	2.1.8.2	Repository: CRAN
+clusterGeneration	1.3.8	Repository: CRAN
+clusterProfiler	4.14.6	biocViews: Annotation, Clustering, GeneSetEnrichment, GO, KEGG,
+clustree	0.5.1	Repository: CRAN
+CNEr	1.42.0	biocViews: GeneRegulation, Visualization, DataImport
+coda	0.19-4.1	Repository: CRAN
+codetools	0.2-20	Repository: CRAN
+colorspace	2.1-2	Repository: CRAN
+combinat	0.0-8	Repository: CRAN
+commonmark	2.0.0	Repository: CRAN
+ComplexHeatmap	2.22.0	biocViews: Software, Visualization, Sequencing
+CompQuadForm	1.4.4	Repository: CRAN
+conflicted	1.2.0	Repository: CRAN
+corrplot	0.95	Repository: CRAN
+covr	3.6.5	Repository: CRAN
+cowplot	1.2.0	Repository: CRAN
+cpp11	0.5.5	Repository: CRAN
+crayon	1.5.3	Repository: CRAN
+credentials	2.0.3	Repository: CRAN
+crosstalk	1.2.2	Repository: CRAN
+curl	7.1.0	Repository: CRAN
+data.table	1.18.4	Repository: CRAN
+DBI	1.3.0	Repository: CRAN
+dbplyr	2.5.2	Repository: CRAN
+dbscan	1.2.5	Repository: CRAN
+decontam	1.26.0	biocViews: ImmunoOncology, Microbiome, Sequencing, Classification,
+DelayedArray	0.32.0	biocViews: Infrastructure, DataRepresentation, Annotation,
+DelayedMatrixStats	1.28.1	biocViews: Infrastructure, DataRepresentation, Software
+deldir	2.0-4	Repository: CRAN
+DEoptim	2.2-8	Repository: CRAN
+DEoptimR	1.2-0	Repository: CRAN
+Deriv	4.2.0	Repository: CRAN
+desc	1.4.3	Repository: CRAN
+DESeq2	1.46.0	biocViews: Sequencing, RNASeq, ChIPSeq, GeneExpression, Transcription,
+devtools	2.5.2	Repository: CRAN
+diagram	1.6.5	Repository: CRAN
+DiagrammeR	1.0.12	Repository: CRAN
+DiceKriging	1.6.1	Repository: CRAN
+dichromat	2.0-0.1	Repository: CRAN
+diffobj	0.3.6	Repository: CRAN
+digest	0.6.39	Repository: CRAN
+dir.expiry	1.14.0	biocViews: Software, Infrastructure
+DirichletMultinomial	1.48.0	biocViews: ImmunoOncology, Microbiome, Sequencing, Clustering,
+doBy	4.7.1	Repository: CRAN
+doParallel	1.0.17	Repository: CRAN
+DOSE	4.0.1	biocViews: Annotation, Visualization, MultipleComparison,
+doSNOW	1.0.20	Repository: CRAN
+dotCall64	1.2	Repository: CRAN
+downlit	0.4.5	Repository: CRAN
+dplyr	1.2.1	Repository: CRAN
+dqrng	0.4.1	Repository: CRAN
+DT	0.34.0	Repository: CRAN
+dtplyr	1.3.3	Repository: CRAN
+e1071	1.7-17	Repository: CRAN
+edgeR	4.4.2	biocViews: GeneExpression, Transcription, AlternativeSplicing,
+ellipsis	0.3.3	Repository: CRAN
+emdbook	1.3.14	Repository: CRAN
+emoa	0.5-3	Repository: CRAN
+EnhancedVolcano	1.24.0	biocViews: RNASeq, GeneExpression, Transcription,
+enrichplot	1.26.6	biocViews: Annotation, GeneSetEnrichment, GO, KEGG, Pathways, Software,
+enrichR	3.4	Repository: CRAN
+EnsDb.Hsapiens.v86	2.99.0	biocViews: AnnotationData, EnsDb, Homo_sapiens
+ensembldb	2.30.0	biocViews: Genetics, AnnotationData, Sequencing, Coverage
+etrunct	0.1	Repository: CRAN
+evaluate	1.0.5	Repository: CRAN
+expm	1.0-0	Repository: CRAN
+fansi	1.0.7	Repository: CRAN
+farver	2.1.2	Repository: CRAN
+fastDummies	1.7.6	Repository: CRAN
+fastmap	1.2.0	Repository: CRAN
+fastmatch	1.1-8	Repository: CRAN
+fdrtool	1.2.18	Repository: CRAN
+fgsea	1.32.4	biocViews: GeneExpression, DifferentialExpression, GeneSetEnrichment,
+fields	17.3	Repository: CRAN
+filelock	1.0.3	Repository: CRAN
+fitdistrplus	1.2-6	Repository: CRAN
+FNN	1.1.4.1	Repository: CRAN
+fontawesome	0.5.3	Repository: CRAN
+fontBitstreamVera	0.1.1	Repository: CRAN
+fontLiberation	0.1.0	Repository: CRAN
+fontquiver	0.2.1	Repository: CRAN
+forcats	1.0.1	Repository: CRAN
+foreach	1.5.2	Repository: CRAN
+forecast	9.0.2	Repository: CRAN
+foreign	0.8-91	Repository: CRAN
+formatR	1.14	Repository: RSPM
+Formula	1.2-5	Repository: CRAN
+fracdiff	1.5-4	Repository: CRAN
+fs	2.1.0	Repository: CRAN
+futile.logger	1.4.9	Repository: CRAN
+futile.options	1.0.1	Repository: RSPM
+future	1.70.0	Repository: CRAN
+future.apply	1.20.2	Repository: CRAN
+gargle	1.6.1	Repository: CRAN
+gdtools	0.5.1	Repository: CRAN
+generics	0.1.4	Repository: CRAN
+GenomeInfoDb	1.42.3	biocViews: Genetics, DataRepresentation, Annotation, GenomeAnnotation
+GenomeInfoDbData	1.2.13	biocViews: AnnotationData, Organism
+GenomicAlignments	1.42.0	biocViews: Infrastructure, DataImport, Genetics, Sequencing, RNASeq,
+GenomicFeatures	1.58.0	biocViews: Genetics, Infrastructure, Annotation, Sequencing,
+GenomicRanges	1.58.0	biocViews: Genetics, Infrastructure, DataRepresentation, Sequencing,
+gert	2.3.1	Repository: CRAN
+GetoptLong	1.1.1	Repository: CRAN
+ggbeeswarm	0.7.3	Repository: CRAN
+ggforce	0.5.0	Repository: CRAN
+ggfun	0.2.0	Repository: CRAN
+ggiraph	0.9.6	Repository: CRAN
+ggnewscale	0.5.2	Repository: CRAN
+ggplot2	4.0.3	Repository: CRAN
+ggplot2movies	0.0.1	Repository: CRAN
+ggplotify	0.1.3	Repository: CRAN
+ggpubr	0.6.3	Repository: CRAN
+ggraph	2.2.2	Repository: CRAN
+ggrastr	1.0.2	Repository: RSPM
+ggrepel	0.9.8	Repository: CRAN
+ggridges	0.5.7	Repository: CRAN
+ggsci	5.0.0	Repository: CRAN
+ggsignif	0.6.4	Repository: CRAN
+ggtangle	0.1.2	Repository: CRAN
+ggthemes	5.2.0	Repository: CRAN
+ggtree	3.14.0	biocViews: Alignment, Annotation, Clustering, DataImport,
+gh	1.6.0	Repository: CRAN
+gitcreds	0.1.2	Repository: CRAN
+glmGamPoi	1.18.0	biocViews: Regression, RNASeq, Software, SingleCell
+GlobalOptions	0.1.4	Repository: CRAN
+globals	0.19.1	Repository: CRAN
+glue	1.8.1	Repository: CRAN
+gmp	0.7-5.1	Repository: CRAN
+GO.db	3.20.0	biocViews: AnnotationData, FunctionalAnnotation
+goftest	1.2-3	Repository: CRAN
+googledrive	2.1.2	Repository: CRAN
+googlesheets4	1.1.2	Repository: CRAN
+GOSemSim	2.32.0	biocViews: Annotation, GO, Clustering, Pathways, Network, Software
+gower	1.0.2	Repository: CRAN
+gplots	3.3.0	Repository: CRAN
+graph	1.84.1	biocViews: GraphAndNetwork
+graphite	1.52.0	biocViews: Pathways, ThirdPartyClient, GraphAndNetwork, Network,
+graphlayouts	1.2.3	Repository: CRAN
+GreyListChIP	1.38.0	biocViews: ChIPSeq, Alignment, Preprocessing, DifferentialPeakCalling,
+gridExtra	2.3	Repository: CRAN
+gridGraphics	0.5-1	Repository: CRAN
+gson	0.1.0	Repository: CRAN
+gt	1.3.0	Repository: CRAN
+gtable	0.3.6	Repository: CRAN
+gtools	3.9.5	Repository: CRAN
+hardhat	1.4.3	Repository: CRAN
+harmony	2.0.3	Repository: CRAN
+haven	2.5.5	Repository: CRAN
+HDF5Array	1.34.0	biocViews: Infrastructure, DataRepresentation, DataImport, Sequencing,
+hdf5r	1.3.12	Repository: CRAN
+here	1.0.2	Repository: CRAN
+hexbin	1.28.5	Repository: CRAN
+highr	0.12	Repository: CRAN
+Hmisc	5.2-5	Repository: CRAN
+hms	1.1.4	Repository: CRAN
+htmlTable	2.5.0	Repository: CRAN
+htmltools	0.5.9	Repository: CRAN
+htmlwidgets	1.6.4	Repository: CRAN
+httpuv	1.6.17	Repository: CRAN
+httr	1.4.8	Repository: CRAN
+httr2	1.2.2	Repository: CRAN
+hwriter	1.3.2.1	Repository: CRAN
+ica	1.0-3	Repository: CRAN
+ids	1.0.1	Repository: CRAN
+igraph	2.3.2	Repository: CRAN
+ini	0.3.1	Repository: CRAN
+InteractionSet	1.34.0	biocViews: Infrastructure, DataRepresentation, Software, HiC
+interp	1.1-6	Repository: CRAN
+invgamma	1.2	Repository: CRAN
+ipred	0.9-15	Repository: CRAN
+IRanges	2.40.1	biocViews: Infrastructure, DataRepresentation
+irlba	2.3.7	Repository: CRAN
+isoband	0.3.0	Repository: CRAN
+iterators	1.0.14	Repository: CRAN
+JASPAR2020	0.99.10	biocViews: AnnotationData, FunctionalAnnotation
+jpeg	0.1-11	Repository: CRAN
+jquerylib	0.1.4	Repository: CRAN
+jsonlite	2.0.0	Repository: CRAN
+juicyjuice	0.1.0	Repository: CRAN
+KEGGREST	1.46.0	biocViews: Annotation, Pathways, ThirdPartyClient, KEGG
+kernlab	0.9-33	Repository: CRAN
+KernSmooth	2.23-26	Repository: CRAN
+knitr	1.51	Repository: CRAN
+labeling	0.4.3	Repository: CRAN
+lambda.r	1.2.4	Repository: RSPM
+later	1.4.8	Repository: CRAN
+lattice	0.22-9	Repository: CRAN
+latticeExtra	0.6-31	Repository: CRAN
+lava	1.9.1	Repository: CRAN
+lazyeval	0.2.3	Repository: CRAN
+leiden	0.4.3.1	Repository: CRAN
+leidenAlg	1.1.8	Repository: CRAN
+leidenbase	0.1.37	Repository: CRAN
+lhs	1.3.0	Repository: CRAN
+liana	0.1.14	biocViews: scater, scran, SingleCellExperiment, ComplexHeatmap,
+lifecycle	1.0.5	Repository: CRAN
+limma	3.62.2	biocViews: ExonArray, GeneExpression, Transcription,
+listenv	0.10.1	Repository: CRAN
+litedown	0.9	Repository: CRAN
+lme4	2.0-1	Repository: CRAN
+lmtest	0.9-40	Repository: CRAN
+locfdr	1.1-8	Repository: CRAN
+locfit	1.5-9.12	Repository: CRAN
+logger	0.4.2	Repository: CRAN
+lubridate	1.9.5	Repository: CRAN
+magick	2.9.1	Repository: CRAN
+magrittr	2.0.5	Repository: CRAN
+mapproj	1.2.12	Repository: CRAN
+maps	3.4.3	Repository: CRAN
+markdown	2.0	Repository: CRAN
+MASS	7.3-65	Repository: CRAN
+MAST	1.32.0	biocViews: GeneExpression, DifferentialExpression, GeneSetEnrichment,
+mathjaxr	2.0-0	Repository: CRAN
+Matrix	1.7-5	Repository: CRAN
+MatrixGenerics	1.18.1	biocViews: Infrastructure, Software
+MatrixModels	0.5-4	Repository: CRAN
+matrixStats	1.5.0	Repository: CRAN
+mclust	6.1.2	Repository: CRAN
+memoise	2.0.1	Repository: CRAN
+metadat	1.6-0	Repository: CRAN
+metafor	5.0-1	Repository: CRAN
+metap	1.14	Repository: CRAN
+metapod	1.14.0	biocViews: MultipleComparison, DifferentialPeakCalling
+mgcv	1.9-4	Repository: CRAN
+microbenchmark	1.5.0	Repository: CRAN
+miloR	2.2.0	biocViews: SingleCell, MultipleComparison, FunctionalGenomics, Software
+mime	0.13	Repository: CRAN
+miniUI	0.1.2	Repository: CRAN
+minqa	1.2.8	Repository: CRAN
+mixsqp	0.3-54	Repository: CRAN
+mixtools	2.0.0.1	Repository: CRAN
+mlr	2.19.3	Repository: CRAN
+mlrMBO	1.1.6	Repository: CRAN
+mnormt	2.1.2	Repository: CRAN
+ModelMetrics	1.2.2.2	Repository: CRAN
+modelr	0.1.11	Repository: CRAN
+msigdbr	26.1.0	Repository: CRAN
+multcomp	1.4-30	Repository: CRAN
+multtest	2.62.0	biocViews: Microarray, DifferentialExpression, MultipleComparison
+munsell	0.5.1	Repository: CRAN
+mutoss	0.1-14	Repository: CRAN
+mvtnorm	1.4-1	Repository: CRAN
+nabor	0.5.0	Repository: CRAN
+nanoparquet	0.5.1	Repository: CRAN
+nichenetr	2.2.1.1	biocViews:
+nlme	3.1-169	Repository: CRAN
+nloptr	2.2.1	Repository: CRAN
+numDeriv	2016.8-1.1	Repository: CRAN
+OmnipathR	3.15.6	biocViews: GraphAndNetwork, Network, Pathways, Software,
+openssl	2.4.2	Repository: CRAN
+openxlsx	4.2.8.1	Repository: CRAN
+optimParallel	1.0-2	Repository: CRAN
+org.Hs.eg.db	3.20.0	biocViews: OrgDb, AnnotationData, Homo_sapiens, humanLLMappings
+org.Mm.eg.db	3.20.0	biocViews: OrgDb, AnnotationData, Mus_musculus, mouseLLMappings
+otel	0.2.0	Repository: CRAN
+pak	0.10.0	Repository: CRAN
+paleotree	3.4.7	Repository: CRAN
+pals	1.10	Repository: CRAN
+parallelly	1.47.0	Repository: CRAN
+parallelMap	1.5.1	Repository: CRAN
+ParamHelpers	1.14.2	Repository: CRAN
+patchwork	1.3.2	Repository: CRAN
+pbapply	1.7-4	Repository: CRAN
+pbdZMQ	0.3-14	Repository: CRAN
+pbkrtest	0.5.5	Repository: CRAN
+pbmcapply	1.5.1	Repository: CRAN
+permute	0.9-10	Repository: CRAN
+phangorn	2.12.1	biocViews: Software, Technology, QualityControl
+pheatmap	1.0.13	Repository: CRAN
+phytools	2.5-2	Repository: CRAN
+pillar	1.11.1	Repository: CRAN
+pkgbuild	1.4.8	Repository: CRAN
+pkgconfig	2.0.3	Repository: CRAN
+pkgdown	2.2.0	Repository: CRAN
+pkgload	1.5.2	Repository: CRAN
+plogr	0.2.0	Repository: RSPM
+plotly	4.12.0	Repository: CRAN
+plotrix	3.8-14	Repository: CRAN
+plyr	1.8.9	Repository: CRAN
+png	0.1-9	Repository: CRAN
+polyclip	1.10-7	Repository: CRAN
+polynom	1.4-1	Repository: CRAN
+poweRlaw	1.0.0	Repository: CRAN
+pracma	2.4.6	Repository: CRAN
+praise	1.0.0	Repository: CRAN
+presto	1.0.0	biocViews:
+prettyunits	1.2.0	Repository: CRAN
+pROC	1.19.0.1	Repository: CRAN
+processx	3.9.0	Repository: CRAN
+prodlim	2026.03.11	Repository: CRAN
+profvis	0.4.0	Repository: CRAN
+progress	1.2.3	Repository: CRAN
+progressr	0.19.0	Repository: CRAN
+promises	1.5.0	Repository: CRAN
+ProtGenerics	1.38.0	biocViews: Infrastructure, Proteomics, MassSpectrometry
+proxy	0.4-29	Repository: CRAN
+ps	1.9.3	Repository: CRAN
+purrr	1.2.2	Repository: CRAN
+pwalign	1.2.0	biocViews: Alignment, SequenceMatching, Sequencing, Genetics
+qqconf	1.3.2	Repository: CRAN
+quadprog	1.5-8	Repository: CRAN
+quantmod	0.4.28	Repository: CRAN
+quantreg	6.1	Repository: CRAN
+quarto	1.5.1	Repository: CRAN
+qvalue	2.38.0	biocViews: MultipleComparisons
+R6	2.6.1	Repository: CRAN
+ragg	1.5.0	Repository: CRAN
+randomForest	4.7-1.2	Repository: CRAN
+RANN	2.6.2	Repository: CRAN
+rappdirs	0.3.4	Repository: CRAN
+RBGL	1.82.0	biocViews: GraphAndNetwork, Network
+rbibutils	2.4.1	Repository: CRAN
+rcmdcheck	1.4.0	Repository: CRAN
+RColorBrewer	1.1-3	Repository: CRAN
+Rcpp	1.1.1-1.1	Repository: CRAN
+RcppAlgos	2.10.1	Repository: CRAN
+RcppAnnoy	0.0.23	Repository: CRAN
+RcppArmadillo	15.2.7-1	Repository: CRAN
+RcppEigen	0.3.4.0.2	Repository: CRAN
+RcppHNSW	0.7.0	Repository: CRAN
+RcppHungarian	0.3	Repository: CRAN
+RcppML	0.3.7.1	Repository: CRAN
+RcppNumerical	0.7-0	Repository: CRAN
+RcppParallel	5.1.11-2	Repository: CRAN
+RcppProgress	0.4.2	Repository: CRAN
+RcppRoll	0.3.2	Repository: CRAN
+RcppThread	2.4.0	Repository: CRAN
+RcppTOML	0.2.3	Repository: CRAN
+RCurl	1.98-1.19	Repository: CRAN
+Rdpack	2.6.6	Repository: CRAN
+reactable	0.4.5	Repository: CRAN
+reactome.db	1.89.0	biocViews: AnnotationData, FunctionalAnnotation
+ReactomePA	1.50.0	biocViews: Pathways, Visualization, Annotation, MultipleComparison,
+reactR	0.6.1	Repository: CRAN
+readr	2.2.0	Repository: CRAN
+readxl	1.5.0	Repository: CRAN
+recipes	1.3.3	Repository: CRAN
+reformulas	0.4.4	Repository: CRAN
+regioneR	1.38.0	biocViews: Genetics, ChIPSeq, DNASeq, MethylSeq, CopyNumberVariation
+rematch	2.0.0	Repository: CRAN
+rematch2	2.1.2	Repository: CRAN
+remotes	2.5.0	Repository: CRAN
+repr	1.1.7	Repository: CRAN
+reprex	2.1.1	Repository: CRAN
+reshape2	1.4.5	Repository: CRAN
+restfulr	0.0.17	Repository: CRAN
+reticulate	1.46.0	Repository: CRAN
+rex	1.2.2	Repository: CRAN
+Rfast	2.1.5.2	Repository: CRAN
+Rfast2	0.1.5.6	Repository: CRAN
+rhdf5	2.50.2	biocViews: Infrastructure, DataImport
+rhdf5filters	1.18.1	biocViews: Infrastructure, DataImport
+Rhdf5lib	1.28.0	biocViews: Infrastructure
+RhpcBLASctl	0.23-42	Repository: CRAN
+Rhtslib	3.2.0	biocViews: DataImport, Sequencing
+rJava	1.0-18	Repository: CRAN
+rjson	0.2.23	Repository: CRAN
+rlang	1.2.0	Repository: CRAN
+rmarkdown	2.31	Repository: CRAN
+R.methodsS3	1.8.2	Repository: CRAN
+Rnanoflann	0.0.3	Repository: CRAN
+robustbase	0.99-7	Repository: CRAN
+ROCR	1.0-12	Repository: CRAN
+R.oo	1.27.1	Repository: CRAN
+roxygen2	8.0.0	Repository: CRAN
+rpart	4.1.27	Repository: CRAN
+rprojroot	2.1.1	Repository: CRAN
+Rsamtools	2.22.0	biocViews: DataImport, Sequencing, Coverage, Alignment, QualityControl
+RSpectra	0.16-2	Repository: CRAN
+RSQLite	3.53.1	Repository: CRAN
+rstatix	0.7.3	Repository: CRAN
+rstudioapi	0.19.0	Repository: CRAN
+rsvd	1.0.5	Repository: RSPM
+rtracklayer	1.66.0	biocViews: Annotation,Visualization,DataImport
+Rtsne	0.17	Repository: CRAN
+R.utils	2.13.0	Repository: CRAN
+rversions	3.0.0	Repository: CRAN
+rvest	1.0.5	Repository: CRAN
+s2	1.1.11	Repository: CRAN
+S4Arrays	1.6.0	biocViews: Infrastructure, DataRepresentation
+S4Vectors	0.44.0	biocViews: Infrastructure, DataRepresentation
+S7	0.2.2	Repository: CRAN
+sandwich	3.1-1	Repository: CRAN
+sass	0.4.10	Repository: CRAN
+ScaledMatrix	1.14.0	biocViews: Software, DataRepresentation
+scales	1.4.0	Repository: CRAN
+scater	1.34.1	biocViews: ImmunoOncology, SingleCell, RNASeq, QualityControl,
+scattermore	1.2	Repository: CRAN
+scatterpie	0.2.6	Repository: CRAN
+scatterplot3d	0.3-45	Repository: CRAN
+sccore	1.0.7	Repository: CRAN
+scDblFinder	1.20.2	biocViews: Preprocessing, SingleCell, RNASeq, ATACSeq
+scran	1.34.0	biocViews: ImmunoOncology, Normalization, Sequencing, RNASeq, Software,
+sctransform	0.4.3	Repository: CRAN
+scuttle	1.16.0	biocViews: ImmunoOncology, SingleCell, RNASeq, QualityControl,
+segmented	2.2-1	Repository: CRAN
+selectr	0.5-1	Repository: CRAN
+seqLogo	1.72.0	biocViews: SequenceMatching
+sessioninfo	1.2.4	Repository: CRAN
+Seurat	5.5.0	Repository: CRAN
+SeuratObject	5.4.0	Repository: CRAN
+SeuratWrappers	0.4.0	biocViews:
+shadowtext	0.1.6	Repository: CRAN
+shape	1.4.6.1	Repository: CRAN
+shiny	1.13.0	Repository: CRAN
+shinyBS	0.65.0	Repository: CRAN
+shinydashboard	0.7.3	Repository: CRAN
+shinyjs	2.1.1	Repository: CRAN
+ShortRead	1.64.0	biocViews: DataImport, Sequencing, QualityControl
+Signac	1.17.1	Repository: CRAN
+SingleCellExperiment	1.28.1	biocViews: ImmunoOncology, DataRepresentation, DataImport,
+sitmo	2.0.2	Repository: CRAN
+smoof	1.7.0	Repository: CRAN
+sn	2.1.3	Repository: CRAN
+snow	0.4-4	Repository: CRAN
+sourcetools	0.1.7-2	Repository: CRAN
+sp	2.2-1	Repository: CRAN
+spacexr	2.2.1	RemoteType: github
+spam	2.11-4	Repository: CRAN
+SparseArray	1.6.2	biocViews: Infrastructure, DataRepresentation
+SparseM	1.84-2	Repository: CRAN
+sparseMatrixStats	1.18.0	biocViews: Infrastructure, Software, DataRepresentation
+sparsevctrs	0.3.6	Repository: CRAN
+SpatialExperiment	1.16.0	biocViews: DataRepresentation, DataImport, Infrastructure,
+spatstat.data	3.1-9	Repository: CRAN
+spatstat.explore	3.8-1	Repository: CRAN
+spatstat.geom	3.8-1	Repository: CRAN
+spatstat.random	3.5-0	Repository: CRAN
+spatstat.sparse	3.2-0	Repository: CRAN
+spatstat.univar	3.2-0	Repository: CRAN
+spatstat.utils	3.2-3	Repository: CRAN
+speckle	1.6.0	biocViews: SingleCell, RNASeq, Regression, GeneExpression
+SQUAREM	2026.1	Repository: CRAN
+statmod	1.5.2	Repository: CRAN
+stringi	1.8.7	Repository: CRAN
+stringr	1.6.0	Repository: CRAN
+SummarizedExperiment	1.36.0	biocViews: Genetics, Infrastructure, Sequencing, Annotation, Coverage,
+survival	3.8-6	Repository: CRAN
+svglite	2.2.2	Repository: CRAN
+sys	3.4.3	Repository: CRAN
+systemfonts	1.3.2	Repository: CRAN
+systemPipeR	2.12.0	biocViews: Genetics, Infrastructure, DataImport, Sequencing, RNASeq,
+tensor	1.5.1	Repository: CRAN
+testthat	3.3.2	Repository: CRAN
+textshaping	1.0.5	Repository: CRAN
+TFBSTools	1.44.0	biocViews: MotifAnnotation, GeneRegulation, MotifDiscovery,
+TFisher	0.2.0	Repository: CRAN
+TFMPvalue	0.0.9	Repository: CRAN
+TH.data	1.1-5	Repository: CRAN
+tibble	3.3.1	Repository: CRAN
+tidygraph	1.3.1	Repository: CRAN
+tidyr	1.3.2	Repository: CRAN
+tidyselect	1.2.1	Repository: CRAN
+tidytree	0.4.7	Repository: CRAN
+tidyverse	2.0.0	Repository: CRAN
+timechange	0.4.0	Repository: CRAN
+timeDate	4052.112	Repository: CRAN
+tinytex	0.59	Repository: CRAN
+treeio	1.30.0	biocViews: Software, Annotation, Clustering, DataImport,
+truncnorm	1.0-9	Repository: CRAN
+TTR	0.24.4	Repository: CRAN
+tweenr	2.0.3	Repository: CRAN
+TxDb.Hsapiens.UCSC.hg19.knownGene	3.2.2	biocViews: AnnotationData, Genetics, TxDb, Homo_sapiens
+TxDb.Hsapiens.UCSC.hg38.knownGene	3.20.0	biocViews: AnnotationData, Genetics, TxDb, Homo_sapiens
+tzdb	0.5.0	Repository: CRAN
+UCell	2.10.1	biocViews: SingleCell, GeneSetEnrichment, Transcriptomics,
+UCSC.utils	1.2.0	biocViews: Infrastructure, GenomeAssembly, Annotation,
+units	1.0-1	Repository: CRAN
+universalmotif	1.24.2	biocViews: MotifAnnotation, MotifDiscovery, DataImport, GeneRegulation
+urca	1.3-4	Repository: CRAN
+urlchecker	1.0.1	Repository: CRAN
+usethis	3.2.1	Repository: CRAN
+utf8	1.2.6	Repository: CRAN
+uuid	1.2-2	Repository: CRAN
+uwot	0.2.4	Repository: CRAN
+V8	8.2.0	Repository: CRAN
+vctrs	0.7.3	Repository: CRAN
+vdiffr	1.0.9	Repository: CRAN
+vegan	2.7-5	Repository: CRAN
+VennDiagram	1.8.2	Repository: CRAN
+VGAM	1.1-14	Repository: CRAN
+vipor	0.4.7	Repository: RSPM
+viridis	0.6.5	Repository: RSPM
+viridisLite	0.4.3	Repository: CRAN
+visNetwork	2.1.4	Repository: CRAN
+vroom	1.7.1	Repository: CRAN
+waldo	0.6.2	Repository: CRAN
+whisker	0.4.1	Repository: CRAN
+withr	3.0.2	Repository: CRAN
+wk	0.9.5	Repository: CRAN
+writexl	1.5.4	Repository: CRAN
+WriteXLS	6.8.0	Repository: CRAN
+xfun	0.58	Repository: CRAN
+xgboost	3.2.1.1	Repository: CRAN
+xlsx	0.6.5	Repository: CRAN
+xlsxjars	0.9.0	Repository: CRAN
+XML	3.99-0.23	Repository: CRAN
+xml2	1.5.2	Repository: CRAN
+xopen	1.0.1	Repository: CRAN
+xtable	1.8-8	Repository: CRAN
+xts	0.14.2	Repository: CRAN
+XVector	0.46.0	biocViews: Infrastructure, DataRepresentation
+yaml	2.3.12	Repository: CRAN
+yulab.utils	0.2.4	Repository: CRAN
+zigg	0.0.2	Repository: CRAN
+zip	3.0.0	Repository: CRAN
+zlibbioc	1.52.0	biocViews: Infrastructure
+zoo	1.8-15	Repository: CRAN

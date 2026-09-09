@@ -64,7 +64,10 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 # Fib.Obj$dataset_label       <- "Glisovic_Fibroblast";  Fib.Obj$cell_class       <- "Fibroblast"
 # Epi.Obj$dataset_label       <- "Rosenblum_Epithelial"; Epi.Obj$cell_class       <- "Epithelial"
 # Immune.Obj$dataset_label    <- "Rosenblum_Immune";     Immune.Obj$cell_class    <- "Immune"
-# SpaceFold.Obj$dataset_label <- "Niec_SpaceFold_SI";    SpaceFold.Obj$cell_class <- "Epithelial"
+# SpaceFold.Obj$dataset_label <- "Niec_SpaceFold_SI"
+# # Niec spans all three compartments; cell_class is derived from the authors' own
+# # coarse annotation, not set to one value. See Master-dataset-integration.Rmd.
+# SpaceFold.Obj$cell_class    <- niec_cell_class[as.character(SpaceFold.Obj$coarse_cluster_dbRM)]
 # Degirmenci.Obj$dataset_label<- "Degirmenci_2018";     Degirmenci.Obj$cell_class<- "Mesenchymal"
 # Kinchen.Obj$dataset_label   <- "Kinchen_2018";        Kinchen.Obj$cell_class   <- "Mesenchymal"
 # McCarthy.Obj$dataset_label  <- "McCarthy_2020";       McCarthy.Obj$cell_class  <- "Mesenchymal"
@@ -90,6 +93,9 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 # Master.Obj <- FindVariableFeatures(Master.Obj, nfeatures = 3000)
 # Master.Obj <- RunPCA(Master.Obj, assay = "SCT", verbose = FALSE)
 # 
+# # Harmony's k-means initialisation is stochastic and carries no default seed,
+# # unlike RunUMAP (seed.use = 42) and FindClusters (random.seed = 0).
+# set.seed(42)
 # Master.Obj <- RunHarmony(Master.Obj,
 #                          group.by.vars  = c("dataset_label", "sequencing_tech"),
 #                          reduction      = "pca", reduction.save = "harmony",

@@ -237,6 +237,23 @@ and S8 lists the region-unique pairs themselves.
 
 ---
 
+## Reproducing the environment
+
+```bash
+Rscript .checks/install_environment.R
+```
+
+Installs the packages the analysis loads directly, pinned to the versions used on the
+cluster: 30 from CRAN via `remotes::install_version()`, 8 from Bioconductor 3.20, and 4 from
+GitHub. It reports any package whose installed version differs from the one used here rather
+than installing over it silently.
+
+The complete library as it stood — **575 packages** with version and source — is recorded in
+`.checks/r_library_manifest.tsv`, so a full closure can be compared package by package.
+
+Base R was **4.4.1 (2024-06-14)**. The script warns if you are on a different minor version,
+since that can change numerical output independently of the packages.
+
 ## Release checks
 
 `bash .checks/release_check.sh` verifies the repository against the documentation: that no

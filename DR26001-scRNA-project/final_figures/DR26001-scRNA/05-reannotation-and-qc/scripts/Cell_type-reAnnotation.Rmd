@@ -201,6 +201,9 @@ multi_sample_pipeline <- function(merged_seu_obj, split_col = "orig.ident", res_
   
   merged_seu_obj <- RunPCA(merged_seu_obj)
   # assay.use was removed in harmony v1.0+; use reduction = "pca" instead
+  # Harmony's k-means initialisation is stochastic and carries no default seed,
+  # unlike RunUMAP (seed.use = 42) and FindClusters (random.seed = 0).
+  set.seed(42)
   merged_seu_obj <- RunHarmony(merged_seu_obj, reduction = "pca", group.by.vars = split_col, reduction.save = "harmony")
   merged_seu_obj <- RunUMAP(merged_seu_obj, reduction = "harmony", dims = 1:40)
   merged_seu_obj <- FindNeighbors(merged_seu_obj, reduction = "harmony", dims = 1:40)

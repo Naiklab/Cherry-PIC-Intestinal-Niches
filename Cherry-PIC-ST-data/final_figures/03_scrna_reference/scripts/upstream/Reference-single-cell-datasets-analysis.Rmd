@@ -455,6 +455,9 @@ dev.off()
 
 # Run Harmony integration
 cat("Running Harmony...\n")
+# Harmony's k-means initialisation is stochastic and carries no default seed,
+# unlike RunUMAP (seed.use = 42) and FindClusters (random.seed = 0).
+set.seed(42)
 integrated.data <- RunHarmony(
   integrated.data,
   group.by.vars = "dataset_source",

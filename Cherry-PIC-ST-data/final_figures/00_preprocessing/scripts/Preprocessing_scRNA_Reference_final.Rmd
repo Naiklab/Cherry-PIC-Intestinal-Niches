@@ -180,6 +180,9 @@ DefaultAssay(Master.Obj) <- "SCT"
 Master.Obj <- FindVariableFeatures(Master.Obj, nfeatures = 3000)
 Master.Obj <- RunPCA(Master.Obj, assay = "SCT", verbose = FALSE)
 
+# Harmony's k-means initialisation is stochastic and carries no default seed,
+# unlike RunUMAP (seed.use = 42) and FindClusters (random.seed = 0).
+set.seed(42)
 Master.Obj <- RunHarmony(Master.Obj,
                          group.by.vars  = c("dataset_label", "sequencing_tech"),
                          reduction      = "pca", reduction.save = "harmony",

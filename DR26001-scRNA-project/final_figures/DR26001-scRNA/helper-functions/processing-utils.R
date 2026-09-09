@@ -7,6 +7,8 @@ multi_sample_pipeline <- function(merged_seu_obj, split_col="orig.ident", harmon
   merged_seu_obj <- FindVariableFeatures(merged_seu_obj)
   merged_seu_obj <- ScaleData(merged_seu_obj)
   merged_seu_obj <- RunPCA(merged_seu_obj)
+  # Harmony's k-means initialisation carries no default seed.
+  set.seed(42)
   merged_seu_obj <- RunHarmony(merged_seu_obj, assay.use="RNA", group.by.vars = "orig.ident")
   merged_seu_obj <- RunUMAP(merged_seu_obj, reduction = "harmony", dims = 1:40)
   merged_seu_obj <- FindNeighbors(merged_seu_obj, reduction = "harmony", dims = 1:40) %>% FindClusters(resolution = c(1:10 / 10))

@@ -700,6 +700,9 @@ elbow_p
 #   - Computationally efficient at this scale
 ```{r harmony}
 # Correct for dataset and sequencing technology simultaneously
+# Harmony's k-means initialisation is stochastic and carries no default seed,
+# unlike RunUMAP (seed.use = 42) and FindClusters (random.seed = 0).
+set.seed(42)
 Master.Obj <- RunHarmony(
   Master.Obj,
   # `sequencing_tech` records the single-cell CAPTURE platform (PIPseq / Drop-seq /
