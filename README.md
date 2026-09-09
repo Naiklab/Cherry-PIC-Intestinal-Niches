@@ -84,6 +84,13 @@ from sequencing data.
 Figures **1, 2, 5, S1, S2** and **S6** are not derived from sequencing data and have no code
 here.
 
+> **Scope of the ligand–receptor code.** Figures 6F, 6G and S8 are produced from
+> pre-computed LIANA and NicheNet result tables, which are included. The inference step
+> itself — the `liana_wrap()` and NicheNet ligand-activity runs that generated those tables —
+> was performed upstream and that driver code is not part of this repository. The parameters
+> used are recorded in the Methods; the tables they produced are in
+> `Biomni-code-external/01_liana_nichenet/data/`.
+
 ---
 
 ## Repository layout
