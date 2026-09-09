@@ -399,8 +399,12 @@
     "OmnipathR": {
       "Package": "OmnipathR",
       "Version": "3.15.6",
-      "Source": "Bioconductor",
-      "Repository": "Bioconductor"
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "saezlab",
+      "RemoteRepo": "OmnipathR",
+      "RemoteSha": "45bd1069a29b7f52a2375e0747e77c9c2dc51ca3"
     },
     "ParamHelpers": {
       "Package": "ParamHelpers",
@@ -669,8 +673,11 @@
     "SeuratWrappers": {
       "Package": "SeuratWrappers",
       "Version": "0.4.0",
-      "Source": "Bioconductor",
-      "Repository": "Bioconductor"
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "satijalab",
+      "RemoteRepo": "seurat-wrappers"
     },
     "ShortRead": {
       "Package": "ShortRead",
@@ -859,7 +866,8 @@
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "stephens999",
-      "RemoteRepo": "ashr"
+      "RemoteRepo": "ashr",
+      "RemoteSha": "6786aa1511d31606ffa5f3e312d5698649049f73"
     },
     "askpass": {
       "Package": "askpass",
@@ -900,14 +908,22 @@
     "basilisk": {
       "Package": "basilisk",
       "Version": "1.19.0",
-      "Source": "Bioconductor",
-      "Repository": "Bioconductor"
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "LTLA",
+      "RemoteRepo": "basilisk",
+      "RemoteSha": "7e940de862c0ed765ee1cf768e3c9d5f2e946b0d"
     },
     "basilisk.utils": {
       "Package": "basilisk.utils",
       "Version": "1.19.0",
-      "Source": "Bioconductor",
-      "Repository": "Bioconductor"
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "LTLA",
+      "RemoteRepo": "basilisk.utils",
+      "RemoteSha": "f596ce05fb07b15cce559027f3a7a36a493d829d"
     },
     "bbmle": {
       "Package": "bbmle",
@@ -2040,8 +2056,12 @@
     "liana": {
       "Package": "liana",
       "Version": "0.1.14",
-      "Source": "Bioconductor",
-      "Repository": "Bioconductor"
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "saezlab",
+      "RemoteRepo": "liana",
+      "RemoteSha": "6cab46c54234f861ea176c3de77c4b8aa45ecb3d"
     },
     "lifecycle": {
       "Package": "lifecycle",
@@ -2304,8 +2324,12 @@
     "nichenetr": {
       "Package": "nichenetr",
       "Version": "2.2.1.1",
-      "Source": "Bioconductor",
-      "Repository": "Bioconductor"
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "saeyslab",
+      "RemoteRepo": "nichenetr",
+      "RemoteSha": "2d5c1ab5e135ebe6634d56c5ee13b8207ac178a1"
     },
     "nlme": {
       "Package": "nlme",
@@ -2436,8 +2460,8 @@
     "phangorn": {
       "Package": "phangorn",
       "Version": "2.12.1",
-      "Source": "Bioconductor",
-      "Repository": "Bioconductor"
+      "Source": "Repository",
+      "Repository": "CRAN"
     },
     "pheatmap": {
       "Package": "pheatmap",
@@ -2544,8 +2568,12 @@
     "presto": {
       "Package": "presto",
       "Version": "1.0.0",
-      "Source": "Bioconductor",
-      "Repository": "Bioconductor"
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "immunogenomics",
+      "RemoteRepo": "presto",
+      "RemoteSha": "7636b3d0465c468c35853f82f1717d3a64b3c8f6"
     },
     "prettyunits": {
       "Package": "prettyunits",
@@ -3058,7 +3086,8 @@
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "dmcable",
-      "RemoteRepo": "spacexr"
+      "RemoteRepo": "spacexr",
+      "RemoteSha": "9f5dc33c8060f946c6072a138b70e189636e1435"
     },
     "spam": {
       "Package": "spam",

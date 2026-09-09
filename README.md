@@ -237,9 +237,31 @@ and S8 lists the region-unique pairs themselves.
 
 ---
 
-## Reproducing the environment
+## Release checks
 
-Three levels, in increasing fidelity.
+`bash .checks/release_check.sh` verifies the repository against the documentation: that no
+credential patterns or oversized files are tracked, that every path named in a README exists,
+that each `.R` twin is current, that every `library()` call is documented, and that the figure
+index covers all 28 panels. Run it before any release.
+
+## Citation
+
+> Rosenblum et al. (2026). *Cherry-PIC enables functional interrogation of cellular
+> neighborhoods in vivo.* Manuscript in preparation.
+
+Questions about the code: open an issue, or contact Ikjot Sidhu.
+
+## License
+
+MIT — see [LICENSE.md](LICENSE.md).
+
+---
+
+## Optional — reproducing the environment exactly
+
+The versions above are the record of what was used and are sufficient to read, cite and
+check the analysis. This section is only needed if you intend to *re-run* it, and offers
+three levels of fidelity.
 
 **1. Install the direct dependencies** — quickest, adequate for reading and re-running most
 notebooks.
@@ -289,21 +311,3 @@ rather compare an existing library than rebuild one.
 > `renv.lock` here is reconstructed from the library as it stands, so it is the environment
 > at time of writing, not a snapshot taken at each figure's render. Practically the two are
 > the same library, but it is a reconstruction, not a record.
-
-## Release checks
-
-`bash .checks/release_check.sh` verifies the repository against the documentation: that no
-credential patterns or oversized files are tracked, that every path named in a README exists,
-that each `.R` twin is current, that every `library()` call is documented, and that the figure
-index covers all 28 panels. Run it before any release.
-
-## Citation
-
-> Rosenblum et al. (2026). *Cherry-PIC enables functional interrogation of cellular
-> neighborhoods in vivo.* Manuscript in preparation.
-
-Questions about the code: open an issue, or contact Ikjot Sidhu.
-
-## License
-
-MIT — see [LICENSE.md](LICENSE.md).
