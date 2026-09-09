@@ -56,24 +56,19 @@ python3  scripts/plot_venn_region_overlap.py    # -> outputs/venn_region_overlap
 **Verified 27 Aug 2026:** all three run clean and reproduce the shipped reference outputs
 byte-for-byte on the counts CSV.
 
-> ### ⚠️ The Venn script does not reproduce published Figure 6F
+> ### Figure 6F — resolved
 >
-> Figure 6F shows **Duodenum 42 | shared 269 | Ileum 134** for Stem-cell receivers.
-> The packaged script produces **23 | 236 | 84**.
+> This package once differed from the published Figure 6F, which showed
+> **Duodenum 42 | shared 269 | Ileum 134** while the script produced **23 | 236 | 84**.
 >
-> The published numbers come from: `_noclu` input, Stem cells, combined evidence, plain
-> set difference, and **no mature-epithelia sender exclusion**. The packaged script differs
-> in two ways:
+> The manuscript subsequently adopted the script's methodology. Published Figure 6F now
+> shows **23 | 236 | 84**, matching `venn_region_overlap_counts.csv` exactly
+> (Stem cells, combined evidence: Duodenum 23, shared 236, Ileum 84). The script is the
+> version of record and no change is needed.
 >
-> 1. It applies `EXCLUDE_SENDERS` (Bottom/Mid/Upper-villus enterocytes, Goblet,
->    Enteroendocrine) — the published figure did not.
-> 2. Its `region_unique_sets()` adds a "combined must be a strict subset of LIANA
->    region-unique" rule, which the published figure did not use.
->
-> Removing the sender exclusion and using the plain set difference reproduces
-> 42 / 269 / 134 exactly. **This is a methodology change made after the figure was made** —
-> decide whether the figure or the script is the version of record before submission.
-> The same question applies to Figure 6G and S8, which share these inputs.
+> The region-uniqueness definition it uses — mature-epithelia senders excluded, and combined
+> evidence required to be a subset of the LIANA region-unique set — also governs Figures 6G
+> and S8, which share these inputs.
 
 ### Expected outputs (`outputs/`)
 

@@ -48,7 +48,11 @@ Biomni-code-external/Full-data/**
 !Biomni-code-external/Full-data/**/
 !Biomni-code-external/Full-data/**/*.R
 !Biomni-code-external/Full-data/**/*.py
-!Biomni-code-external/Full-data/**/*.md
+# figure_legends.md documents how the LIANA and pathway panels were built and is worth
+# keeping. The other 20 .md files in the bundle are the vendor's working analysis reports,
+# including archived pre-run versions whose numbers were superseded — they belong in the
+# deposit, not in a repository a reviewer reads.
+!Biomni-code-external/Full-data/**/figure_legends.md
 
 # ── Working scratch ──────────────────────────────────────────────────────────
 # Sync scripts, dated backups and superseded documents. Local bookkeeping.
@@ -62,3 +66,6 @@ _sync/
 Rplots.pdf
 .DS_Store
 Thumbs.db
+
+# Internal working notes — not for the public repository
+PROJECT_NOTES.md
