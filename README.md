@@ -40,27 +40,49 @@ in `Dataset_Documentation.xlsx`.
 
 ## Figure index
 
-| Panel | Notebook |
-|---|---|
-| 3B, 3C, 3D | `Cherry-PIC-ST-data/.../01_spatial_clusters/scripts/Fig3_VisiumHD_final.Rmd` |
-| 3E | `Cherry-PIC-ST-data/.../04_spatial_clusters_16um/scripts/Fig3E_16um_final.Rmd` |
-| 3F | `DR26001-scRNA-project/.../04-merge-controls/scripts/Fig3F_DotPlots_final.Rmd` |
-| 4A | `Cherry-PIC-ST-data/.../02_regional_genes/scripts/Fig4A_VisiumHD_final.Rmd` |
-| 6B, 6C | `Cherry-PIC-scRNA-project/.../02-clustering-and-annotation/scripts/Fig6_scRNA_final.Rmd` |
-| 6D, 6E | `Cherry-PIC-scRNA-project/.../03-deconvolution-with-ST-data/scripts/Fig6_Deconvolution_StemNiche_final.Rmd` |
-| 6F | `Biomni-code-external/01_liana_nichenet/scripts/plot_venn_region_overlap.py` |
-| 6G | `Biomni-code-external/01_liana_nichenet/scripts/plot_sender_all.R` |
-| 6H | `Biomni-code-external/02_pathway_analysis/scripts/regenerate_pathway_figures.R` |
-| S3 | `Cherry-PIC-ST-data/.../01_spatial_clusters/scripts/FigS3_VisiumHD_QC_Clusters_final.Rmd` |
-| S4 | `Cherry-PIC-ST-data/.../01_spatial_clusters/scripts/FigS4_DotPlots_final.Rmd` |
-| S5A, S5B | `Cherry-PIC-ST-data/.../03_scrna_reference/scripts/FigS5_scRNA_Reference_final.Rmd` |
-| S5C–E | `Biomni-code-external/.../dotplot_markers_final.R` |
-| S7 | `Cherry-PIC-scRNA-project/.../02-clustering-and-annotation/scripts/FigS7_DotPlots_final.Rmd` |
-| S8 | `Biomni-code-external/01_liana_nichenet/` |
-| S9 | `Biomni-code-external/02_pathway_analysis/scripts/regenerate_pathway_figures.R` |
+### Main figures
 
-Figures 1, 2, 5, S1, S2 and S6, and Figure 4 panels B–E, are not derived from sequencing
-data. Figures 3A and 6A are experimental schematics.
+| Panel | What it shows | Notebook |
+|---|---|---|
+| **3B** | RCTD dominant cell type, spatial — duodenum | `Cherry-PIC-ST-data/.../01_spatial_clusters/scripts/Fig3_VisiumHD_final.Rmd` |
+| **3C** | RCTD dominant cell type, spatial — ileum | *same* |
+| **3D** | Composition of deconvolved cell identities, duodenum vs ileum (replicates pooled per region) | *same* |
+| **3E** | Epithelial UMAP along the crypt–villus axis, 16 µm | `Cherry-PIC-ST-data/.../04_spatial_clusters_16um/scripts/Fig3E_16um_final.Rmd` |
+| **3F** | Dot plots, region-specific enterocyte programs (proximal and distal), scRNA | `DR26001-scRNA-project/.../04-merge-controls/scripts/Fig3F_DotPlots_final.Rmd` |
+| **4A** | Spatial expression of *Fabp1*, *Reg1*, *Fabp6*, *Slc10a2* across duodenum and ileum | `Cherry-PIC-ST-data/.../02_regional_genes/scripts/Fig4A_VisiumHD_final.Rmd` |
+| **6B** | scRNA UMAP of sorted Cherry-PIC niches, broad cell type | `Cherry-PIC-scRNA-project/.../02-clustering-and-annotation/scripts/Fig6_scRNA_final.Rmd` |
+| **6C** | Cell-type composition by region, with propeller tests | *same* |
+| **6D** | RCTD dominant cell type, hi-res spatial — duodenum niche | `Cherry-PIC-scRNA-project/.../03-deconvolution-with-ST-data/scripts/Fig6_Deconvolution_StemNiche_final.Rmd` |
+| **6E** | RCTD dominant cell type, hi-res spatial — ileum niche | *same* |
+| **6F** | Venn of region overlap in ligand–receptor pairs | `Biomni-code-external/01_liana_nichenet/scripts/plot_venn_region_overlap.py` |
+| **6G** | Hub-and-spoke sender summaries, stem-cell receiver | `Biomni-code-external/01_liana_nichenet/scripts/plot_sender_all.R` |
+| **6H** | GSEA diverging bars — fibroblasts and endothelium | `Biomni-code-external/02_pathway_analysis/scripts/regenerate_pathway_figures.R` |
+
+Panels **3A** and **6A** are experimental schematics. Of Figure 4, only **4A** is derived
+from sequencing data.
+
+### Supplementary figures
+
+| Panel | What it shows | Notebook |
+|---|---|---|
+| **S3A** | Spatial cluster maps, duodenum and ileum | `Cherry-PIC-ST-data/.../01_spatial_clusters/scripts/FigS3_VisiumHD_QC_Clusters_final.Rmd` |
+| **S3B** | UMAP of spatial clusters with annotation | *same* |
+| **S3C** | Features vs UMI counts per replicate, pre-filter | *same* |
+| **S3D** | QC violins — UMI, features, mitochondrial percent | *same* |
+| **S4A** | Marker dot plots, epithelial spatial clusters (proximal villus; distal villus, Tuft, Crypts) | `Cherry-PIC-ST-data/.../01_spatial_clusters/scripts/FigS4_DotPlots_final.Rmd` |
+| **S4B** | Marker dot plots, stromal and immune spatial clusters | *same* |
+| **S5A** | Integrated reference atlas UMAP, coloured by dataset of origin | `Cherry-PIC-ST-data/.../03_scrna_reference/scripts/FigS5_scRNA_Reference_final.Rmd` |
+| **S5B** | Integrated reference atlas UMAP, coloured by broad cell type | *same* |
+| **S5C–E** | Marker dot plots of the reference atlas — epithelia, stroma, immune | `Biomni-code-external/.../dotplot_markers_final.R` |
+| **S7A** | Marker dot plots, Cherry-PIC niche scRNA — epithelia | `Cherry-PIC-scRNA-project/.../02-clustering-and-annotation/scripts/FigS7_DotPlots_final.Rmd` |
+| **S7B** | Marker dot plots, Cherry-PIC niche scRNA — immune and stroma | *same* |
+| **S8A/B** | Region-unique ligand–receptor pairs by module, stem-cell receiver — duodenum and ileum | `Biomni-code-external/01_liana_nichenet/` |
+| **S9A** | Module score heatmaps — Notch and WNT signalling | `Biomni-code-external/02_pathway_analysis/scripts/regenerate_pathway_figures.R` |
+| **S9B** | Module score heatmap — retinoic acid signalling | *same* |
+| **S9C** | GSEA diverging bars — macrophages | *same* |
+
+Figures **1, 2, 5, S1, S2** and **S6** are not derived from sequencing data and have no code
+here.
 
 ---
 
