@@ -117,21 +117,28 @@ Biomni-code-external/          ligand–receptor and pathway analysis
 ## Reference datasets
 
 The integrated reference atlas combines eight datasets — two generated for this manuscript
-and six public — merged, SCTransformed and batch-corrected with Harmony.
+and six published — merged, SCTransformed and batch-corrected with Harmony. All are
+*Mus musculus*.
 
-| Dataset | Source | Accession | Cells |
+| Dataset | Publication | Accession | Cells |
 |---|---|---|---|
 | Rosenblum — epithelial | This manuscript | to be deposited | 17,552 |
 | Rosenblum — immune | This manuscript | to be deposited | 27,863 |
-| Glisovic *et al.* 2025 | *J Cell Sci* | GSE269017 | 7,221 |
-| Niec *et al.* 2022 | *Cell Stem Cell* | GSE190037 | 2,237 |
-| Degirmenci *et al.* 2018 | | GSE113043 | 4,464 |
-| Kinchen *et al.* 2018 | | GSE114374 | 3,713 |
-| McCarthy *et al.* 2020 | | GSE130681 | 5,397 |
-| Roulis *et al.* 2020 | | GSE142431 | 6,151 |
+| Glisovic *et al.* 2025 | Intestinal fibroblast heterogeneity — unifying RNA-seq studies and introducing consensus-driven nomenclature. *J Cell Sci* 138(23):jcs264147. [10.1242/jcs.264147](https://doi.org/10.1242/jcs.264147) | [GSE269017](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE269017) | 7,221 |
+| Niec *et al.* 2022 | Lymphatics act as a signaling hub to regulate intestinal stem cell activity. *Cell Stem Cell* 29(7):1067–1082.e18. [10.1016/j.stem.2022.05.007](https://doi.org/10.1016/j.stem.2022.05.007) | [GSE190037](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE190037) | 2,237 |
+| Degirmenci *et al.* 2018 | GLI1-expressing mesenchymal cells form the essential Wnt-secreting niche for colon stem cells. *Nature* 558(7710):449–453. [10.1038/s41586-018-0190-3](https://doi.org/10.1038/s41586-018-0190-3) | [GSE113043](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE113043) | 4,464 |
+| Kinchen *et al.* 2018 | Structural remodeling of the human colonic mesenchyme in inflammatory bowel disease. *Cell* 175(2):372–386.e17. [10.1016/j.cell.2018.08.067](https://doi.org/10.1016/j.cell.2018.08.067) | [GSE114374](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE114374) | 3,713 |
+| McCarthy *et al.* 2020 | Distinct mesenchymal cell populations generate the essential intestinal BMP signaling gradient. *Cell Stem Cell* 26(3):391–402.e5. [10.1016/j.stem.2020.01.008](https://doi.org/10.1016/j.stem.2020.01.008) | [GSE130681](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE130681) | 5,397 |
+| Roulis *et al.* 2020 | Paracrine orchestration of intestinal tumorigenesis by a mesenchymal niche. *Nature* 580(7804):524–529. [10.1038/s41586-020-2166-3](https://doi.org/10.1038/s41586-020-2166-3) | [GSE142431](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE142431) | 6,151 |
 
-The build is in `Cherry-PIC-ST-data/final_figures/03_scrna_reference/scripts/upstream/`,
-together with executed notebooks recording the run.
+**GSE114374 is a mixed-species series.** Kinchen *et al.* deposited both human and mouse
+data; only the **mouse** samples are used here — three healthy controls, immune cells removed
+on *Ptprc*.
+
+Per-dataset filtering and the label each dataset carries inside the object are recorded in
+`Dataset_Documentation.xlsx`. The build is in
+`Cherry-PIC-ST-data/final_figures/03_scrna_reference/scripts/upstream/`, together with
+executed notebooks recording the run.
 
 ---
 
