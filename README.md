@@ -240,7 +240,8 @@ and S8 lists the region-unique pairs themselves.
 ## Reproducing the environment
 
 ```bash
-Rscript .checks/install_environment.R
+Rscript .checks/install_environment.R --dry-run   # report what differs, change nothing
+Rscript .checks/install_environment.R             # install
 ```
 
 Installs the packages the analysis loads directly, pinned to the versions used on the
