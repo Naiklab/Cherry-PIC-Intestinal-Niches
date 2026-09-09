@@ -239,21 +239,47 @@ and S8 lists the region-unique pairs themselves.
 
 ## Reproducing the environment
 
+Three levels, in increasing fidelity.
+
+**1. Install the direct dependencies** — quickest, adequate for reading and re-running most
+notebooks.
+
 ```bash
 Rscript .checks/install_environment.R --dry-run   # report what differs, change nothing
 Rscript .checks/install_environment.R             # install
 ```
 
-Installs the packages the analysis loads directly, pinned to the versions used on the
-cluster: 30 from CRAN via `remotes::install_version()`, 8 from Bioconductor 3.20, and 4 from
-GitHub. It reports any package whose installed version differs from the one used here rather
-than installing over it silently.
+Pins the ~40 packages the analysis loads directly: 30 CRAN via
+`remotes::install_version()`, 8 from Bioconductor 3.20, 4 from GitHub. Transitive
+dependencies resolve to whatever those require.
 
-The complete library as it stood — **575 packages** with version and source — is recorded in
-`.checks/r_library_manifest.tsv`, so a full closure can be compared package by package.
+**2. Restore the full package closure** — pins all **575** packages at the versions used.
 
-Base R was **4.4.1 (2024-06-14)**. The script warns if you are on a different minor version,
-since that can change numerical output independently of the packages.
+```r
+install.packages("renv")
+renv::restore()            # reads renv.lock
+```
+
+**3. Rebuild the whole environment, including the platform** — the only way to reproduce
+numerical output exactly.
+
+```bash
+docker build -f .checks/Dockerfile -t cherry-pic:4.4.1 .
+```
+
+Package versions alone do not determine results: the OS, compiler and BLAS/LAPACK do too.
+The analysis ran on **Rocky Linux 9.8, R 4.4.1, reference `libRblas`/`libRlapack`,
+LAPACK 3.12.0**. A different BLAS changes floating-point summation order, so PCA, UMAP and
+clustering can differ in the last digits even with identical package versions. The
+Dockerfile pins that platform; convert it with `singularity build` for an HPC cluster.
+
+`.checks/r_library_manifest.tsv` lists the same 575 packages as plain text if you would
+rather compare an existing library than rebuild one.
+
+> **What none of this recovers.** No `renv.lock` was captured while the analysis ran —
+> `renv.lock` here is reconstructed from the library as it stands, so it is the environment
+> at time of writing, not a snapshot taken at each figure's render. Practically the two are
+> the same library, but it is a reconstruction, not a record.
 
 ## Release checks
 
