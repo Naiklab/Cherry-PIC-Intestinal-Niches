@@ -116,8 +116,14 @@ repository: its two inputs are read from `../data/` or from `CHERRYPIC_MASTER_OB
 `/mnt/results`.
 
 **Neither input ships here.** `Master.Obj.rds` is the 5.8 GB integrated atlas built by
-`Cherry-PIC-ST-data/final_figures/03_scrna_reference/` and belongs with the Zenodo deposit;
-the curated marker workbook is not in this repository at all and needs adding.
+`Cherry-PIC-ST-data/final_figures/03_scrna_reference/`; it is on the analysis cluster and
+belongs with the Zenodo deposit.
+
+`curated_10_genes_per_cluster_res1_2.xlsx` is **missing entirely** — not in this repository,
+not on the cluster, and not any of the annotation workbooks here under another name (none
+contains the `Curated 10 genes` worksheet the script reads). It was uploaded directly to the
+analysis sandbox and exists only wherever it was uploaded from. **Figure S5C–E cannot be
+regenerated until it is added**; everything else in this folder can.
 
 ## A note on `Full-data/`
 
