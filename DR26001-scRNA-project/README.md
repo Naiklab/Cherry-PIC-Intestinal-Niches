@@ -180,7 +180,7 @@ a presto/`wilcoxauc` wrapper that returns the Raw / Filtered / Top marker tables
 ### Prior annotations — resolved, no longer external
 
 Two notebooks needed prior-annotation columns that lived in multi-GB Seurat objects under
-another user's Minerva account. Only these columns were ever read from them, so they were
+another user's account on the cluster. Only these columns were ever read from them, so they were
 extracted once and vendored here as CSVs. The `left_join` in each notebook is unchanged.
 
 | CSV | Columns | Cells | Used by |
@@ -188,8 +188,7 @@ extracted once and vendored here as CSVs. The `left_join` in each notebook is un
 | `02-epithelia-clustering/data/prior_annotations_epithelia_2024-03-24.csv` | `cell_type_broad`, `cell_type_narrow` | 35,981 | `Combined-short-term-epithelia-analysis.Rmd`; downstream by the stage-05 SingleR heatmaps |
 | `03-immune-clustering/data/prior_annotations_immune_2024-08-06.csv` | `final_clusters` | 21,523 | `short-term-immune-analysis-2024-02-09.Rmd`; downstream as `refdata` for `TransferData` in `long-term-immune-analysis.Rmd` |
 
-Source objects (1.1 GB and 4.5 GB) remain on Minerva under
-`/sc/arion/projects/naiklab/Alex/Daniel-Redone-Analysis-NYU-Transfer/`. Nothing in this
+Source objects (1.1 GB and 4.5 GB) remain on the analysis cluster. Nothing in this
 repository needs them.
 
 ## Known issues not yet fixed

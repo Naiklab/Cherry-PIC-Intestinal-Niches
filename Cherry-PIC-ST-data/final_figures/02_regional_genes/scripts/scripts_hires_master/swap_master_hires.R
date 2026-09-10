@@ -4,13 +4,14 @@
 # 8um objects, writing NEW *_hires.RDS files. Mirrors Swap_LowRes_to_HiRes_Images.Rmd.
 # =============================================================================
 
-.libPaths("/sc/arion/projects/naiklab/ikjot/R")   # Rocky9 R/4.4.1 personal library
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 library(tidyverse)                                  # whole tidyverse only
 library(Seurat)                                     # spatial object handling (v5)
 library(png)                                        # readPNG() — same reader Seurat uses
 
 # ---- Configuration ----------------------------------------------------------
-data.dir <- "/sc/arion/projects/naiklab/ikjot/DR_Visium_HD_analysis_Jan_26/rawdata"
+# Space Ranger output root, one folder per sample.
+data.dir <- Sys.getenv("CHERRYPIC_RAWDATA", "rawdata")
 
 # Sample folder -> slice/image name (make.names() dotting matches merged slots)
 image.names <- list(

@@ -19,7 +19,7 @@ cat("Start time:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n")
 cat("Setting up environment...\n")
 
 # Library path
-.libPaths("/sc/arion/projects/naiklab/ikjot/R")
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 
 # Load required libraries
 suppressPackageStartupMessages({

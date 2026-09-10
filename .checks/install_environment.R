@@ -5,7 +5,7 @@
 #   Rscript .checks/install_environment.R --dry-run  report only, change nothing
 #
 # Installs the packages the analysis loads directly, pinned to the versions used
-# on the Minerva HPC cluster. Transitive dependencies resolve to whatever the
+# on the analysis cluster. Transitive dependencies resolve to whatever the
 # pinned versions require; the complete 575-package closure as it stood is
 # recorded in .checks/r_library_manifest.tsv for exact comparison.
 #

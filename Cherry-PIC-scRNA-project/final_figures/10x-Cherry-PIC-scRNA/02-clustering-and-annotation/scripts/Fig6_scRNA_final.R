@@ -1,5 +1,5 @@
 ## ----setup, include=FALSE-----------------------------------------------------
-for (.p in c("/sc/arion/projects/naiklab/ikjot/R")) if (dir.exists(.p)) .libPaths(c(.p, .libPaths()))
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 library(Seurat)
 library(speckle)
 library(tidyverse)      # whole tidyverse, never individual sub-packages
@@ -28,6 +28,9 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 # # SCTransform fit PER SAMPLE at merge time (median_umi baked in per-sample —
 # # this is why 03's Section 6 refit is required after any cell-count-changing filter).
 # seu <- SCTransform(seu, vst.flavor = "v2")
+# # Harmony's k-means initialisation is stochastic and carries no default seed,
+# # unlike RunUMAP (seed.use = 42) and FindClusters (random.seed = 0).
+# set.seed(42)
 # seu <- RunPCA(seu) |> RunHarmony(group.by.vars = "orig.ident") |>
 #   RunUMAP(reduction = "harmony", dims = 1:30) |>
 #   FindNeighbors(reduction = "harmony", dims = 1:30) |>
@@ -62,6 +65,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 # # drop the same fraction of cells from each sample, so the inherited SCT
 # # models would silently no longer match the filtered population.
 # seu_final <- SCTransform(seu_final, vst.flavor = "v2")
+# set.seed(42)
 # seu_final <- RunPCA(seu_final) |> RunHarmony(group.by.vars = "orig.ident") |>
 #   RunUMAP(reduction = "harmony", dims = 1:30)
 # 

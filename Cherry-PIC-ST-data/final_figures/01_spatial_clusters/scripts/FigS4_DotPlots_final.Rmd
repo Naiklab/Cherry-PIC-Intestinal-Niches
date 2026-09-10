@@ -39,7 +39,7 @@ the `marker_panels` chunk below.
 
 ## Running this
 
-The 8 µm object exceeds a laptop's memory once loaded, so this runs on a compute node:
+The 8 µm object is large once loaded, so this runs on a compute node:
 
 ```
 OPENBLAS_NUM_THREADS=1 Rscript FigS4_DotPlots_final.R
@@ -54,7 +54,7 @@ the same way (3 clusters each) and do match the published figure. Separating 10 
 would require a one-off exception to the annotation column every other notebook shares.
 
 ```{r setup, include=FALSE}
-for (.p in c("/sc/arion/projects/naiklab/ikjot/R")) if (dir.exists(.p)) .libPaths(c(.p, .libPaths()))
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 
 library(Seurat)
 library(tidyverse)

@@ -31,7 +31,7 @@ Written to `../outputs/`. A `fig3F` prefix marks a published panel.
 | `../outputs/epithelia_EP.CTRL_data.processed(no-immune).RDS` | CTRL-only, immune-excluded epithelia — 17,246 cells with `cell_type_labels` and `Location` |
 
 Frozen. This notebook reads it; it does not rebuild it. At 420 MB it loads in a few
-seconds, so this one runs comfortably on a laptop.
+seconds, so this one needs no special resources.
 
 The differential-expression table behind the gene selection is built upstream by
 `Analysis-part1-Epithelia.Rmd` (§9, Duodenum vs Ileum) and written to

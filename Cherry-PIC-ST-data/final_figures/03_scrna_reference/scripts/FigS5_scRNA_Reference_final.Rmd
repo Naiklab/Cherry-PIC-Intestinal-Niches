@@ -49,15 +49,14 @@ easy to confuse; §4 below sets out exactly how the Broad categories resolve.
 
 ## Running this
 
-`Master.Obj.rds` is 5.8 GB and needs more memory than a laptop has, so this runs on a
-compute node:
+`Master.Obj.rds` is 5.8 GB, so this runs on a compute node:
 
 ```
 OPENBLAS_NUM_THREADS=1 Rscript FigS5_scRNA_Reference_final.R
 ```
 
 ```{r setup, include=FALSE}
-.libPaths("/sc/arion/projects/naiklab/ikjot/R")
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 library(Seurat)
 library(tidyverse)
 library(patchwork)

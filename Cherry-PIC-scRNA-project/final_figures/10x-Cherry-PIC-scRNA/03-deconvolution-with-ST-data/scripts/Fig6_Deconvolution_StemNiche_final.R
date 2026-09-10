@@ -1,5 +1,5 @@
 ## ----setup, include=FALSE-----------------------------------------------------
-for (.p in c("/sc/arion/projects/naiklab/ikjot/R")) if (dir.exists(.p)) .libPaths(c(.p, .libPaths()))
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 library(Seurat)
 library(tidyverse)   # whole tidyverse, never individual sub-packages
 library(patchwork)
@@ -13,9 +13,10 @@ set.seed(42)
 ## ----pipeline-provenance, child='Preprocessing_RCTD_StemNiche_final.Rmd'------
 
 ## ----stage1-niche-zones, eval=FALSE-------------------------------------------
-# # Distance-based zone assignment around the stem-cell-annotated spatial cluster
-# # (see Stem_Cell_Niche_Analysis_8um.Rmd for the exact distance thresholds).
-# merged.object$stem_niche_zone <- assign_niche_zone(merged.object)  # Stem_cell | Immediate_periphery | NA
+# # Distance to the nearest stem-cell-dominant bin, then zone assignment. The niche is
+# # the stem-cell bins plus their immediate periphery: within 3 bin widths (≤ 24 µm).
+# # classify_niche_zone() is defined in Preprocessing_VisiumHD_8um_final.Rmd, Stage 7.
+# merged.object$stem_niche_zone <- classify_niche_zone(...)  # Stem_cell | Immediate_periphery | Outside_niche
 # saveRDS(merged.object, "output_8um/RDS-files/final_analysis_object_8um_with_stem_niche.RDS")
 
 

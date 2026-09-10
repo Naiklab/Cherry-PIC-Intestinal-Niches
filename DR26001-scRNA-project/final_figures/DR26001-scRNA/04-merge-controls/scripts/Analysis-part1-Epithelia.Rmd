@@ -27,11 +27,7 @@ Paths are relative to this `scripts/` directory. Run with the working directory 
 ## 0. Setup
 
 ```{r setup, message=FALSE, warning=FALSE}
-# Portable: only prepend these library paths when they actually exist.
-for (.p in c("/hpc/packages/minerva-rocky9/rpackages/4.4.1/site-library",
-             "/hpc/packages/minerva-rocky9/R/4.4.1/lib64/R/library")) {
-  if (dir.exists(.p)) .libPaths(c(.p, .libPaths()))
-}
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 
 library(Seurat)
 library(tidyverse)

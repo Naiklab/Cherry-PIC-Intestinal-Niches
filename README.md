@@ -158,19 +158,25 @@ executed notebooks recording the run.
 Each notebook has an `.R` twin generated with `knitr::purl()`, which runs without pandoc.
 Paths inside notebooks are relative, so run from the notebook's own folder.
 
+This analysis is sized for a compute cluster, not a workstation. Notebooks reading the
+Visium HD or integrated-atlas objects need tens of gigabytes of memory; each states its
+requirement at the top. Run them on a compute node:
+
 ```bash
+export OPENBLAS_NUM_THREADS=1     # keep BLAS single-threaded under a scheduler
 cd <notebook folder>
-Rscript FigS7_DotPlots_final.R
-```
-
-Notebooks reading the Visium HD or integrated-atlas objects need more memory than a laptop
-has; each notebook states its requirement at the top. On a cluster:
-
-```bash
-module load R/4.4.1
-export OPENBLAS_NUM_THREADS=1
 Rscript Fig3_VisiumHD_final.R
 ```
+
+If your R packages live outside the default library, point `CHERRYPIC_R_LIB` at them and
+every script will prepend it:
+
+```bash
+export CHERRYPIC_R_LIB=/path/to/your/R/library
+```
+
+`submit_Fig6_Deconvolution_StemNiche_final.sh` is an example batch script written for LSF;
+its resource requests are portable, its scheduler directives are not.
 
 Figure notebooks read pre-computed objects and do not rebuild them. The `Preprocessing_*`
 notebooks document how those objects were made.
@@ -226,8 +232,8 @@ Also used, by stage:
 label transfer. Neither is present in the analysis library, so that notebook's SingleR chunks
 were run in a separate session; its outputs are provided rather than regenerated.
 
-All analysis was run on the Minerva HPC cluster. Versions are read from the analysis library
-and confirmed against `sessionInfo()` recorded in the render logs.
+All analysis was run on a Linux HPC cluster. Versions are read from the analysis library and
+confirmed against `sessionInfo()` recorded in the render logs.
 
 Python components (Figures 6F, 6G, S8) use pandas, numpy, matplotlib and matplotlib-venn.
 
@@ -293,9 +299,9 @@ renv::restore()            # reads renv.lock
 ```
 
 A few graphics packages compile against system libraries — freetype, libpng, libtiff, libjpeg
-and libwebp. Any standard Linux or macOS development setup has these. A bare HPC compute node
-may not, and adding them needs root; there, level 1 is the practical route, since it builds on
-the packages the cluster already provides.
+and libwebp. Compute nodes often lack the development headers for these, and adding them needs
+root. Where that is the case, level 1 is the practical route, since it builds on the packages
+the cluster already provides.
 
 Neither level reproduces the platform, and package versions alone do not determine results —
 the OS, compiler and BLAS/LAPACK do too. The analysis ran on **Rocky Linux 9.8, R 4.4.1,

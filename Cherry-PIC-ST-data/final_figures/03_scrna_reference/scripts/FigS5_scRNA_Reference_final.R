@@ -1,5 +1,5 @@
 ## ----setup, include=FALSE-----------------------------------------------------
-.libPaths("/sc/arion/projects/naiklab/ikjot/R")
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 library(Seurat)
 library(tidyverse)
 library(patchwork)
@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 
 ## ----ppref-load, eval=FALSE---------------------------------------------------
-# .libPaths("/sc/arion/projects/naiklab/ikjot/R")
+# if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 # library(Seurat); library(tidyverse); library(patchwork); library(harmony); library(clustree)
 # 
 # # Lab-supplied processed objects (note: two different Daniels — see Stage 2 naming note)

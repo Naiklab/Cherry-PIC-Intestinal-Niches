@@ -1,5 +1,5 @@
 ## ----setup, include=FALSE-----------------------------------------------------
-.libPaths("/sc/arion/projects/naiklab/ikjot/R")
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 library(Seurat)             # Read10X_h5, spatial plotting
 library(tidyverse)
 library(patchwork)
@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 
 ## ----pp8-params, eval=FALSE---------------------------------------------------
-# .libPaths("/sc/arion/projects/naiklab/ikjot/R")
+# if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 # library(Seurat); library(tidyverse); library(patchwork); library(RColorBrewer)
 # future::plan("multicore", workers = future::availableCores())
 # options(future.globals.maxSize = 2 * 10^12)

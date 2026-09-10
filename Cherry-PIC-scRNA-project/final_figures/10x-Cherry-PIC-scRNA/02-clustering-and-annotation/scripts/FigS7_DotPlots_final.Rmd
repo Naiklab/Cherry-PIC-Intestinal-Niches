@@ -39,7 +39,7 @@ the percentage of cells expressing.
 
 ## Running this
 
-Runs on a laptop in about a minute:
+Runs in about a minute:
 
 ```
 Rscript FigS7_DotPlots_final.R
@@ -57,7 +57,7 @@ plot renames them for display only; the underlying grouping is unchanged.
 | T helper cells | T_helper cells |
 
 ```{r setup, include=FALSE}
-for (.p in c("/sc/arion/projects/naiklab/ikjot/R")) if (dir.exists(.p)) .libPaths(c(.p, .libPaths()))
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 
 library(Seurat)
 library(tidyverse)

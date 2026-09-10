@@ -62,14 +62,14 @@ trailing "enterocytes" that every other Tip-villus proximal cluster carries.
 
 ## Running this
 
-Both objects are around 2 GB and fit in memory on a laptop, so no compute node is needed:
+Both objects are around 2 GB, so no compute node is needed:
 
 ```
 Rscript Fig3E_16um_final.R
 ```
 
 ```{r setup, include=FALSE}
-for (.p in c("/sc/arion/projects/naiklab/ikjot/R")) if (dir.exists(.p)) .libPaths(c(.p, .libPaths()))
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 
 library(Seurat)
 library(tidyverse)

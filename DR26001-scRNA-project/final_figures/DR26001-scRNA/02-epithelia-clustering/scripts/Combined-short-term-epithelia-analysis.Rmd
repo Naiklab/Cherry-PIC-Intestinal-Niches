@@ -102,7 +102,7 @@ DimPlot(seu_obj_short_term_combined_processed, group.by = "RNA_snn_res.0.1")
 #
 # These two columns were extracted once from
 #   seu-obj-short-term-epi-V4-annotations-2024-03-24.RDS (35,981 cells)
-# which lived under another user's Minerva account. The whole object was 1.1 GB and only
+# which lived under another user's account on the cluster. The whole object was 1.1 GB and only
 # these columns were ever read from it, so it is stored here as a CSV instead: the join
 # below is unchanged, and this notebook now runs without cluster access.
 meta_broad <- read.csv("../data/prior_annotations_epithelia_2024-03-24.csv",

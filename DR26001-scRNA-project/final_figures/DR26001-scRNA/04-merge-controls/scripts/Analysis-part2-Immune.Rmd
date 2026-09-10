@@ -19,8 +19,7 @@ Goals of the analysis:
 4. Generate Heatmap and Venn diagrams
 
 ```{r chunk-01}
-# portable: only prepend these library paths when they actually exist
-for (.p in c("/sc/arion/projects/naiklab/ikjot/R","/hpc/users/sidhui01/R/x86_64-pc-linux-gnu-library/4.4")) if (dir.exists(.p)) .libPaths(c(.p, .libPaths()))
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 ```
 
 ```{r chunk-02}

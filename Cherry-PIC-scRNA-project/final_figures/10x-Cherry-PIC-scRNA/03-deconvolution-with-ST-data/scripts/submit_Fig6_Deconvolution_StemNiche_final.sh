@@ -1,6 +1,6 @@
 #!/bin/bash
-#BSUB -P acc_naiklab
-#BSUB -q premium
+#BSUB -P <project_account>        # site-specific: your allocation
+#BSUB -q <queue>                  # site-specific: a queue allowing 24 h
 #BSUB -n 2
 #BSUB -W 24:00
 #BSUB -R "rusage[mem=50000]"
@@ -13,6 +13,10 @@
 # Figure 6 — Stem Cell Niche RCTD Deconvolution, Hi-Res (FINAL)
 # =============================================================================
 #
+# Example batch script, written for LSF. The directives above are scheduler- and
+# site-specific; translate them for Slurm (#SBATCH) or whatever your cluster runs.
+# The resources below are what this job needs, and are the portable part.
+#
 # Self-contained: reads only from ../data (frozen RCTD object + hi-res PNGs),
 # writes only to ../outputs. Does not touch the working analysis notebooks.
 #
@@ -21,7 +25,6 @@
 # - 50 GB RAM per core (100 GB total) -- ~1.6GB RCTD object + 4 hi-res
 #   rasters (~0.75GB each) + large PDF rendering headroom
 # - 24 hours walltime
-# - Premium queue
 #
 # To submit (from this scripts/ folder): bsub < submit_Fig6_Deconvolution_StemNiche_final.sh
 # To check:  bjobs -l <JOBID>

@@ -36,14 +36,14 @@ Frozen. This notebook reads them; it does not rebuild them.
 
 ## Running this
 
-The 8 µm object needs more memory than a laptop has, so this runs on a compute node:
+The 8 µm object is large, so this runs on a compute node:
 
 ```
 OPENBLAS_NUM_THREADS=1 Rscript FigS3_VisiumHD_QC_Clusters_final.R
 ```
 
 ```{r setup, include=FALSE}
-.libPaths("/sc/arion/projects/naiklab/ikjot/R")
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 library(Seurat)             # Read10X_h5, spatial plotting
 library(tidyverse)
 library(patchwork)

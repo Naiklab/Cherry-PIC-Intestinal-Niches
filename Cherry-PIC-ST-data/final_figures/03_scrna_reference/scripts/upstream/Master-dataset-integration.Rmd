@@ -20,7 +20,7 @@ output: html_notebook
 
 ```{r setup}
 # Use the user defined library
-.libPaths("/sc/arion/projects/naiklab/ikjot/R") 
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 
 library(Seurat)
 library(harmony)       # install.packages("harmony") if needed
@@ -77,7 +77,9 @@ set.seed(42)
 
 ```{r load-daniel}
 # Base paths
-daniel_output_dir <- "/sc/arion/projects/naiklab/shared/Daniel-Single-Cell-for-Ikjot/Ikjot-analysis-folder/output"
+# Source objects for this study's epithelial and immune compartments
+# (one sequencing run, split by compartment). Deposited with the manuscript.
+source_scrna_dir <- Sys.getenv("CHERRYPIC_SOURCE_SCRNA", "Source-Single-Cell-Data/output")
 local_rds_dir <- "Reference-Single-Cell-Data/rds-objects"
 
 # ── 1a. Fibroblast object (saved before HPC step) ────────────────────────────
@@ -91,7 +93,7 @@ cat("Fibroblast metadata columns:", paste(colnames(Fib.Obj@meta.data), collapse 
 
 # ── 1b. Epithelial object ─────────────────────────────────────────────────────
 epi_path <- file.path(
-  daniel_output_dir,
+  source_scrna_dir,
   "Clustering-Analysis-LT-ST-combined-Epithelia",
   "RDS",
   "EP.CTRL_data.processed.RDS"
@@ -107,11 +109,11 @@ cat("\n")
 
 # ── 1c. Immune object ─────────────────────────────────────────────────────────
 immune_candidates <- c(
-  file.path(daniel_output_dir,
+  file.path(source_scrna_dir,
             "Clustering-Analysis-LT-ST-combined-Immune",
             "RDS",
             "Immune.CTRL_data.processed.RDS"),
-  file.path(daniel_output_dir,
+  file.path(source_scrna_dir,
             "Clustering-Analysis-LT-ST-combined-Immune",
             "RDS",
             "Immune.CTRL_data.filtered.RDS")

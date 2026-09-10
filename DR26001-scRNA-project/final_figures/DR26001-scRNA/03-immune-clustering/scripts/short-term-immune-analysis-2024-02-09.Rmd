@@ -92,7 +92,7 @@ DimPlot(seu_obj_short_term_immune_combined_processed, group.by = "RNA_snn_res.0.
 #
 # This column was extracted once from
 #   2024-08-06-Immune-Finalized-Seurat-Object.RDS (21,523 cells)
-# which lived under another user's Minerva account. The whole object was 4.5 GB and only
+# which lived under another user's account on the cluster. The whole object was 4.5 GB and only
 # this one column was ever read from it, so it is stored here as a CSV instead: the join
 # below is unchanged, and this notebook now runs without cluster access.
 meta_immune_old <- read.csv("../data/prior_annotations_immune_2024-08-06.csv",

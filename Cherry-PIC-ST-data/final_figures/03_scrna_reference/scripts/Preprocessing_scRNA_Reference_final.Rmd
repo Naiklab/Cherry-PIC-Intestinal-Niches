@@ -60,7 +60,7 @@ are written to `Reference-Single-Cell-Data/rds-objects/` (`Fibroblast.Obj.rds`,
 The Rosenblum Epithelial/Immune objects and the Niec SpaceFold SI object arrive already processed.
 
 ```{r ppref-load, eval=FALSE}
-.libPaths("/sc/arion/projects/naiklab/ikjot/R")
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 library(Seurat); library(tidyverse); library(patchwork); library(harmony); library(clustree)
 
 # Lab-supplied processed objects (note: two different Daniels — see Stage 2 naming note)

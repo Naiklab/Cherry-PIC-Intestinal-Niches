@@ -43,14 +43,14 @@ nothing here re-runs `03_annotation_and_doublet_filtering.Rmd` or
 
 ## Running this
 
-Runs on a laptop:
+Runs in an ordinary R session:
 
 ```
 Rscript Fig6_scRNA_final.R
 ```
 
 ```{r setup, include=FALSE}
-for (.p in c("/sc/arion/projects/naiklab/ikjot/R")) if (dir.exists(.p)) .libPaths(c(.p, .libPaths()))
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 library(Seurat)
 library(speckle)
 library(tidyverse)      # whole tidyverse, never individual sub-packages

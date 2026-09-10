@@ -17,7 +17,7 @@ to the frozen RDS objects. It is included at the top of `Fig3_VisiumHD_final.Rmd
 
 **All chunks are `eval = FALSE`** — this is code-of-record, not re-run at figure time
 (the figures read the frozen RDS). To rebuild from scratch, run these stages in order
-on a compute node (`bsub`; cap BLAS threads). The heavy steps (RCTD, integration) are
+on a compute node (submit through your scheduler; cap BLAS threads). The heavy steps (RCTD, integration) are
 the canonical `.R` batch scripts, embedded here verbatim.
 
 ### Object build DAG
@@ -49,7 +49,7 @@ The scRNA reference (`Master.Obj.rds`) used by RCTD is built in
 *(source: `General_VisiumHD_Analysis_Workflow.Rmd`)*
 
 ```{r pp8-params, eval=FALSE}
-.libPaths("/sc/arion/projects/naiklab/ikjot/R")
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 library(Seurat); library(tidyverse); library(patchwork); library(RColorBrewer)
 future::plan("multicore", workers = future::availableCores())
 options(future.globals.maxSize = 2 * 10^12)
