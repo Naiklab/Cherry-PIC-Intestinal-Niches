@@ -1,0 +1,95 @@
+---
+title: "Step-1-Duodenum-QC-HTO"
+author: "Aleksandr Prystupa"
+date: "2024-06-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Packages
+```{r}
+pacman::p_load("dplyr", "Seurat", "glue", "stringr")
+```
+
+# Load Data
+## Load Sensitivity 5 Seurat Object
+```{r}
+# 1. HTO Data Sensitivity 5
+seu_data <- Read10X(data.dir = "../../data/2024-06-05/pipseeker/Daniel_1_D-results/HTO/filtered_matrix/sensitivity_5/")
+seu_obj <- CreateSeuratObject(counts = seu_data$`Gene Expression`, project = "Duodenum_2024-06-05", min.cells = 3, min.features = 200)
+
+# 2. Subset Counts to Contain only barcodes in both Gene Expression & HTO
+joint_bcs <- intersect(rownames(seu_obj@meta.data), colnames(seu_data$`Cell Hashing`))
+
+seu_obj <- seu_obj[ ,joint_bcs]
+seu_data$`Cell Hashing` <- seu_data$`Cell Hashing`[ ,joint_bcs]
+
+# 3. Add HTO Assay
+seu_obj[["HTO"]] <- CreateAssayObject(counts = seu_data$`Cell Hashing`)
+```
+
+# Downstream Analysis
+## Normalization
+### Gene Expression
+```{r}
+seu_obj <- NormalizeData(seu_obj)
+
+# Find and scale variable features
+seu_obj <- FindVariableFeatures(seu_obj, selection.method = "mean.var.plot")
+seu_obj <- ScaleData(seu_obj, features = VariableFeatures(seu_obj))
+```
+
+### HTO
+```{r}
+seu_obj <- NormalizeData(seu_obj, assay = "HTO", normalization.method = "CLR")
+```
+
+## Demux
+```{r}
+seu_obj <- HTODemux(seu_obj, assay = "HTO", positive.quantile = 0.99)
+```
+
+Singlets vs Doublets vs Negatives Counts
+```{r}
+table(seu_obj@meta.data$HTO_classification.global)
+table(seu_obj@meta.data$HTO_maxID)
+```
+
+## QC
+Feature Scatter Before Removing Singlets & Doublets
+```{r fig.height=10, fig.width=16}
+FeatureScatter(seu_obj, feature1 = "hashtag1", feature2 = "hashtag2") %>% print()
+
+if (!dir.exists("../../output/deodenum-analysis/Step-1-Output/")) {dir.create("../../output/deodenum-analysis/Step-1-Output/", recursive = T)}
+  
+pdf("../../output/deodenum-analysis/Step-1-Output/Duodenum-Hashtags-Pre-Filtering.pdf", height = 10, width = 12)
+FeatureScatter(seu_obj, feature1 = "hashtag1", feature2 = "hashtag2") %>% print()
+dev.off()
+```
+
+### Subset only singlets
+```{r}
+seu_obj_singlets <- seu_obj %>% subset(HTO_classification.global == "Singlet")
+```
+
+```{r}
+table(seu_obj_singlets$HTO_classification)
+```
+
+```{r fig.height=10, fig.width=16}
+FeatureScatter(seu_obj_singlets, feature1 = "hashtag1", feature2 = "hashtag2") %>% print()
+
+pdf("../../output/deodenum-analysis/Step-1-Output/Duodenum-Hashtags-Post-Filtering.pdf", height = 10, width = 12)
+FeatureScatter(seu_obj_singlets, feature1 = "hashtag1", feature2 = "hashtag2") %>% print()
+dev.off()
+```
+
+Hashtags worked!
+
+# Save RDS
+```{r}
+saveRDS(seu_obj_singlets, "../../output/deodenum-analysis/Step-1-Duodenum_Singlets_seu_obj.RDS")
+```

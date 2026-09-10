@@ -1,0 +1,25 @@
+---
+title: "Step-2-Older-Sample-Analysis"
+author: "Aleksandr Prystupa"
+date: "2024-06-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Packages
+```{r}
+pacman::p_load("dplyr", "Seurat", "glue", "stringr")
+```
+
+# Load Data
+```{r}
+seu_obj <- readRDS("/gpfs/data/naiklab/Alex/2024-02-09-Daniel-Single-Cell/combined-pools-no-colon/output/full_seu_obj_no_colon.RDS")
+```
+
+```{r}
+seu_obj@meta.data %>% select(orig.ident, Location, Sample_Name, hash.ID) %>% unique() %>% filter(Location %in% c("Duodenum", "Ileum"))
+```
+

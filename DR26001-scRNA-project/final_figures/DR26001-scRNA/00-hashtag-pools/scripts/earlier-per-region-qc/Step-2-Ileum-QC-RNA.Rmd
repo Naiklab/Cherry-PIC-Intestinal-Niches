@@ -1,0 +1,87 @@
+---
+title: "Step-2-ileum-QC-RNA"
+author: "Aleksandr Prystupa"
+date: "2024-06-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Packages
+```{r}
+pacman::p_load("dplyr", "Seurat", "glue", "stringr")
+```
+
+# Load Data
+## Load Sensitivity 5 Seurat Object
+```{r}
+seu_obj_ileum_singlets <- readRDS("../../output/ileum-analysis/Step-1-Ileum_Singlets_seu_obj.RDS")
+```
+
+# QC
+## 1. Add percent.mt
+```{r}
+seu_obj_ileum_singlets[["percent.mt"]] <- Seurat::PercentageFeatureSet(seu_obj_ileum_singlets, pattern = "^mt-")
+```
+
+# QC Plots
+## 1. Violin Plots
+```{r fig.height=12, fig.width=16}
+Seurat::VlnPlot(seu_obj_ileum_singlets, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3) %>% print()
+
+if (!dir.exists("../../output/ileum-analysis/Step-2-Output/")) {dir.create("../../output/ileum-analysis/Step-2-Output/", recursive = T)}
+
+pdf("../../output/ileum-analysis/Step-2-Output/Ileum-QC-Vln-Plots.pdf", height = 12, width = 16)
+Seurat::VlnPlot(seu_obj_ileum_singlets, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3) %>% print()
+dev.off()
+```
+
+## 2. Feature Plots
+```{r fig.height=12, fig.width=16}
+plot1 <- Seurat::FeatureScatter(seu_obj_ileum_singlets, feature1 = "nCount_RNA", feature2 = "percent.mt")
+plot2 <- Seurat::FeatureScatter(seu_obj_ileum_singlets, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+
+a <- plot1 + plot2
+a
+
+pdf("../../output/ileum-analysis/Step-2-Output/Pool-2-QC-Feature-Scatter-Plots.pdf", height = 12, width = 16)
+a %>% print()
+dev.off()
+```
+
+## QC Table
+```{r}
+dplyr::count(seu_obj_ileum_singlets@meta.data, nFeature_RNA > 1000, HTO_maxID)
+dplyr::count(seu_obj_ileum_singlets@meta.data, nFeature_RNA < 6000, HTO_maxID)
+dplyr::count(seu_obj_ileum_singlets@meta.data, percent.mt > 20, HTO_maxID)
+```
+
+## Subset by QC-cutoffs
+Min Features = 1000
+Max Features = 7000
+Min percent.mt = 10
+```{r}
+seu_obj_ileum_singlets_clean <- subset(seu_obj_ileum_singlets, subset = nFeature_RNA > 1000 & nFeature_RNA < 6000 & percent.mt < 20)
+```
+
+Final Counts Table by Hashtag
+```{r}
+table(seu_obj_ileum_singlets_clean@meta.data$HTO_maxID)
+table(seu_obj_ileum_singlets@meta.data$HTO_maxID)
+```
+
+# Save RDS
+```{r}
+saveRDS(seu_obj_ileum_singlets_clean, "../../output/ileum-analysis/Step-2-ileum_Singlets_clean_seu_obj.RDS")
+```
+
+```{r}
+seu_obj_ileum_singlets_clean <- readRDS("../../output/ileum-analysis/Step-2-ileum_Singlets_clean_seu_obj.RDS")
+```
+
+```{r}
+table(seu_obj_ileum_singlets_clean$HTO_classification)
+```
+

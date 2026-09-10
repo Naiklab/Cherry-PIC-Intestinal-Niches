@@ -66,6 +66,27 @@ Run each route from the directory holding `htp/`; the scripts resolve
 | `RNA-QC.R` | Adds `percent.mt` from `^mt-`, merges pools, filters | `nFeature_RNA > 500 & < 7000 & percent.mt < 20` |
 | `HTP-Processing.R` | Normalise → HVG → scale → PCA → Harmony over `orig.ident` → UMAP and clusters on 40 dims, resolutions 0.1–1.0 → presto markers | writes `final-htp-seu-obj.RDS`, the object this stage holds |
 
+### An earlier, superseded per-region QC
+
+`scripts/earlier-per-region-qc/` holds five notebooks by A. Prystupa, dated 18 June 2024, that
+processed the 2024-06-05 PIPseeker matrices **separately per region** before the pooled `htp`
+pipeline above was written. They are kept as the record of that earlier pass; they did **not**
+produce the objects in `data/`:
+
+| | Earlier per-region QC | `htp` pipeline (of record) |
+|---|---|---|
+| Duodenum filter | `nFeature_RNA` 500–6,000, `percent.mt < 20` | `nFeature_RNA` 500–7,000, `percent.mt < 20` |
+| Ileum filter | `nFeature_RNA` **1,000**–6,000, `percent.mt < 20` | same 500–7,000 filter for both regions |
+| Demultiplexing | `HTODemux(positive.quantile = 0.99)`, singlets kept | identical |
+| `orig.ident` | `Duodenum_2024-06-05` (hyphens) | `Duodenum_2024_06_05` (underscores) |
+| Sample metadata | none assigned | `Sample_ID`, `Location`, `Condition`, `Time_Course`, `Sequencing_Date` from the sheets |
+
+The last two rows are what settle it: the deposited pools carry underscored identities and the
+full metadata schema, so they came from `htp`, not from these notebooks. The per-region
+thresholds above therefore describe a pass that no reported result depends on.
+`Step-2-Older-Sample-Analysis.Rmd` is a 25-line stub that reads a 2024-02-09 object from an
+NYU path no longer reachable; the corresponding 2024-02-09 notebooks are not on the cluster.
+
 `data/hto-sample-sheets/` holds each pool's two sheets: `hto-samples-sheet.xlsx` (run name →
 PIPseeker matrix path) and `hto-samples-groups.xlsx` (hashtag → `Sample_ID`, `Location`,
 `Condition`, `Sequencing_Date`, one worksheet per run). Those are the experimental design.
@@ -92,17 +113,12 @@ cluster has no separate long-term HTP directory — and the run names were corre
 `2024_03_22` before the object was written. Read the sheet as the long-term pool's, and take
 the object's identities as authoritative.
 
-### Conditions: SFB profiled, control analysed
+### Conditions: control cells only
 
-Each pool contains both control and SFB-colonised animals. **Only control cells are used**, from
-stage 04 onward (`Condition == "Control"`); nothing in this repository analyses the SFB arm:
-
-| Pool | Cells | Control | SFB (not used) |
-|---|---|---|---|
-| 2024-02-09 | 27,060 | 15,625 | 11,435 |
-| 2024-06-05 | 22,785 | 10,690 | 12,095 |
-| 2024-03-22 | 45,822 | 19,120 | 26,702 |
-| **Total** | **95,667** | **45,435** | **50,232** |
+The pools contain more than one experimental group. **Every analysis in this repository uses
+the control cells only** — 45,435 of the 95,667 cells across the three pools — selected at
+stage 04 with `Condition == "Control"`. Nothing downstream of that filter touches the other
+groups, and they are not described in the manuscript.
 
 The short-term / long-term distinction is likewise not a biological variable in any result. It
 appears in the code only to nominate reference and query for the label transfer in
