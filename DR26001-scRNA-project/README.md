@@ -29,6 +29,51 @@ DR26001-scRNA-project/
         └── 06-downstream-handoffs/
 ```
 
+## From raw matrices to the two deposited objects
+
+Every step is in this repository. The chain, with the script that performs each link:
+
+```
+PIPseeker filtered matrices (Gene Expression + Cell Hashing, sensitivity_5)
+  │   paths in 00-hashtag-pools/data/hto-sample-sheets/<pool>/hto-samples-sheet.xlsx
+  ▼   00-hashtag-pools/scripts/htp/scripts/HTO-QC.R
+demultiplexed, singlets only            HTODemux(positive.quantile = 0.99) on CLR hashing
+  ▼   .../htp/scripts/RNA-QC.R
+filtered and merged per pool            nFeature_RNA 500–7,000, percent.mt < 20
+  ▼   .../htp/scripts/HTP-Processing.R
+final-htp-seu-obj.RDS  ──[renamed per pool, see below]──▶  00-hashtag-pools/data/
+  ▼   01-separate-epithelia-immune/scripts/Separate-Epithelia-Immune-{ShortTerm,LongTerm}.Rmd
+epithelial and immune subsets per arm   cluster at res 0.5, split on Epcam / Ptprc
+  ▼   02-epithelia-clustering/  and  03-immune-clustering/
+per-arm clustering and label transfer   Harmony over pool, 40 dims, res 0.1–1.0
+  ▼   04-merge-controls/scripts/Analysis-part1-Epithelia.Rmd
+      04-merge-controls/scripts/Analysis-part2-Immune.Rmd
+epithelia_EP.CTRL_data.processed.RDS        ← the reference-atlas handoff
+epithelia_EP.CTRL_data.processed(no-immune).RDS  ← the ligand–receptor handoff
+immune_Immune.CTRL_data.processed.RDS
+```
+
+**The one manual link.** `HTP-Processing.R` writes a generic
+`htp-outs/Downstream-Analysis/RDS/final-htp-seu-obj.RDS` inside whichever pool directory it is
+run from. Each run's output was then renamed into `00-hashtag-pools/data/`:
+
+| Pool run | Produced | Renamed to |
+|---|---|---|
+| 2024-02-09 (short-term) | `final-htp-seu-obj.RDS` | `final-htp-seu-obj-2024-02-09-RNA.RDS` |
+| 2024-06-05 (short-term) | `final-htp-seu-obj.RDS` | `final-htp-seu-obj-2024-06-05-RNA.RDS` |
+| 2024-03-22 (long-term) | `final-htp-seu-obj.RDS` | `final-htp-seu-obj-2024-03-22-LongTerm.RDS` |
+
+Nothing in the code performs that rename; it was done by hand between the pipeline and stage 01.
+The pool each file holds is verifiable from its own metadata — `Sequencing_Date`,
+`Time_Course` and the `_ST`/`_LT` suffix on every `Sample_ID` all agree.
+
+**Two asymmetries worth knowing.** The 2024-02-09 and 2024-03-22 pools are split into
+epithelial and immune subsets at stage 01, but the 2024-06-05 pool is read whole by
+`Combined-short-term-epithelia-analysis.Rmd`, which takes its epithelial clusters directly
+while merging. And `05-reannotation-and-qc` reads one object,
+`seu-obj-V5-Annotation-pre-removal-2025-03-26.RDS`, that no script here produces — it comes
+from the earlier annotation lineage. Neither affects the three objects above.
+
 ## Stages
 
 ### 00-hashtag-pools — inputs
