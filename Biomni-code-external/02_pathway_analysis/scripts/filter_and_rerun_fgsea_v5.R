@@ -83,7 +83,7 @@ cell_types <- list(
        pb_file = "pseudobulk_Bottom-Villus_enterocytes_Ileum_vs_Duodenum.csv",
        pb_dir = pb_dir, seurat_types = "Bottom-Villus enterocytes"),
   list(name = "Plasmablasts",
-       pb_file = "pseudobulk_Plamsablasts_Ileum_vs_Duodenum.csv",
+       pb_file = "pseudobulk_Plasmablasts_Ileum_vs_Duodenum.csv",
        pb_dir = pb_dir, seurat_types = "Plamsablasts"),
   list(name = "Stem cells",
        pb_file = "pseudobulk_Stem_cells_Ileum_vs_Duodenum.csv",

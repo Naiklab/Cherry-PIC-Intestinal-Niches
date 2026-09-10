@@ -155,6 +155,20 @@ space-separated labels exactly as below. All 16 senders are present in both regi
 | `Cd8aa IEL` | T cell / IEL | yes |
 | `Activated/helper-like T cells` | T cell | yes |
 | `Plamsablasts` | B lineage | yes |
+
+**Two labels are corrected for display, not in the data.** The annotation carries a misspelling
+and one verbose label. Both are mapped to their published form at plotting time, so the tables
+and the figures disagree on spelling by design — the tables record what was scored, the figures
+show the corrected name.
+
+| In the data | Published as | Where the mapping lives |
+|---|---|---|
+| `Plamsablasts` | Plasmablasts | `plot_sender_all.R` (`short_lab`), `filter_and_rerun_fgsea_v5.R` (`name`), `FigS7_DotPlots_final.Rmd` (`display_label`) |
+| `Activated/helper-like T cells` | Helper T | `plot_sender_all.R` (`short_lab`) |
+
+Never correct the spelling in a string that is matched against the data — colour-palette keys,
+`seurat_types`, and any `subset()` on a cell-type label all have to keep `Plamsablasts` or they
+silently match nothing.
 | `Blood vascular endothelial cells` | endothelial | yes |
 | `Bottom-Villus enterocytes` | epithelial | no — mature epithelium |
 | `Mid-villus enterocytes` | epithelial | no — mature epithelium |

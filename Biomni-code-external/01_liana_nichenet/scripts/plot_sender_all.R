@@ -18,7 +18,7 @@ short_recv <- function(r) if (r=="Stem cells") "Stem" else "TA"
 short_lab <- function(n, receiver) {
   rec <- c("Blood vascular endothelial cells"="Endothelial","Activated/helper-like T cells"="Helper T",
            "TA / early progenitors"="TA/early prog.","Paneth cells"="Paneth",
-           "Stem cells"="Stem")
+           "Stem cells"="Stem","Plamsablasts"="Plasmablasts")   # display only; key matches the data
   base <- ifelse(n %in% names(rec), rec[n], n)
   out <- base
   # self (autocrine) only possible for Stem sender now (TA sender is merged, never a receiver label match)

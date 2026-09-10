@@ -22,7 +22,8 @@ inferno_rev <- c("#FCFFA4", "#F7D13D", "#FB9A06", "#ED6925", "#CF4446",
 display_label <- c(
   "CLU+ reserve stem cells"           = "CLU+ regenerative cells",
   "Blood vascular endothelial cells"  = "Endothelial cells",
-  "T_helper cells"                    = "T helper cells"
+  "T_helper cells"                    = "T helper cells",
+  "Plamsablasts"                      = "Plasmablasts"   # misspelt in the annotation
 )
 relabel <- function(x) ifelse(x %in% names(display_label), display_label[x], x)
 
@@ -56,7 +57,7 @@ panel_B <- list(
            "Pdgfra","Dcn","Col1a1","Cxcl12","Rspo3","Acta2",
            "Pecam1","Cdh5","Kdr","Flt1","Emcn"),
   cell_types_top_to_bottom = c("Endothelial cells", "Fibroblasts", "Macrophages", "cDC1",
-                               "Plamsablasts", "Cd8aa IEL", "T helper cells")
+                               "Plasmablasts", "Cd8aa IEL", "T helper cells")
 )
 
 # Map published cell-type labels back to the object's broad_cell_type values.
