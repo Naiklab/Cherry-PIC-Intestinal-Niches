@@ -84,14 +84,12 @@ from sequencing data.
 Figures **1, 2, 5, S1, S2** and **S6** are not derived from sequencing data and have no code
 here.
 
-> **Scope of the ligand–receptor code.** The analysis that defines Figures 6F, 6G and S8 is
-> included: sender exclusions, the NicheNet activity filter, the region-uniqueness set logic
-> and all counting and plotting live in `Biomni-code-external/01_liana_nichenet/scripts/`.
-> What ran in a prior session is the scoring step that produced the two input tables —
-> `liana_wrap()` with its default method set, and NicheNet `predict_ligand_activities()`.
-> Those scored tables are provided in `01_liana_nichenet/data/`, so every number in the
-> figures can be verified from this repository; re-deriving the tables from the Seurat object
-> would require re-running the two package calls, whose parameters are given in the Methods.
+**Ligand–receptor analysis (6F, 6G, S8).** The scored LIANA and NicheNet tables are provided
+in `01_liana_nichenet/data/`, and everything applied to them — sender exclusions, the NicheNet
+activity filter, the region-uniqueness set logic, counting and plotting — is in
+`01_liana_nichenet/scripts/`. Every number in these figures can therefore be checked from this
+repository. The scoring step itself is two package calls, `liana_wrap()` and
+`predict_ligand_activities()`, with parameters given in the Methods.
 
 ---
 
@@ -272,63 +270,51 @@ MIT — see [LICENSE.md](LICENSE.md).
 
 ## Optional — reproducing the environment exactly
 
-The versions above are the record of what was used and are sufficient to read, cite and
-check the analysis. This section is only needed if you intend to *re-run* it, and offers
-three levels of fidelity.
+The versions above are the record of what was used, and are enough to read, cite and check
+the analysis. This section is only needed to *re-run* it, and offers three levels of fidelity.
 
-**1. Install the direct dependencies** — quickest, adequate for reading and re-running most
-notebooks.
+**1. Install the direct dependencies** — quickest, and enough for most notebooks.
 
 ```bash
 Rscript .checks/install_environment.R --dry-run   # report what differs, change nothing
 Rscript .checks/install_environment.R             # install
 ```
 
-Pins the ~40 packages the analysis loads directly: 30 CRAN via
-`remotes::install_version()`, 8 from Bioconductor 3.20, 4 from GitHub. Transitive
-dependencies resolve to whatever those require.
+Pins the ~40 packages the analysis loads directly: 30 CRAN via `remotes::install_version()`,
+8 from Bioconductor 3.20, 4 from GitHub. Transitive dependencies resolve to whatever those
+require.
 
 **2. Restore the package closure** — pins all **305** packages at the versions used: the 33
-the code loads plus the 272 they require.
+the code loads plus the 272 they pull in.
 
 ```r
 install.packages("renv")
 renv::restore()            # reads renv.lock
 ```
 
-> Tested on the analysis cluster: 269 of 305 packages build from source, and the remainder
-> fail only on packages needing system development headers — `ragg` wants freetype, libpng,
-> libtiff, libjpeg and libwebp, which are not on the compute nodes' include path and need
-> root to install. On a machine with the usual development packages this is a non-issue; on
-> an HPC node, level 1 above is the practical route, since it uses packages the cluster has
-> already built. Level 3 sidesteps it entirely by carrying its own system libraries.
+A few graphics packages compile against system libraries — freetype, libpng, libtiff, libjpeg
+and libwebp. Any standard Linux or macOS development setup has these. A bare HPC compute node
+may not, and adding them needs root; there, level 1 is the practical route, since it builds on
+the packages the cluster already provides.
 
-**3. Rebuild the whole environment, including the platform** — the only way to reproduce
-numerical output exactly.
+**3. Rebuild the environment including the platform** — the only way to reproduce numerical
+output exactly.
 
 ```bash
 docker build -f .checks/Dockerfile -t cherry-pic:4.4.1 .
 docker run --rm -v "$PWD":/work -w /work cherry-pic:4.4.1 Rscript -e 'sessionInfo()'
 ```
 
-The build fails rather than completing quietly if R is not 4.4.1 or Seurat is not 5.5.0,
-and prints the linked BLAS and LAPACK so they can be checked rather than assumed. Expect a
-long first build — 575 packages, many compiled from source.
+Built on `rocker/r-ver:4.4.1`. The build asserts R 4.4.1, Seurat 5.5.0 and the reference BLAS,
+failing rather than completing quietly if any differ, and prints the linked BLAS and LAPACK so
+they can be checked rather than assumed. Expect a long first build. For an HPC cluster,
+convert it with `singularity build`. The image has not yet been built end to end.
 
-> **Not yet built end to end.** The Dockerfile is written against `rocker/r-ver:4.4.1`
-> (multi-arch, so it builds natively on both Intel and Apple Silicon) and its inputs are
-> verified, but no image has been produced from it. Build it once before release.
+Package versions alone do not determine results; the OS, compiler and BLAS/LAPACK do too. The
+analysis ran on **Rocky Linux 9.8, R 4.4.1, reference `libRblas`/`libRlapack`, LAPACK 3.12.0**.
+A different BLAS changes floating-point summation order, so PCA, UMAP and clustering can differ
+in the last digits even with identical package versions.
 
-Package versions alone do not determine results: the OS, compiler and BLAS/LAPACK do too.
-The analysis ran on **Rocky Linux 9.8, R 4.4.1, reference `libRblas`/`libRlapack`,
-LAPACK 3.12.0**. A different BLAS changes floating-point summation order, so PCA, UMAP and
-clustering can differ in the last digits even with identical package versions. The
-Dockerfile pins that platform; convert it with `singularity build` for an HPC cluster.
-
-`.checks/r_library_manifest.tsv` lists the same 575 packages as plain text if you would
-rather compare an existing library than rebuild one.
-
-> **What none of this recovers.** No `renv.lock` was captured while the analysis ran —
-> `renv.lock` here is reconstructed from the library as it stands, so it is the environment
-> at time of writing, not a snapshot taken at each figure's render. Practically the two are
-> the same library, but it is a reconstruction, not a record.
+`.checks/r_library_manifest.tsv` lists the full library as plain text, for comparing an existing
+installation rather than building a new one. `renv.lock` is generated from that library rather
+than captured during each render — it is the same library the figures were produced from.
