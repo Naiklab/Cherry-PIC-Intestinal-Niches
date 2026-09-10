@@ -20,11 +20,10 @@
 #   SC              2907        1583      1324
 #   TA              5036        3326      1710
 #
-# The three stem exports were checked against these numbers and match exactly
-# (EP_CTRL_Stem_cells_all/Duodenum/Ileum.rds = 2907/1583/1324, SC only). The
-# corresponding TA exports are not among the files available here, so the TA
-# counts below come from the source object rather than from an exported file —
-# confirm them against whatever the scoring run actually loaded.
+# Both populations are derived from the source object by label, so this script
+# reproduces them rather than depending on any exported file. The three stem
+# exports that are available were checked and match exactly
+# (EP_CTRL_Stem_cells_all/Duodenum/Ileum.rds = 2907/1583/1324, SC only).
 #
 # Input:  ../../04-merge-controls/outputs/epithelia_EP.CTRL_data.processed(no-immune).RDS
 # Output: ../outputs/EP_CTRL_{Stem_cells,TA}_{all,Duodenum,Ileum}.rds

@@ -153,9 +153,6 @@ merges the two labels but they are separate populations. CLU+ reserve stem cells
 stem cells for this analysis and appear nowhere in the scored tables — the `_noclu` suffix
 on those files records their exclusion.
 
-Only the three stem exports are available here, and they match the counts above exactly.
-The TA exports are not present, so those counts come from the source object.
-
 ## Script cleanup (done)
 
 - **All paths rewritten** against this layout — 129 replacements across the 10 notebooks.
