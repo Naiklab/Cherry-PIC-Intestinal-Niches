@@ -282,12 +282,20 @@ Pins the ~40 packages the analysis loads directly: 30 CRAN via
 `remotes::install_version()`, 8 from Bioconductor 3.20, 4 from GitHub. Transitive
 dependencies resolve to whatever those require.
 
-**2. Restore the full package closure** — pins all **575** packages at the versions used.
+**2. Restore the package closure** — pins all **305** packages at the versions used: the 33
+the code loads plus the 272 they require.
 
 ```r
 install.packages("renv")
 renv::restore()            # reads renv.lock
 ```
+
+> Tested on the analysis cluster: 269 of 305 packages build from source, and the remainder
+> fail only on packages needing system development headers — `ragg` wants freetype, libpng,
+> libtiff, libjpeg and libwebp, which are not on the compute nodes' include path and need
+> root to install. On a machine with the usual development packages this is a non-issue; on
+> an HPC node, level 1 above is the practical route, since it uses packages the cluster has
+> already built. Level 3 sidesteps it entirely by carrying its own system libraries.
 
 **3. Rebuild the whole environment, including the platform** — the only way to reproduce
 numerical output exactly.
