@@ -147,9 +147,10 @@ They are subsets of `epithelia_EP.CTRL_data.processed(no-immune).RDS` on
 | `Stem cells` | `SC` | 2,907 | 1,583 | 1,324 |
 | `TA cells` | `TA` | 5,036 | 3,326 | 1,710 |
 
-`TA cells` is distinct from the Cherry-PIC niche object's own
-`TA cells/early progenitors` (199 cells), which supplies senders; the sender-count figure
-merges the two labels but they are separate populations. CLU+ reserve stem cells are not
+`TA cells` here and the Cherry-PIC niche object's `TA cells/early progenitors` (199 cells)
+are two labels for the same transit-amplifying compartment: they are separate rows in the raw
+LIANA tables and one sender, `TA / early progenitors`, in the final output. CLU+ reserve stem
+cells are not
 stem cells for this analysis and appear nowhere in the scored tables — the `_noclu` suffix
 on those files records their exclusion.
 

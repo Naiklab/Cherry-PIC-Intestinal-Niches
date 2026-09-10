@@ -146,8 +146,8 @@ space-separated labels exactly as below. All 16 senders are present in both regi
 | Sender | Compartment | Kept as a sender in the figure |
 |---|---|---|
 | `Stem cells` | stem | yes |
-| `TA cells` | epithelial progenitor | yes |
-| `TA cells/early progenitors` | epithelial progenitor | yes |
+| `TA cells` | epithelial progenitor | yes — merged, see below |
+| `TA cells/early progenitors` | epithelial progenitor | yes — merged, see below |
 | `Paneth cells` | epithelial | yes |
 | `Fibroblasts` | mesenchymal | yes |
 | `Macrophages` | immune | yes |
@@ -161,6 +161,20 @@ space-separated labels exactly as below. All 16 senders are present in both regi
 | `Upper-villus enterocytes` | epithelial | no — mature epithelium |
 | `Goblet cells` | epithelial | no — mature epithelium |
 | `Enteroendocrine cells` | epithelial | no — mature epithelium |
+
+**`TA cells` and `TA cells/early progenitors` are one population in the final output.** They
+are two labels for the transit-amplifying compartment, and `build_sender_counts_merged.py`
+relabels both to `TA / early progenitors` before counting. Treat them as a single sender when
+reading the figures; they are separate rows only in the raw LIANA tables.
+
+That gives the sender count in the final output:
+
+```
+16 senders in the LIANA tables
+−5 mature epithelium excluded (Bottom/Mid/Upper-villus enterocytes, Goblet, Enteroendocrine)
+−1 the two TA labels merged into one
+=10 senders per region and receiver
+```
 
 Receivers are `Stem cells` and `TA cells`. Both progenitor populations appear as senders
 against **both** receivers, including their own, so stem→stem and TA→TA interactions are in
