@@ -100,7 +100,7 @@ References_avail <- surveyReferences() %>% as.data.frame()
 #Import gene signatures from Daniel
 ```{r chunk-12}
 # Read in gene signature table provided by Daniel (used for module scoring / marker analysis)
-gene.signatures <- read_excel("../data/gene signatures for ikjot.xlsx")
+gene.signatures <- read_excel("../data/gene-signatures.xlsx")
 ```
 
 # Load Epithelial-Only Processed Object and Preview Annotations

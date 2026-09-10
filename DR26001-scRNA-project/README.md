@@ -103,8 +103,9 @@ Key outputs:
 The SC and TA labels defined here are what the ligand–receptor analysis consumes:
 clusters **0, 9 → SC**; clusters **3, 5, 6, 7 → TA**.
 
-`data/seu-obj-short-term-epithelia-2024-06-05.RDS` (482 MB) is not referenced by any
-script in the project — worth confirming whether it is still needed.
+`data/seu-obj-short-term-epithelia-2024-06-05.RDS` (482 MB) is a superseded earlier export of
+the 2024-06-05 pool: 25,049 cells with no pool or arm metadata, against the 22,785-cell pool in
+`00-hashtag-pools/data/` that stage 02 actually reads. No script uses it; it can be deleted.
 
 ### 06-downstream-handoffs
 
@@ -163,9 +164,16 @@ on those files records their exclusion.
   TOC + code folding, 124 anonymous chunks named, obsolete `create.dir()` calls dropped.
 - **Two pre-existing bugs fixed** in `Analysis-part2-Immune.Rmd`: a stray `}` that closed
   nothing (the chunk could never have run) and a duplicated console plot block.
+- **`Analysis-part2-Immune.Rmd` trimmed**: the unused colour-palette chunk and four
+  print-only inspection chunks removed, and the marker table it prints moved to the
+  resolution the annotation is applied to (0.9). Every computation preserved.
+- **Heatmap reconstruction verified.** `Analysis-part1-Epithelia.Rmd` rebuilds `top100` and
+  `top50` as the most significant DE genes; every gene name legible on the archived heatmap
+  PDFs is in that set, and the alternative ordering by fold change is not.
+- **`data/` filenames with spaces renamed**, with the one reader updated in the same commit.
 - All 10 notebooks now pass an R syntax check.
 
-## External dependencies — mostly resolved
+## External dependencies — resolved
 
 Recovered from the `Daniel-Redone-Analysis-NYU-Transfer` download and vendored in:
 
@@ -174,16 +182,10 @@ Recovered from the `Daniel-Redone-Analysis-NYU-Transfer` download and vendored i
 | `processing-utils.R` | `helper-functions/processing-utils.R` (one copy) | 4 scripts, via `source("../../helper-functions/processing-utils.R")` |
 | `Onur_Markers.xlsx` | `02-epithelia-clustering/data/` | both stage-02 scripts |
 
-Only one function from the helper is actually used: `run.presto.specific.columns()`,
-a presto/`wilcoxauc` wrapper that returns the Raw / Filtered / Top marker tables.
-
-> **Note on `multi_sample_pipeline()`.** The helper also defines a function of this name,
-> and every notebook additionally defines its own inline version. The two differ: the
-> helper hardcodes `group.by.vars = "orig.ident"` and ignores its `split_col` argument,
-> and has no SCT branch. **Results are unaffected** — the `source()` calls all happen in
-> the Markers chunk, after the pipeline has already run, and every call site passes
-> `split_col = "orig.ident"` anyway. But re-running chunks out of order would silently
-> pick up the helper's version. Worth deleting the helper's copy.
+The helper now contains only `run.presto.specific.columns()`, a presto/`wilcoxauc` wrapper
+that returns the Raw / Filtered / Top marker tables. Every notebook defines its own
+`multi_sample_pipeline()` inline; the helper deliberately does not, so sourcing it can never
+replace the version a notebook has already run.
 
 ### Prior annotations — resolved, no longer external
 
@@ -199,11 +201,3 @@ extracted once and vendored here as CSVs. The `left_join` in each notebook is un
 Source objects (1.1 GB and 4.5 GB) remain on the analysis cluster. Nothing in this
 repository needs them.
 
-## Known issues not yet fixed
-- `data/` filenames with spaces were **deliberately left unchanged** so the scripts still
-  resolve them. Renaming has to happen in the same commit as updating the readers.
-- `Analysis-part2-Immune.Rmd` got a structural tidy but not a full rebuild; its 57-line
-  colour-palette chunk and several diagnostic-only chunks could still be trimmed.
-- Two heatmaps in `Analysis-part1-Epithelia.Rmd` referenced objects (`top100`, `top50`)
-  that were never defined in the file. Reconstructed from the DE table with a comment —
-  **verify before reuse**.

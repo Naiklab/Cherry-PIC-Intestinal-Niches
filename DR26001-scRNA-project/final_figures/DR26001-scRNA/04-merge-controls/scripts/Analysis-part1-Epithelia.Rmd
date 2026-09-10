@@ -287,9 +287,15 @@ EP.CTRL_data.processed.no_immune <- ScaleData(
 top100.Duodenum.Genes <- DE_Genes.DuodenumVsIleum %>% dplyr::filter(avg_log2FC > 0) %>% slice_head(n = 100)
 top100.Ileum.Genes    <- DE_Genes.DuodenumVsIleum %>% dplyr::filter(avg_log2FC < 0) %>% slice_head(n = 100)
 
-# NOTE: the original notebook also plotted objects named `top100` and `top50` that were
-# never defined in the file — they existed only in the interactive session. Reconstructed
-# here as the top 100 / top 50 rows of the significant DE table. Verify before reuse.
+# `top100` and `top50` were never defined in the original notebook; they existed only in
+# the interactive session. They are reconstructed here as the first 100 / 50 rows of the
+# significant DE table, i.e. the most significant genes (FindMarkers returns rows in
+# ascending p-value order and the saved table preserves that order).
+#
+# Verified against the archived heatmap PDFs from the original run: every gene name
+# legible on those pages (51 of the 100-gene heatmap, 29 of the 50-gene one) is in this
+# reconstruction, whereas ordering by |avg_log2FC| instead recovers only 17 and 8. The
+# reconstruction therefore reproduces the originals' gene selection.
 top100 <- DE_Genes.DuodenumVsIleum %>% slice_head(n = 100)
 top50  <- DE_Genes.DuodenumVsIleum %>% slice_head(n = 50)
 

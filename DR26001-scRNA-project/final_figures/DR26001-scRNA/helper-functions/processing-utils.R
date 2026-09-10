@@ -1,22 +1,9 @@
 # processing-utils.R
+#
+# Shared marker helper for the DR26001 notebooks. Each notebook defines its own
+# multi_sample_pipeline() inline; this file deliberately does not, so that sourcing
+# it can never replace the version a notebook has already run.
 
-# 1. Multi Sample Pipeline
-multi_sample_pipeline <- function(merged_seu_obj, split_col="orig.ident", harmony=FALSE) {
-  
-  merged_seu_obj <- NormalizeData(merged_seu_obj)
-  merged_seu_obj <- FindVariableFeatures(merged_seu_obj)
-  merged_seu_obj <- ScaleData(merged_seu_obj)
-  merged_seu_obj <- RunPCA(merged_seu_obj)
-  # Harmony's k-means initialisation carries no default seed.
-  set.seed(42)
-  merged_seu_obj <- RunHarmony(merged_seu_obj, assay.use="RNA", group.by.vars = "orig.ident")
-  merged_seu_obj <- RunUMAP(merged_seu_obj, reduction = "harmony", dims = 1:40)
-  merged_seu_obj <- FindNeighbors(merged_seu_obj, reduction = "harmony", dims = 1:40) %>% FindClusters(resolution = c(1:10 / 10))
-  
-  return(merged_seu_obj)
-}
-
-# 2. Find Markers
 run.presto.specific.columns <- function(seu_obj, col_name_list = NULL, RNA_cols = F) {
   
   DefaultAssay(seu_obj) <- "RNA"
@@ -56,52 +43,3 @@ run.presto.specific.columns <- function(seu_obj, col_name_list = NULL, RNA_cols 
   
   return(final_results_list)
 }
-
-# 2. Plot UMAP
-plot.umaps <- function(seu_obj, save_path) {
-  
-  # Plot All Together in One File
-  pdf(glue("{save_path}/all_resolutions_UMAPs.pdf"), height = 12, width = 16)
-  for (res in colnames(seu_obj@meta.data)[startsWith(colnames(seu_obj@meta.data), "RNA_snn")]) {
-    res_num <- stringr::str_replace(string = res, pattern = "RNA_snn_res.", replacement = "")
-    a <- SCpubr::do_DimPlot(seu_obj, group.by = res, plot.axes = T, plot.title = glue("UMAP Resolution {res_num}")) + theme(plot.title = element_text(hjust=0.5))
-    a  %>% print()
-  }
-  dev.off()
-  
-  # Plot All Resolutions in Separate Files
-  for (res in colnames(seu_obj@meta.data)[startsWith(colnames(seu_obj@meta.data), "RNA_snn")]) {
-    res_num <- stringr::str_replace(string = res, pattern = "RNA_snn_res.", replacement = "")
-    
-    pdf(glue("{save_path}/specific-resolutions/UMAP-res-{res_num}.pdf"), height = 12, width = 16)
-    a <- SCpubr::do_DimPlot(seu_obj, group.by = res, plot.axes = T, plot.title = glue("UMAP Resolution {res_num}")) + theme(plot.title = element_text(hjust=0.5))
-    a %>% print()
-    dev.off()
-  }
-}
-
-plot.umaps.labeled <- function(seu_obj, save_path) {
-  
-  # Plot All Together in One File
-  pdf(glue("{save_path}/all_resolutions_UMAPs-Labeled.pdf"), height = 12, width = 16)
-  for (res in colnames(seu_obj@meta.data)[startsWith(colnames(seu_obj@meta.data), "RNA_snn")]) {
-    res_num <- stringr::str_replace(string = res, pattern = "RNA_snn_res.", replacement = "")
-    a <- SCpubr::do_DimPlot(seu_obj, group.by = res, plot.axes = T, plot.title = glue("UMAP Resolution {res_num}"), label = T) + theme(plot.title = element_text(hjust=0.5))
-    a  %>% print()
-  }
-  dev.off()
-  
-  # Plot All Resolutions in Separate Files
-  for (res in colnames(seu_obj@meta.data)[startsWith(colnames(seu_obj@meta.data), "RNA_snn")]) {
-    res_num <- stringr::str_replace(string = res, pattern = "RNA_snn_res.", replacement = "")
-    
-    pdf(glue("{save_path}/specific-resolutions/UMAP-res-{res_num}-Labeled.pdf"), height = 12, width = 16)
-    a <- SCpubr::do_DimPlot(seu_obj, group.by = res, plot.axes = T, plot.title = glue("UMAP Resolution {res_num}"), label = T) + theme(plot.title = element_text(hjust=0.5))
-    a %>% print()
-    dev.off()
-  }
-}
-
-
-
-

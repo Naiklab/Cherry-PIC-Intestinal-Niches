@@ -28,65 +28,6 @@ library(tidyverse)
 library(harmony)
 library(glue)
 library(EnhancedVolcano)
-library(ggsci)
-```
-
-Set up color palettes for plots
-```{r chunk-03}
-# IGV colors for clusters (many distinct colors)
-igv_colors <- pal_igv("default")(51)
-
-# Different palettes for different variable types
-npg_colors <- pal_npg("nrc")(10)        # Nature Publishing Group - good for Location (2 categories)
-lancet_colors <- pal_lancet("lanonc")(9) # Lancet - good for Condition
-d3_colors <- pal_d3("category20")(20)    # D3 - good for Sample_ID/orig.ident (many categories)
-jco_colors <- pal_jco("default")(10)     # JCO - good for Time_Course
-ucscgb_colors <- pal_ucscgb("default")(26) # UCSC Genome Browser - alternative for many categories
-
-# Helper function to get colors based on number of clusters (for clustering)
-get_igv_colors <- function(n) {
-  if (n <= 51) {
-    return(igv_colors[1:n])
-  } else {
-    return(rep(igv_colors, length.out = n))
-  }
-}
-
-# Helper function to get colors for Location (NPG palette)
-get_location_colors <- function(n) {
-  if (n <= 10) {
-    return(npg_colors[1:n])
-  } else {
-    return(rep(npg_colors, length.out = n))
-  }
-}
-
-# Helper function to get colors for Condition (Lancet palette)
-get_condition_colors <- function(n) {
-  if (n <= 9) {
-    return(lancet_colors[1:n])
-  } else {
-    return(rep(lancet_colors, length.out = n))
-  }
-}
-
-# Helper function to get colors for Sample_ID/orig.ident (D3 palette)
-get_sample_colors <- function(n) {
-  if (n <= 20) {
-    return(d3_colors[1:n])
-  } else {
-    return(rep(d3_colors, length.out = n))
-  }
-}
-
-# Helper function to get colors for Time_Course (JCO palette)
-get_time_colors <- function(n) {
-  if (n <= 10) {
-    return(jco_colors[1:n])
-  } else {
-    return(rep(jco_colors, length.out = n))
-  }
-}
 ```
 
 Import immune cells only for both time points
@@ -96,34 +37,6 @@ cat("Immune short-term dataset:", ncol(Immune.scRNA.short.term), "cells\n")
 
 Immune.scRNA.long.term <- readRDS("../../01-separate-epithelia-immune/outputs/long-term-2024-03-22_seu-obj-long-term-immune-2024-03-22-RNA-RNA_snn_res.0.5.RDS")
 cat("Immune long-term dataset:", ncol(Immune.scRNA.long.term), "cells\n")
-```
-
-Check metadata columns in both datasets
-```{r chunk-05}
-cat("Short-term immune metadata columns:\n")
-print(colnames(Immune.scRNA.short.term@meta.data))
-
-cat("\nLong-term immune metadata columns:\n")
-print(colnames(Immune.scRNA.long.term@meta.data))
-```
-
-Check for existing cell type labels
-```{r chunk-06}
-# Check short-term cell type labels
-cat("Short-term immune - checking for cell type labels:\n")
-if ("cell_type_label" %in% colnames(Immune.scRNA.short.term@meta.data)) {
-  print(table(Immune.scRNA.short.term$cell_type_label))
-} else if ("seurat_clusters" %in% colnames(Immune.scRNA.short.term@meta.data)) {
-  print(table(Immune.scRNA.short.term$seurat_clusters))
-}
-
-# Check long-term cell type labels
-cat("\nLong-term immune - checking for cell type labels:\n")
-if ("cell_type_label" %in% colnames(Immune.scRNA.long.term@meta.data)) {
-  print(table(Immune.scRNA.long.term$cell_type_label))
-} else if ("seurat_clusters" %in% colnames(Immune.scRNA.long.term@meta.data)) {
-  print(table(Immune.scRNA.long.term$seurat_clusters))
-}
 ```
 
 Visualize initial clustering
@@ -143,18 +56,6 @@ print(p2)
 ```
 
 Isolate the cells from control samples only
-```{r chunk-08}
-# Check condition column names
-cat("Checking condition columns in short-term:\n")
-if ("Condition" %in% colnames(Immune.scRNA.short.term@meta.data)) {
-  print(table(Immune.scRNA.short.term$Condition))
-} 
-
-cat("\nChecking condition columns in long-term:\n")
-if ("Condition" %in% colnames(Immune.scRNA.long.term@meta.data)) {
-  print(table(Immune.scRNA.long.term$Condition))
-}
-```
 
 ```{r chunk-09}
 # Subset control samples only
@@ -169,12 +70,6 @@ Merge Immune populations from Control samples
 ```{r chunk-10}
 Immune.CTRL_data <- merge(Immune.scRNA.long.term.CTRL_only, Immune.scRNA.short.term.CTRL_only)
 cat("Merged immune CTRL dataset:", ncol(Immune.CTRL_data), "cells\n")
-```
-
-Check merged metadata
-```{r chunk-11}
-print("Checking available metadata columns in merged object:")
-print(colnames(Immune.CTRL_data@meta.data))
 ```
 
 Using Alex's reprocessing pipeline
@@ -232,7 +127,6 @@ for (res in grep("^RNA_snn", colnames(Immune.CTRL_data.processed@meta.data), val
     theme(legend.position = "right")
   print(p)
 }
-
 
 ```
 
@@ -324,10 +218,11 @@ for (res in resolutions_to_analyze) {
       length(unique(immune.markers$cluster)), "clusters\n")
 }
 
-# Print summary of top markers for default resolution (0.5)
-Idents(Immune.CTRL_data.processed) <- "RNA_snn_res.0.5"
-cat("\n=== Top 10 markers per cluster (res 0.5) ===\n")
-print(read.csv("../outputs/immune_Top10-Cluster-Markers-res.0.5.csv"))
+# Print the top markers at the resolution the annotation below is applied to (res 0.9),
+# so the table shown here describes the same clusters that receive labels.
+Idents(Immune.CTRL_data.processed) <- "RNA_snn_res.0.9"
+cat("\n=== Top 10 markers per cluster (res 0.9) ===\n")
+print(read.csv("../outputs/immune_Top10-Cluster-Markers-res.0.9.csv"))
 ```
 
 # Add cell type annotations for immune cells from CSV
@@ -683,7 +578,6 @@ Immune.CTRL_data.processed <- readRDS("../outputs/immune_Immune.CTRL_data.proces
 
 immune.annotation <- read.csv("../data/immune-annotation.csv")
 ```
-
 
 # Session Info
 ```{r chunk-36}

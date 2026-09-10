@@ -234,7 +234,6 @@ Also used, by stage:
 | circlize | 0.4.18 | circular layouts |
 | ggpubr | 0.6.3 | statistical annotation on plots |
 | ggrepel | 0.9.8 | non-overlapping labels |
-| ggsci | 5.0.0 | palettes |
 | svglite | 2.2.2 | SVG output |
 | data.table | 1.18.4 | fast table I/O |
 | jsonlite | 2.0.0 | metadata I/O |
@@ -303,11 +302,11 @@ Rscript .checks/install_environment.R --dry-run   # report what differs, change 
 Rscript .checks/install_environment.R             # install
 ```
 
-Pins the ~40 packages the analysis loads directly: 30 CRAN via `remotes::install_version()`,
+Pins the ~40 packages the analysis loads directly: 29 CRAN via `remotes::install_version()`,
 8 from Bioconductor 3.20, 4 from GitHub. Transitive dependencies resolve to whatever those
 require.
 
-**2. Restore the package closure** — pins all **305** packages at the versions used: the 33
+**2. Restore the package closure** — pins all **304** packages at the versions used: the 32
 the code loads plus the 272 they pull in.
 
 ```r

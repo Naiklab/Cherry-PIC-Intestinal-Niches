@@ -115,7 +115,7 @@ Ikjot-analysis-folder/Analysis-part2-Immune.Rmd	final_figures/DR26001-scRNA/04-m
 Ikjot-analysis-folder/Combined-cell-type-annotations.csv	final_figures/DR26001-scRNA/04-merge-controls/data/Combined-cell-type-annotations.csv
 Ikjot-analysis-folder/updated-cell-type-labels-for-IKJOT.csv	final_figures/DR26001-scRNA/04-merge-controls/data/updated-cell-type-labels-for-IKJOT.csv
 Ikjot-analysis-folder/immune-annotation.csv	final_figures/DR26001-scRNA/04-merge-controls/data/immune-annotation.csv
-Ikjot-analysis-folder/Short term SFB scRNA seq final annotation.xlsx	final_figures/DR26001-scRNA/04-merge-controls/data/Short term SFB scRNA seq final annotation.xlsx
+Ikjot-analysis-folder/Short term SFB scRNA seq final annotation.xlsx	final_figures/DR26001-scRNA/04-merge-controls/data/short-term-SFB-scRNA-final-annotation.xlsx
 Ikjot-analysis-folder/Analysis-part1.nb.html	final_figures/DR26001-scRNA/04-merge-controls/outputs/epithelia_Analysis-part1.nb.html
 Ikjot-analysis-folder/Analysis-part2-Immune.nb.html	final_figures/DR26001-scRNA/04-merge-controls/outputs/immune_Analysis-part2.nb.html
 Ikjot-analysis-folder/output/Clustering-Analysis-LT-ST-combined-Epithelia/markers/DE_Genes.Duodenum.Vs.Ileum-CTRL-cell-type-Enterocytes-only.csv	final_figures/DR26001-scRNA/04-merge-controls/outputs/epithelia_DE_Genes.Duodenum.Vs.Ileum-CTRL-cell-type-Enterocytes-only.csv
@@ -195,9 +195,9 @@ Ikjot-analysis-folder/output/Clustering-Analysis-LT-ST-combined-Immune/plots/UMA
 Ikjot-analysis-folder/output/Clustering-Analysis-LT-ST-combined-Immune/plots/UMAP/Updated-UMAP-groupby-plots.pdf	final_figures/DR26001-scRNA/04-merge-controls/outputs/immune_Updated-UMAP-groupby-plots.pdf
 Ikjot-analysis-folder/Local-analysis/Cell_type-reAnnotation.Rmd	final_figures/DR26001-scRNA/05-reannotation-and-qc/scripts/Cell_type-reAnnotation.Rmd
 Ikjot-analysis-folder/Local-analysis/Doublet-test.Rmd	final_figures/DR26001-scRNA/05-reannotation-and-qc/scripts/Doublet-test.Rmd
-Ikjot-analysis-folder/Local-analysis/gene signatures for ikjot.xlsx	final_figures/DR26001-scRNA/05-reannotation-and-qc/data/gene signatures for ikjot.xlsx
-Ikjot-analysis-folder/Local-analysis/scRNA seq res 0.8 for epithelia trajectory.xlsx	final_figures/DR26001-scRNA/05-reannotation-and-qc/data/scRNA seq res 0.8 for epithelia trajectory.xlsx
-Ikjot-analysis-folder/Local-analysis/immune annotation 2026 DR.xlsx	final_figures/DR26001-scRNA/05-reannotation-and-qc/data/immune annotation 2026 DR.xlsx
+Ikjot-analysis-folder/Local-analysis/gene signatures for ikjot.xlsx	final_figures/DR26001-scRNA/05-reannotation-and-qc/data/gene-signatures.xlsx
+Ikjot-analysis-folder/Local-analysis/scRNA seq res 0.8 for epithelia trajectory.xlsx	final_figures/DR26001-scRNA/05-reannotation-and-qc/data/scRNA-res0.8-epithelia-trajectory.xlsx
+Ikjot-analysis-folder/Local-analysis/immune annotation 2026 DR.xlsx	final_figures/DR26001-scRNA/05-reannotation-and-qc/data/immune-annotation-2026.xlsx
 Ikjot-analysis-folder/Local-analysis/RDS-files/seu-obj-V5-Annotation-pre-removal-2025-03-26.RDS	final_figures/DR26001-scRNA/05-reannotation-and-qc/data/seu-obj-V5-Annotation-pre-removal-2025-03-26.RDS
 Ikjot-analysis-folder/Local-analysis/RDS-files/seu-obj-short-term-epithelia-2024-06-05.RDS	final_figures/DR26001-scRNA/05-reannotation-and-qc/data/seu-obj-short-term-epithelia-2024-06-05.RDS
 Ikjot-analysis-folder/Local-analysis/SingleR-Prediction-Scores-Heatmap.pdf	final_figures/DR26001-scRNA/05-reannotation-and-qc/outputs/SingleR-Prediction-Scores-Heatmap.pdf
