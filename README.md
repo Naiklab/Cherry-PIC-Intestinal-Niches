@@ -73,7 +73,7 @@ from sequencing data.
 | **S4B** | Marker dot plots, stromal and immune spatial clusters | *same* |
 | **S5A** | Integrated reference atlas UMAP, coloured by dataset of origin | `Cherry-PIC-ST-data/final_figures/03_scrna_reference/scripts/FigS5_scRNA_Reference_final.Rmd` |
 | **S5B** | Integrated reference atlas UMAP, coloured by broad cell type | *same* |
-| **S5C–E** | Marker dot plots of the reference atlas — epithelia, stroma, immune | `Biomni-code-external/Full-data/Biomni_lab_downloads_20260826_195708/dotplot_markers_final.R` |
+| **S5C–E** | Marker dot plots of the reference atlas — epithelia, stroma, immune | `Biomni-code-external/04_marker_dotplots/scripts/dotplot_markers_final.R` |
 | **S7A** | Marker dot plots, Cherry-PIC niche scRNA — epithelia | `Cherry-PIC-scRNA-project/final_figures/10x-Cherry-PIC-scRNA/02-clustering-and-annotation/scripts/FigS7_DotPlots_final.Rmd` |
 | **S7B** | Marker dot plots, Cherry-PIC niche scRNA — immune and stroma | *same* |
 | **S8A/B** | Region-unique ligand–receptor pairs by module, stem-cell receiver — duodenum and ileum | `Biomni-code-external/01_liana_nichenet/` |
@@ -189,6 +189,8 @@ to a sensible default.
 | `CHERRYPIC_R_LIB` | R's own library paths | Prepend a library holding the analysis packages |
 | `CHERRYPIC_RAWDATA` | `rawdata` | Space Ranger output root, one folder per sample |
 | `CHERRYPIC_SOURCE_SCRNA` | the DR26001 project's `04-merge-controls/outputs` | Source scRNA objects for the atlas build |
+| `CHERRYPIC_MASTER_OBJ` | `../data/Master.Obj.rds` | Integrated atlas object, for the Figure S5C–E dot plots |
+| `CHERRYPIC_MARKER_XLSX` | `../data/curated_10_genes_per_cluster_res1_2.xlsx` | Curated marker workbook for those dot plots |
 
 ```bash
 export CHERRYPIC_R_LIB=/path/to/your/R/library

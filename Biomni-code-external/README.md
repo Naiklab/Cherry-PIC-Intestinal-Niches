@@ -106,6 +106,31 @@ Rscript scripts/regenerate_pathway_figures.R
 - `module_heatmaps/` — 25 module heatmaps (PNG + SVG), one per pathway module
 - `pathways_ambient_removed/` — 6 bar plots (PNG + SVG), one per cell type
 
+## 04_marker_dotplots — Reference-atlas marker dot plots (Figure S5C–E)
+
+`scripts/dotplot_markers_final.R` builds the three compact dot plots of curated annotation
+markers, one per compartment, in z-score and log1p versions, plus the underlying expression
+table. It came from the Biomni delivery of 26 August 2026 and has been repointed at this
+repository: its two inputs are read from `../data/` or from `CHERRYPIC_MASTER_OBJ` and
+`CHERRYPIC_MARKER_XLSX`, and it writes to `../outputs/` rather than the sandbox's
+`/mnt/results`.
+
+**Neither input ships here.** `Master.Obj.rds` is the 5.8 GB integrated atlas built by
+`Cherry-PIC-ST-data/final_figures/03_scrna_reference/` and belongs with the Zenodo deposit;
+the curated marker workbook is not in this repository at all and needs adding.
+
+## A note on `Full-data/`
+
+`Full-data/` is the Biomni deliveries exactly as received, kept as the record of what was
+handed over. Only two files in it are tracked — `report_region_unique_liana.md` and
+`report_biological_nichenet.md` — because they are the only written record of the scoring
+parameters, which the Key parameters section above draws on.
+
+The delivered package also contains copies of the scripts in `01_liana_nichenet/` and
+`02_pathway_analysis/`. Those copies are **not** tracked: the versions in this repository have
+since been corrected and the delivered ones still carry sandbox paths that resolve nowhere.
+Where the two differ, the folders above are authoritative.
+
 ## 03_shared_data — Shared input data
 
 | File | Description |

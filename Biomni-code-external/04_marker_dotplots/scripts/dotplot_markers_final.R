@@ -3,70 +3,16 @@
 # Dot plot generation: curated annotation markers for mouse intestinal scRNA-seq
 # =============================================================================
 #
-# Description:
-#   Generates compact dot plots of curated annotation markers for all cell
-#   populations in a mouse intestinal single-cell dataset. Produces 3
-#   compartment-specific plots (Immune, Epithelia, Stroma), each in two color
-#   scales (z-score and log1p), plus a companion CSV of expression values.
+# Produces Figure S5C-E. Recovered from the Biomni delivery of 26 Aug 2026 and
+# repointed at this repository's layout; the analysis itself is unchanged.
 #
-# Gene selection strategy:
-#   - Single-cluster populations: keep only canonical markers (5-6 per pop,
-#     7 for Early progenitors). See canonical_single list below.
-#   - Merged populations (>=2 clusters sharing same broad group): hybrid
-#     selection capped at 4 genes total:
-#       1. Core genes = curated markers shared by >=2 subclusters, ordered
-#          by minimum gene_slot
-#       2. If core exceeds cap, keep top N core genes
-#       3. If core < cap, fill with unique genes (1 subcluster only), rotating
-#          between subclusters in cluster-number order
-#   - Pan-fibroblast markers (6): Col1a1, Col1a2, Col3a1, Vim, Pdgfra, Pdgfrb
-#     added to Stroma x-axis, shown across all stromal populations
-#   - Pan-endothelial marker (1): Pecam1, added to Stroma x-axis
+# Inputs, overridable by environment variable:
+#   CHERRYPIC_MASTER_OBJ   the integrated reference atlas, Master.Obj.rds, built by
+#                          Cherry-PIC-ST-data/final_figures/03_scrna_reference/.
+#                          5.8 GB; not in this repository - see the Zenodo deposit.
+#   CHERRYPIC_MARKER_XLSX  curated marker workbook, sheet "Curated 10 genes".
 #
-# Population merges:
-#   - All 6 Cd8aa IEL clusters (1, 3, 5, 10, 33, 39) merged into one group
-#   - Fibroblasts split into 3 sub-groups:
-#       Activated interstitial: clusters 4, 6, 12
-#       Myofibroblasts:         clusters 9, 16
-#       Telocyte-like:          cluster 42
-#
-# Plot aesthetics:
-#   - Reversed inferno palette (yellow=low, dark=high)
-#   - Dots: shape 21 (filled circle + border), 0.25pt black border
-#   - Dot size range: 0.8-5mm, mapped to % expressing
-#   - Zero-expression: no dot drawn (filtered out)
-#   - theme_classic: no grid lines, no grey background
-#   - Font: Liberation Sans, 6pt axis text, 10pt title
-#   - Dimensions: 12 x 3.75 inches at 300 dpi
-#
-# Input:
-#   /mnt/user-uploads/Master.Obj.rds
-#     - 5.5 GB Seurat object, 29,335 genes x 74,598 cells
-#     - Assays: RNA (split per-sample layers), SCT (default), HTO
-#     - Clustering: SCT_snn_res.1.2 (43 levels, 0-42)
-#
-#   /mnt/user-uploads/curated_10_genes_per_cluster_res1_2.xlsx
-#     - Sheet "Curated 10 genes": 43 clusters x 10 genes with annotations
-#     - Sheet "Marker validation": log2FC, pct.1, pct.2, p_val_adj
-#     - Clusters 34 and 41 have no curated markers (NA)
-#
-# Output:
-#   /mnt/results/dotplot_immune_zscore_compact.png/.svg
-#   /mnt/results/dotplot_immune_log1p_compact.png/.svg
-#   /mnt/results/dotplot_epithelia_zscore_compact.png/.svg
-#   /mnt/results/dotplot_epithelia_log1p_compact.png/.svg
-#   /mnt/results/dotplot_stroma_zscore_compact.png/.svg
-#   /mnt/results/dotplot_stroma_log1p_compact.png/.svg
-#   /mnt/results/dotplot_marker_expression_data_hybrid.csv
-#
-# Requirements:
-#   - R with Seurat, ggplot2, dplyr, tidyr, readxl, Matrix, svglite
-#   - >= 64 GB RAM (5.5 GB Seurat object)
-#   - Copy this script to local disk before running (S3 mount can truncate)
-#
-# Usage:
-#   Rscript dotplot_markers_final.R
-#
+# Outputs: ../outputs/
 # =============================================================================
 
 suppressPackageStartupMessages({
@@ -86,14 +32,14 @@ set.seed(1)
 # ---- 1. Load Seurat object ----
 cat("Loading Seurat object...\n")
 t0 <- Sys.time()
-obj <- readRDS("/mnt/user-uploads/Master.Obj.rds")
+obj <- readRDS(Sys.getenv("CHERRYPIC_MASTER_OBJ", "../data/Master.Obj.rds"))
 cat(sprintf("Loaded in %.1f min. Dim: %d genes x %d cells\n",
             as.numeric(difftime(Sys.time(), t0, units = "mins")),
             nrow(obj), ncol(obj)))
 
 # ---- 2. Read curated markers xlsx, all 10 genes per cluster ----
 cat("Reading curated markers xlsx...\n")
-xl <- "/mnt/user-uploads/curated_10_genes_per_cluster_res1_2.xlsx"
+xl <- Sys.getenv("CHERRYPIC_MARKER_XLSX", "../data/curated_10_genes_per_cluster_res1_2.xlsx")
 markers <- read_excel(xl, sheet = "Curated 10 genes") %>%
   filter(!is.na(Cluster)) %>%
   select(Cluster, population_name = `Population annotation`,
@@ -409,7 +355,7 @@ plot_df <- plot_df %>%
 cat(sprintf("Plot data: %d rows\n", nrow(plot_df)))
 
 # ---- 10. Save companion CSV ----
-csv_out <- "/mnt/results/dotplot_marker_expression_data_hybrid.csv"
+csv_out <- "../outputs/dotplot_marker_expression_data_hybrid.csv"
 
 # For CSV: only hybrid-selected gene-broad pairs + pan-marker-stroma pairs
 csv_df <- plot_df %>%
@@ -530,8 +476,8 @@ for (comp in comp_order) {
         plot.margin = margin(6, 6, 6, 6)
       )
 
-    png_out <- sprintf("/mnt/results/dotplot_%s_%s_compact.png", tolower(comp), scale_type)
-    svg_out <- sprintf("/mnt/results/dotplot_%s_%s_compact.svg", tolower(comp), scale_type)
+    png_out <- sprintf("../outputs/dotplot_%s_%s_compact.png", tolower(comp), scale_type)
+    svg_out <- sprintf("../outputs/dotplot_%s_%s_compact.svg", tolower(comp), scale_type)
 
     tryCatch({
       ggsave(png_out, p, width = 12, height = 3.75, dpi = 300,
