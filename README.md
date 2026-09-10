@@ -158,6 +158,17 @@ executed notebooks recording the run.
 Each notebook has an `.R` twin generated with `knitr::purl()`, which runs without pandoc.
 Paths inside notebooks are relative, so run from the notebook's own folder.
 
+Several figure notebooks embed their `Preprocessing_*` notebook as a child, so editing a
+preprocessing notebook changes the figure twin too. Regenerate from the notebook's folder,
+writing to a temporary name and moving it over — `purl()` will not overwrite a twin that is
+newer than the notebook, and a child edit leaves it exactly that:
+
+```bash
+Rscript -e "knitr::purl('Fig6_scRNA_final.Rmd', output='tmp.R', documentation=1)" && mv tmp.R Fig6_scRNA_final.R
+```
+
+The release check compares twin content against a fresh `purl()`, so a stale twin fails it.
+
 This analysis is sized for a compute cluster, not a workstation. Notebooks reading the
 Visium HD or integrated-atlas objects need tens of gigabytes of memory; each states its
 requirement at the top. Run them on a compute node:

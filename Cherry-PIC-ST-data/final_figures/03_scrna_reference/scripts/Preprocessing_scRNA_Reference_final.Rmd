@@ -77,7 +77,6 @@ Immune.Obj <- readRDS(immune_path)   # Rosenblum immune, this manuscript
 
 # Reference datasets prepared in Stage 0
 SpaceFold.Obj  <- readRDS("../data/rds-objects/SI-data_SpaceFold-paper.RDS")
-rds_path <- "Reference-Single-Cell-Data/rds-objects"
 Degirmenci.Obj <- readRDS(file.path(rds_path, "Degirmenci.Obj.rds"))
 Kinchen.Obj    <- readRDS(file.path(rds_path, "Kinchen.Obj.rds"))
 McCarthy.Obj   <- readRDS(file.path(rds_path, "McCarthy.Obj.rds"))

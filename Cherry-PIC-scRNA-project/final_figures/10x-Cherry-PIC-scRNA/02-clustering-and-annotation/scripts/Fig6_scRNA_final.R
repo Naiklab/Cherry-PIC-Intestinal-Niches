@@ -43,7 +43,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 # # Single source of truth for both colors AND exclusion: the biologist-curated
 # # annotation xlsx. No second hand-maintained exclusion list anywhere else.
 # ann_df <- readxl::read_excel(
-#   "New-annotations/New qc resolution 1 annotation  broad annotation and colors July07.xlsx")
+#   "../data/New qc resolution 1 annotation  broad annotation and colors July07.xlsx")
 # REMOVE_CLUSTERS <- ann_df$Cluster[ann_df$`Hex color` == "Remove"]
 # 
 # seu$cell_type       <- unname(setNames(ann_df$Annotation, ann_df$Cluster)[cluster_ids])

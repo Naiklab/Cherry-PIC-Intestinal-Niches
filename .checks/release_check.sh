@@ -47,14 +47,31 @@ STALE=$(grep -rniE "still missing|not yet (fixed|rendered|deposited)|blocked on|
                 || { warn "review these — they may describe resolved issues:"; echo "$STALE" | cut -c1-120 | sed 's/^/    /'; }
 
 head "5. .R twins are current"
+# Content check: regenerate each twin to a temporary file and diff it. An mtime test
+# misses child-notebook edits, which leave the twin newer than its parent — and purl()
+# will not overwrite a newer twin, so an in-place regeneration silently does nothing.
 DRIFT=0
-for rmd in $(git ls-files '*_final.Rmd'); do
-  r="${rmd%.Rmd}.R"
-  [ -f "$r" ] || continue
-  [ "$rmd" -nt "$r" ] && { echo "    stale: $r"; DRIFT=$((DRIFT+1)); }
-done
-[ "$DRIFT" = "0" ] && pass "every .R twin is at least as new as its .Rmd" \
-                   || fail "$DRIFT twin(s) older than their source — regenerate with knitr::purl()"
+if command -v Rscript >/dev/null 2>&1 && Rscript -e 'quit(status = !requireNamespace("knitr", quietly = TRUE))' >/dev/null 2>&1; then
+  while IFS= read -r rmd; do
+    r="${rmd%.Rmd}.R"
+    [ -f "$r" ] || continue
+    t=$(mktemp)
+    ( cd "$(dirname "$rmd")" && Rscript -e "knitr::purl('$(basename "$rmd")', output='$t', quiet=TRUE, documentation=1)" >/dev/null 2>&1 )
+    if [ ! -s "$t" ]; then echo "    could not purl: $rmd"; DRIFT=$((DRIFT+1))
+    elif ! diff -q "$t" "$r" >/dev/null; then echo "    stale: $r"; DRIFT=$((DRIFT+1)); fi
+    rm -f "$t"
+  done < <(git ls-files '*.Rmd')
+  [ "$DRIFT" = "0" ] && pass "every .R twin matches a fresh knitr::purl() of its notebook" \
+                     || fail "$DRIFT twin(s) differ from their notebook — regenerate (README, Running the code)"
+else
+  while IFS= read -r rmd; do
+    r="${rmd%.Rmd}.R"
+    [ -f "$r" ] || continue
+    [ "$rmd" -nt "$r" ] && { echo "    stale: $r"; DRIFT=$((DRIFT+1)); }
+  done < <(git ls-files '*.Rmd')
+  [ "$DRIFT" = "0" ] && pass "every .R twin is at least as new as its .Rmd (mtime only — Rscript or knitr not found)" \
+                     || fail "$DRIFT twin(s) older than their source — regenerate with knitr::purl()"
+fi
 
 head "6. Declared dependencies match the code"
 CALLED=$(grep -rhoE "library\([A-Za-z0-9.]+\)" $(git ls-files '*.Rmd' '*.R') 2>/dev/null |
