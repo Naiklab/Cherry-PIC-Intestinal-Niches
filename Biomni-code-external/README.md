@@ -183,6 +183,79 @@ its record is the session's own reports, which state every parameter:
 | Sender exclusions in figures | Bottom/Mid/Upper-villus enterocytes, Goblet, Enteroendocrine; Paneth kept |
 | Region-uniqueness | LIANA-significant in one region but not the other |
 
+### Cell populations in the LIANA tables
+
+The two shipped `_noclu` tables carry **16 sender populations** and **2 receivers**, in
+space-separated labels exactly as below. All 16 are present in both regions.
+
+| Sender | Compartment | Kept as a sender in the figure |
+|---|---|---|
+| `Stem cells` | stem | yes |
+| `TA cells` | epithelial progenitor | yes — merged, see below |
+| `TA cells/early progenitors` | epithelial progenitor | yes — merged, see below |
+| `Paneth cells` | epithelial | yes |
+| `Fibroblasts` | mesenchymal | yes |
+| `Macrophages` | immune | yes |
+| `cDC1` | dendritic | yes |
+| `Cd8aa IEL` | T cell / IEL | yes |
+| `Activated/helper-like T cells` | T cell | yes |
+| `Plamsablasts` | B lineage | yes |
+| `Blood vascular endothelial cells` | endothelial | yes |
+| `Bottom-Villus enterocytes` | epithelial | no — mature epithelium |
+| `Mid-villus enterocytes` | epithelial | no — mature epithelium |
+| `Upper-villus enterocytes` | epithelial | no — mature epithelium |
+| `Goblet cells` | epithelial | no — mature epithelium |
+| `Enteroendocrine cells` | epithelial | no — mature epithelium |
+
+**`TA cells` and `TA cells/early progenitors` are one population in the final output.** They
+are two labels for the transit-amplifying compartment, and `build_sender_counts_merged.py`
+relabels both to `TA / early progenitors` before counting. That gives the sender count in the
+figures:
+
+```
+16 senders in the LIANA tables
+−5 mature epithelium excluded (Bottom/Mid/Upper-villus enterocytes, Goblet, Enteroendocrine)
+−1 the two TA labels merged into one
+=10 senders per region and receiver
+```
+
+Receivers are `Stem cells` and `TA cells`. Both progenitor populations appear as senders
+against **both** receivers, including their own, so stem→stem and TA→TA interactions are in
+the tables.
+
+**CLU+ reserve stem cells are not among the 16.** They are excluded before the figures, which
+is what the `_noclu` suffix records, and it only ever affected the duodenum, where they number
+73 against 0 in the ileum:
+
+| Region | Pre-exclusion | `_noclu` | Removed |
+|---|---|---|---|
+| Duodenum | 17 senders, 1,523 rows | 16 senders, 1,379 rows | `CLU+ reserve stem cells`, 144 rows |
+| Ileum | 16 senders, 1,629 rows | 16 senders, 1,629 rows | nothing |
+
+Two label conventions exist across the wider output set. The shipped tables use spaces; the
+archived per-niche files from the earlier run (`_archive_prerun_2026-08-06`,
+`liana_<region>_<Stem|TA>_cell_niche.csv`) use underscores, carry 9 senders each and one
+receiver per file. Those are superseded — the figures use the two combined tables above.
+
+### Why 6F and 6G report different totals
+
+Both figures are built from the same rows of the same two tables; they count differently, and
+the relationship is exact. Verified by re-running both scripts, which reproduce the committed
+outputs byte for byte:
+
+| Region | Receiver | Distinct pairs (6F) | Sum over senders, TA merged (6G) |
+|---|---|---|---|
+| Duodenum | Stem cells | 349 | 571 |
+| Duodenum | TA cells | 377 | 576 |
+| Ileum | Stem cells | 434 | 685 |
+| Ileum | TA cells | 401 | 581 |
+
+6F counts each ligand–receptor pair once; 6G counts it once per sender that carries it, so its
+total is larger by the average number of senders per pair, about 1.5–1.7×. Summing per-sender
+counts *before* merging the two TA labels gives 584 / 584 / 703 / 589; merging them collapses
+the pairs both labels carry and yields the figures' numbers exactly. S8 is narrower again — the
+region-unique pairs only, on LIANA evidence alone.
+
 ### Pathway analysis
 - **Significance threshold:** padj < 0.05
 - **Ambient gene panel:** 34 genes (Paneth/secretory, enterocyte, bile acid transport, xenobiotic/metabolic)

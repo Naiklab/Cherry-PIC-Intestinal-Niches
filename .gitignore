@@ -80,3 +80,7 @@ PROJECT_NOTES.md
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Biomni deliveries are kept as received; the corrected copies in
+# Biomni-code-external/0*/scripts/ are the authoritative versions.
+Biomni-code-external/Full-data/**/reproducible_package/**/scripts/
