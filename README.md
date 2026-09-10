@@ -244,6 +244,12 @@ Also used, by stage:
 | tidyr | 1.3.2 | reshaping |
 | grid | base R | low-level graphics, used by the heatmap layouts |
 
+**The hashtag-pool pipeline ran under a different R.** `DR26001-scRNA-project/.../00-hashtag-pools/scripts/`
+was executed with `module load r/4.2.2` in 2024, before the analysis library below existed, and
+additionally loads **SCpubr** for its UMAP panels. Its package versions are not in the manifest
+and were not recovered; treat it as code-of-record for the deposited pools rather than as part
+of the reproducible environment.
+
 `Cell_type-reAnnotation.Rmd` additionally loads **SingleR** and **celldex** for reference-based
 label transfer. Neither is present in the analysis library, so that notebook's SingleR chunks
 were run in a separate session; its outputs are provided rather than regenerated.

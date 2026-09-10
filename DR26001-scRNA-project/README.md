@@ -39,10 +39,45 @@ DR26001-scRNA-project/
 | `data/final-htp-seu-obj-2024-06-05-RNA.RDS` | 454 MB |
 | `data/final-htp-seu-obj-2024-03-22-LongTerm.RDS` | 739 MB |
 
-`htp` = hashtag pool. These arrive already demultiplexed, carrying `Location`
-(Duodenum / Ileum), `Condition`, `Sample_ID` and `Time_Course`. **The Cell Ranger run and
-HTO demultiplexing that produced them are not in this project** — the only genuine
-upstream gap. `scripts/` is intentionally empty.
+`htp` = hashtag pool. These carry `Location` (Duodenum / Ileum), `Condition`, `Sample_ID`
+and `Time_Course`, assigned during demultiplexing.
+
+**The pipeline that produced them is now included**, recovered from
+`Daniel-Redone-Analysis-NYU-Transfer` on the cluster. It ran under `module load r/4.2.2`,
+separately from the R 4.4.1 library the rest of this repository uses, and its own package
+versions were not recovered — treat it as code-of-record for the deposited pools.
+
+```
+scripts/htp/
+├── routes/            run-htp-hto-qc.sh → run-htp-rna-qc.sh → run-htp-processing.sh
+└── scripts/
+    ├── HTO-QC.R           demultiplex, keep singlets
+    ├── RNA-QC.R           per-cell filtering, merge
+    ├── HTP-Processing.R   Harmony pipeline + markers → final-htp-seu-obj.RDS
+    └── helper-functions/  utils, hto-utils, rna-utils, processing-utils
+```
+
+Run each route from the directory holding `htp/`; the scripts resolve
+`htp/scripts/...` and `htp/raw-data/...` relative to it. The three stages are:
+
+| Stage | Does | Key parameters |
+|---|---|---|
+| `HTO-QC.R` | Reads the PIPseeker HTO matrices, builds one Seurat object per pool, demultiplexes | `CreateSeuratObject(min.cells = 3, min.features = 200)`; barcodes intersected between Gene Expression and Cell Hashing; HTO normalised `CLR`; `HTODemux(positive.quantile = 0.99)`; keeps `HTO_classification.global == "Singlet"` |
+| `RNA-QC.R` | Adds `percent.mt` from `^mt-`, merges pools, filters | `nFeature_RNA > 500 & < 7000 & percent.mt < 20` |
+| `HTP-Processing.R` | Normalise → HVG → scale → PCA → Harmony over `orig.ident` → UMAP and clusters on 40 dims, resolutions 0.1–1.0 → presto markers | writes `final-htp-seu-obj.RDS`, the object this stage holds |
+
+`data/hto-sample-sheets/` holds each pool's two sheets: `hto-samples-sheet.xlsx` (run name →
+PIPseeker matrix path) and `hto-samples-groups.xlsx` (hashtag → `Sample_ID`, `Location`,
+`Condition`, `Sequencing_Date`, one worksheet per run). Those are the experimental design.
+The paths inside them point at the sequencing facility's storage and will need substituting.
+
+> **Two things to check in the sheets.** The `2024-02-09` pool's sheet uses run names
+> `*_2024_02_09_pool{1A,1B,2A,2B}` but reads matrices under `.../naiklab/2024-03-22/`, and the
+> merged objects carry both `*_2024_02_09_pool{1,2}` and `*_2024_03_22_pool{1A,1B,2A,2B}`
+> identities — so which sequencing date these four runs belong to is not settled by the files
+> alone. No long-term (2024-03-22) HTP directory exists on the cluster; that folder is empty.
+> Confirm the mapping before the GEO submission, since it determines which raw runs back which
+> deposited samples.
 
 ### 01-separate-epithelia-immune
 
