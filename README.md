@@ -84,12 +84,14 @@ from sequencing data.
 Figures **1, 2, 5, S1, S2** and **S6** are not derived from sequencing data and have no code
 here.
 
-> **Scope of the ligand–receptor code.** Figures 6F, 6G and S8 are produced from
-> pre-computed LIANA and NicheNet result tables, which are included. The inference step
-> itself — the `liana_wrap()` and NicheNet ligand-activity runs that generated those tables —
-> was performed upstream and that driver code is not part of this repository. The parameters
-> used are recorded in the Methods; the tables they produced are in
-> `Biomni-code-external/01_liana_nichenet/data/`.
+> **Scope of the ligand–receptor code.** The analysis that defines Figures 6F, 6G and S8 is
+> included: sender exclusions, the NicheNet activity filter, the region-uniqueness set logic
+> and all counting and plotting live in `Biomni-code-external/01_liana_nichenet/scripts/`.
+> What ran in a prior session is the scoring step that produced the two input tables —
+> `liana_wrap()` with its default method set, and NicheNet `predict_ligand_activities()`.
+> Those scored tables are provided in `01_liana_nichenet/data/`, so every number in the
+> figures can be verified from this repository; re-deriving the tables from the Seurat object
+> would require re-running the two package calls, whose parameters are given in the Methods.
 
 ---
 
