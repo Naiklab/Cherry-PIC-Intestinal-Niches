@@ -243,6 +243,7 @@ Also used, by stage:
 | tibble | 3.3.1 | data frames |
 | tidyr | 1.3.2 | reshaping |
 | grid | base R | low-level graphics, used by the heatmap layouts |
+| gridExtra | 2.3 | multi-panel QC layouts in the hashtag-pool pipeline |
 
 **The hashtag-pool pipeline ran under a different R.** `DR26001-scRNA-project/.../00-hashtag-pools/scripts/`
 was executed with `module load r/4.2.2` in 2024, before the analysis library below existed, and

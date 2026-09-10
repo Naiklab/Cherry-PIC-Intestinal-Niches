@@ -71,13 +71,42 @@ PIPseeker matrix path) and `hto-samples-groups.xlsx` (hashtag → `Sample_ID`, `
 `Condition`, `Sequencing_Date`, one worksheet per run). Those are the experimental design.
 The paths inside them point at the sequencing facility's storage and will need substituting.
 
-> **Two things to check in the sheets.** The `2024-02-09` pool's sheet uses run names
-> `*_2024_02_09_pool{1A,1B,2A,2B}` but reads matrices under `.../naiklab/2024-03-22/`, and the
-> merged objects carry both `*_2024_02_09_pool{1,2}` and `*_2024_03_22_pool{1A,1B,2A,2B}`
-> identities — so which sequencing date these four runs belong to is not settled by the files
-> alone. No long-term (2024-03-22) HTP directory exists on the cluster; that folder is empty.
-> Confirm the mapping before the GEO submission, since it determines which raw runs back which
-> deposited samples.
+**The pool identities are settled by the objects themselves.** Every cell's `Sample_ID`
+carries a `_ST` or `_LT` suffix, and `Sequencing_Date` and `Time_Course` agree with it:
+
+| Object | Cells | `orig.ident` | Date | Arm |
+|---|---|---|---|---|
+| `final-htp-seu-obj-2024-02-09-RNA.RDS` | 27,060 | `{Duodenum,Ileum}_2024_02_09_pool{1,2}` | `2024_02_09` | short_term |
+| `final-htp-seu-obj-2024-06-05-RNA.RDS` | 22,785 | `{Duodenum,Ileum}_2024_06_05` | `2024_06_05` | short_term |
+| `final-htp-seu-obj-2024-03-22-LongTerm.RDS` | 45,822 | `{Duodenum,Ileum}_2024_03_22_pool{1A,1B,2A,2B}` | `2024_03_22` | long_term |
+
+So the four-way `pool{1A,1B,2A,2B}` split belongs to the **long-term 2024-03-22** pool, and the
+short-term 2024-02-09 pool is a simple `pool1`/`pool2`. The three pools share essentially no
+barcodes (4, 6 and 1 cells across the three pairwise comparisons — chance collisions in a fixed
+barcode whitelist), so they are disjoint cell sets.
+
+That explains the sheet under `2024-02-09-Short-Term-HTP/`: its paths point at
+`.../naiklab/2024-03-22/Pool-{1a,1b,2a,2b}` and its run names carry a stale `2024_02_09`
+prefix. **That HTP directory was reused to process the long-term pool** — which is also why the
+cluster has no separate long-term HTP directory — and the run names were corrected to
+`2024_03_22` before the object was written. Read the sheet as the long-term pool's, and take
+the object's identities as authoritative.
+
+### Conditions: SFB profiled, control analysed
+
+Each pool contains both control and SFB-colonised animals. **Only control cells are used**, from
+stage 04 onward (`Condition == "Control"`); nothing in this repository analyses the SFB arm:
+
+| Pool | Cells | Control | SFB (not used) |
+|---|---|---|---|
+| 2024-02-09 | 27,060 | 15,625 | 11,435 |
+| 2024-06-05 | 22,785 | 10,690 | 12,095 |
+| 2024-03-22 | 45,822 | 19,120 | 26,702 |
+| **Total** | **95,667** | **45,435** | **50,232** |
+
+The short-term / long-term distinction is likewise not a biological variable in any result. It
+appears in the code only to nominate reference and query for the label transfer in
+`long-term-{epithelia,immune}-analysis.Rmd`, and as one grouping among several in QC plots.
 
 ### 01-separate-epithelia-immune
 
