@@ -103,9 +103,9 @@ Key outputs:
 The SC and TA labels defined here are what the ligand–receptor analysis consumes:
 clusters **0, 9 → SC**; clusters **3, 5, 6, 7 → TA**.
 
-`data/seu-obj-short-term-epithelia-2024-06-05.RDS` (482 MB) is a superseded earlier export of
-the 2024-06-05 pool: 25,049 cells with no pool or arm metadata, against the 22,785-cell pool in
-`00-hashtag-pools/data/` that stage 02 actually reads. No script uses it; it can be deleted.
+A superseded earlier export of the 2024-06-05 pool (`seu-obj-short-term-epithelia-2024-06-05.RDS`,
+25,049 cells with no pool or arm metadata, against the 22,785-cell pool stage 02 reads) sat in
+this folder unused; it was deleted on 10 September 2026.
 
 ### 06-downstream-handoffs
 
