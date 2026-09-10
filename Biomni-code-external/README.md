@@ -133,81 +133,30 @@ pip install pandas matplotlib matplotlib-venn
 ## Key parameters
 
 ### LIANA + NicheNet
-- **Sender exclusions:** CLU+ reserve stem cells + mature epithelia (Bottom/Mid/Upper-villus enterocytes, Goblet, Enteroendocrine) excluded; Paneth cells kept
-- **Receivers:** Stem cells, TA cells
-- **NicheNet activity threshold:** pearson > 0
-- **Region-uniqueness:** LIANA-sig in one region but not the other
 
-### Cell populations in the LIANA tables
+The scoring step ran in the Biomni session of 6 August 2026 and is not among these scripts;
+its record is the session's own reports, which state every parameter:
 
-The two shipped `_noclu` tables carry **16 sender populations** and **2 receivers**, using
-space-separated labels exactly as below. All 16 senders are present in both regions.
+- `Full-data/Biomni_lab_downloads_20260826_164206/report_region_unique_liana.md`
+- `Full-data/Biomni_lab_downloads_20260826_164206/report_biological_nichenet.md`
 
-| Sender | Compartment | Kept as a sender in the figure |
-|---|---|---|
-| `Stem cells` | stem | yes |
-| `TA cells` | epithelial progenitor | yes — merged, see below |
-| `TA cells/early progenitors` | epithelial progenitor | yes — merged, see below |
-| `Paneth cells` | epithelial | yes |
-| `Fibroblasts` | mesenchymal | yes |
-| `Macrophages` | immune | yes |
-| `cDC1` | dendritic | yes |
-| `Cd8aa IEL` | T cell / IEL | yes |
-| `Activated/helper-like T cells` | T cell | yes |
-| `Plamsablasts` | B lineage | yes |
-
-**Two labels are corrected for display, not in the data.** The annotation carries a misspelling
-and one verbose label. Both are mapped to their published form at plotting time, so the tables
-and the figures disagree on spelling by design — the tables record what was scored, the figures
-show the corrected name.
-
-| In the data | Published as | Where the mapping lives |
-|---|---|---|
-| `Plamsablasts` | Plasmablasts | `plot_sender_all.R` (`short_lab`), `filter_and_rerun_fgsea_v5.R` (`name`), `FigS7_DotPlots_final.Rmd` (`display_label`) |
-| `Activated/helper-like T cells` | Helper T | `plot_sender_all.R` (`short_lab`) |
-
-Never correct the spelling in a string that is matched against the data — colour-palette keys,
-`seurat_types`, and any `subset()` on a cell-type label all have to keep `Plamsablasts` or they
-silently match nothing.
-| `Blood vascular endothelial cells` | endothelial | yes |
-| `Bottom-Villus enterocytes` | epithelial | no — mature epithelium |
-| `Mid-villus enterocytes` | epithelial | no — mature epithelium |
-| `Upper-villus enterocytes` | epithelial | no — mature epithelium |
-| `Goblet cells` | epithelial | no — mature epithelium |
-| `Enteroendocrine cells` | epithelial | no — mature epithelium |
-
-**`TA cells` and `TA cells/early progenitors` are one population in the final output.** They
-are two labels for the transit-amplifying compartment, and `build_sender_counts_merged.py`
-relabels both to `TA / early progenitors` before counting. Treat them as a single sender when
-reading the figures; they are separate rows only in the raw LIANA tables.
-
-That gives the sender count in the final output:
-
-```
-16 senders in the LIANA tables
-−5 mature epithelium excluded (Bottom/Mid/Upper-villus enterocytes, Goblet, Enteroendocrine)
-−1 the two TA labels merged into one
-=10 senders per region and receiver
-```
-
-Receivers are `Stem cells` and `TA cells`. Both progenitor populations appear as senders
-against **both** receivers, including their own, so stem→stem and TA→TA interactions are in
-the tables.
-
-**CLU+ reserve stem cells are not among the 16.** They are excluded before the figure, and
-the exclusion is what the `_noclu` suffix records. It only ever affected the duodenum, where
-they have 73 cells against 0 in the ileum:
-
-| Region | Pre-exclusion | `_noclu` | Removed |
-|---|---|---|---|
-| Duodenum | 17 senders, 1,523 rows | 16 senders, 1,379 rows | `CLU+ reserve stem cells`, 144 rows |
-| Ileum | 16 senders, 1,629 rows | 16 senders, 1,629 rows | nothing |
-
-Two label conventions exist in the wider output set. The shipped tables use spaces; the
-archived per-niche files from the earlier run (`_archive_prerun_2026-08-06`,
-`liana_<region>_<Stem|TA>_cell_niche.csv`) use underscores, carry 9 senders each and a single
-receiver per file. Those are superseded — the analysis behind the figures uses the two
-combined tables above.
+| Parameter | Value |
+|---|---|
+| Scoring object | `nichenet_obj.rds`, 19,280 cells, 17 cell types — the regional dataset's stem (2,907) and TA (5,036) cells merged with the sorted-niche object; duodenum 11,261 / ileum 8,019; not included here |
+| LIANA | 0.1.14, `liana_wrap(idents_col = "cell_type", resource = "MouseConsensus")` per region, then `liana_aggregate()`; object converted to a `SingleCellExperiment` on logcounts |
+| Resource | `MouseConsensus`, 3,998 mouse pairs — the default human-symbol resource returned 40 rows |
+| Methods | NATMI, Connectome, LogFC, SingleCellSignalR, CellPhoneDB (500 permutations, single-threaded) |
+| Significance | robust rank aggregation, `aggregate_rank ≤ 0.05` (the tables confirm: significant tables max exactly 0.0500, full tables run to 1.0) |
+| CLU+ reserve stem cells | removed from the significant-pair tables after aggregation (`_noclu`); duodenum only |
+| NicheNet networks | v2 mouse, Zenodo 7074291; ligand–target matrix 22,521 × 1,287 |
+| Candidate ligands | 239 distinct LIANA-significant ligands (union of regions); 216 present in the matrix → `nichenet/v2/potential_ligands.txt` |
+| Response gene sets | up-ileum (234) and up-duodenum (189) from DESeq2 pseudobulk by biological sample (6 vs 6), `padj < 0.05`, `|log2FC| > 0.5`; plus curated stem and TA marker sets |
+| Background | genes expressed in ≥ 10% of receiver cells ∩ matrix rows — stem 7,962, TA 9,494 |
+| Runs | 6: {stem, TA} × {up-ileum, up-duodenum, markers}; `predict_ligand_activities()` → Pearson, AUROC, AUPR |
+| Activity threshold | Pearson > 0 |
+| Receptors | expressed in ≥ 10% of receiver cells |
+| Sender exclusions in figures | Bottom/Mid/Upper-villus enterocytes, Goblet, Enteroendocrine; Paneth kept |
+| Region-uniqueness | LIANA-significant in one region but not the other |
 
 ### Pathway analysis
 - **Significance threshold:** padj < 0.05
