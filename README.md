@@ -127,14 +127,16 @@ The integrated reference atlas combines seven source datasets — one generated 
 manuscript and six published — merged, SCTransformed and batch-corrected with Harmony. All
 are *Mus musculus*.
 
-The data generated here came from a **single sequencing run**; epithelial and immune
-compartments were split into two objects after annotation and enter the atlas as two
-labelled entries, so they appear as two rows below but are not independent samples.
+The data generated here are **one experiment sequenced as three pools** (9 February,
+22 March and 5 June 2024); epithelial and immune compartments were split into two objects
+after annotation and enter the atlas as two labelled entries, so they appear as two rows
+below but are not independent datasets. Their full processing chain, from raw matrices
+onward, is in `DR26001-scRNA-project/`.
 
 | Dataset | Publication | Accession | Cells |
 |---|---|---|---|
-| Rosenblum — epithelial compartment | This manuscript (same run as below) | to be deposited | 17,552 |
-| Rosenblum — immune compartment | This manuscript (same run as above) | to be deposited | 27,863 |
+| Rosenblum — epithelial compartment | This manuscript (same experiment as below) | to be deposited | 17,552 |
+| Rosenblum — immune compartment | This manuscript (same experiment as above) | to be deposited | 27,863 |
 | Glisovic *et al.* 2025 | Intestinal fibroblast heterogeneity — unifying RNA-seq studies and introducing consensus-driven nomenclature. *J Cell Sci* 138(23):jcs264147. [10.1242/jcs.264147](https://doi.org/10.1242/jcs.264147) | [GSE269017](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE269017) | 7,221 |
 | Niec *et al.* 2022 | Lymphatics act as a signaling hub to regulate intestinal stem cell activity. *Cell Stem Cell* 29(7):1067–1082.e18. [10.1016/j.stem.2022.05.007](https://doi.org/10.1016/j.stem.2022.05.007) | [GSE190037](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE190037) | 2,237 |
 | Degirmenci *et al.* 2018 | GLI1-expressing mesenchymal cells form the essential Wnt-secreting niche for colon stem cells. *Nature* 558(7710):449–453. [10.1038/s41586-018-0190-3](https://doi.org/10.1038/s41586-018-0190-3) | [GSE113043](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE113043) | 4,464 |
