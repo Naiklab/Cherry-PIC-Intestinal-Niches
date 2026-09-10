@@ -69,3 +69,6 @@ Thumbs.db
 
 # Internal working notes — not for the public repository
 PROJECT_NOTES.md
+
+# Word lock files
+~$*
