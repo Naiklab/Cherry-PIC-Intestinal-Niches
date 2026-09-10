@@ -271,7 +271,7 @@ MIT — see [LICENSE.md](LICENSE.md).
 ## Optional — reproducing the environment exactly
 
 The versions above are the record of what was used, and are enough to read, cite and check
-the analysis. This section is only needed to *re-run* it, and offers three levels of fidelity.
+the analysis. This section is only needed to *re-run* it, and offers two levels of fidelity.
 
 **1. Install the direct dependencies** — quickest, and enough for most notebooks.
 
@@ -297,23 +297,11 @@ and libwebp. Any standard Linux or macOS development setup has these. A bare HPC
 may not, and adding them needs root; there, level 1 is the practical route, since it builds on
 the packages the cluster already provides.
 
-**3. Rebuild the environment including the platform** — the only way to reproduce numerical
-output exactly.
-
-```bash
-docker build -f .checks/Dockerfile -t cherry-pic:4.4.1 .
-docker run --rm -v "$PWD":/work -w /work cherry-pic:4.4.1 Rscript -e 'sessionInfo()'
-```
-
-Built on `rocker/r-ver:4.4.1`. The build asserts R 4.4.1, Seurat 5.5.0 and the reference BLAS,
-failing rather than completing quietly if any differ, and prints the linked BLAS and LAPACK so
-they can be checked rather than assumed. Expect a long first build. For an HPC cluster,
-convert it with `singularity build`. The image has not yet been built end to end.
-
-Package versions alone do not determine results; the OS, compiler and BLAS/LAPACK do too. The
-analysis ran on **Rocky Linux 9.8, R 4.4.1, reference `libRblas`/`libRlapack`, LAPACK 3.12.0**.
-A different BLAS changes floating-point summation order, so PCA, UMAP and clustering can differ
-in the last digits even with identical package versions.
+Neither level reproduces the platform, and package versions alone do not determine results —
+the OS, compiler and BLAS/LAPACK do too. The analysis ran on **Rocky Linux 9.8, R 4.4.1,
+reference `libRblas`/`libRlapack`, LAPACK 3.12.0**. A different BLAS changes floating-point
+summation order, so PCA, UMAP and clustering can differ in the last digits even with identical
+package versions.
 
 `.checks/r_library_manifest.tsv` lists the full library as plain text, for comparing an existing
 installation rather than building a new one. `renv.lock` is generated from that library rather
