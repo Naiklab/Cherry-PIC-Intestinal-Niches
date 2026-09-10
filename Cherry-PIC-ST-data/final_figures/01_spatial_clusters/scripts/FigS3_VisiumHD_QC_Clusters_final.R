@@ -109,9 +109,10 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 ## ----pp8-niche-params, eval=FALSE---------------------------------------------
 # STEM_CELL_TYPE      <- "Stem_cells"
-# IMMED_PERI_MAX_BINS <- 3     # immediate periphery = 1–3 bins (8–24 µm)
-# MAX_BINS            <- 6     # full niche = 1–6 bins (8–48 µm)
-# zone_levels <- c("Stem_cell", "Immediate_periphery", "Outer_periphery", "Distal", "No_tissue")
+# IMMED_PERI_MAX_BINS <- 3     # immediate periphery = within 3 bin widths (≤ 24 µm)
+# # The stem-cell niche is the stem-cell bins plus that immediate periphery.
+# # Everything further out is outside the niche and is not carried forward.
+# zone_levels <- c("Stem_cell", "Immediate_periphery", "Outside_niche", "No_tissue")
 
 
 ## ----pp8-niche-helpers, eval=FALSE--------------------------------------------
@@ -126,21 +127,20 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 #   nn <- RANN::nn2(data = stem_coords, query = all_coords, k = 1)   # nearest stem spot
 #   as.numeric(nn$nn.dists[, 1]) / spot_diam_px
 # }
-# # Zone by distance; Stem_cell overrides; excluded dominant/region/cluster → Distal.
+# # Zone by distance; Stem_cell overrides; excluded dominant/region/cluster → Outside_niche.
 # classify_niche_zone <- function(dist_bins, is_stem, celltype_vec, region_ann_vec,
 #                                 cluster_ann_vec = NULL, immed_max = IMMED_PERI_MAX_BINS,
-#                                 max_bins = MAX_BINS, excl_dominant = character(0),
+#                                 excl_dominant = character(0),
 #                                 excl_region = character(0), excl_cluster = character(0)) {
 #   zone <- character(length(dist_bins))
 #   zone[is.na(dist_bins)] <- "No_tissue"
-#   zone[!is.na(dist_bins) & dist_bins > max_bins] <- "Distal"
-#   zone[!is.na(dist_bins) & dist_bins > immed_max & dist_bins <= max_bins & !is_stem] <- "Outer_periphery"
+#   zone[!is.na(dist_bins)] <- "Outside_niche"
 #   zone[!is.na(dist_bins) & dist_bins > 0 & dist_bins <= immed_max & !is_stem] <- "Immediate_periphery"
 #   zone[is_stem] <- "Stem_cell"
 #   excl <- (!is.na(celltype_vec)   & celltype_vec   %in% excl_dominant) |
 #           (!is.na(region_ann_vec) & region_ann_vec %in% excl_region)
 #   if (!is.null(cluster_ann_vec)) excl <- excl | (!is.na(cluster_ann_vec) & cluster_ann_vec %in% excl_cluster)
-#   zone[excl & !zone %in% c("Stem_cell", "No_tissue")] <- "Distal"
+#   zone[excl & !zone %in% c("Stem_cell", "No_tissue")] <- "Outside_niche"
 #   factor(zone, levels = zone_levels)
 # }
 
@@ -167,11 +167,6 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 # all_results <- do.call(rbind, niche_results)
 # merged.object <- AddMetaData(merged.object,
 #   all_results[colnames(merged.object), c("dist_bins", "dist_um", "stem_niche_zone")])
-# # Full niche (1–6 bins) + tissue type
-# merged.object$Stem_cell_niche <- factor(ifelse(
-#   merged.object$stem_niche_zone %in% c("Immediate_periphery", "Outer_periphery"),
-#   "Stem_cell_niche", as.character(merged.object$stem_niche_zone)),
-#   levels = c("Stem_cell", "Stem_cell_niche", "Distal", "No_tissue"))
 # merged.object$tissue_type <- ifelse(grepl("Duodenum", merged.object$orig.ident, ignore.case = TRUE),
 #                                     "Duodenum", "Ileum")
 # saveRDS(merged.object, "output_8um/RDS-files/final_analysis_object_8um_with_stem_niche.RDS")
