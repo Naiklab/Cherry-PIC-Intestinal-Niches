@@ -87,8 +87,8 @@ Key outputs:
 
 | File | Note |
 |---|---|
-| `outputs/epithelia_EP.CTRL_data.processed(no-immune).RDS` | 398 MB — **the object both handoffs use** |
-| `outputs/epithelia_EP.CTRL_data.processed.RDS` | 406 MB — before immune removal |
+| `outputs/epithelia_EP.CTRL_data.processed(no-immune).RDS` | 398 MB — the ligand–receptor handoff |
+| `outputs/epithelia_EP.CTRL_data.processed.RDS` | 406 MB — before immune removal; the reference-atlas handoff |
 | `outputs/immune_Immune.CTRL_data.processed.RDS` | 359 MB |
 | `outputs/immune_Immune.CTRL_data.filtered.RDS` | 356 MB |
 | `outputs/epithelia_DE_Genes.Duodenum.Vs.Ileum-CTRL-cell-type-*.csv` | 8 per-cell-type DE tables |
@@ -113,17 +113,12 @@ in `Cherry-PIC-ST-data/` builds `Master.Obj.rds` from twelve objects; three come
 
 | Reference variable | This project |
 |---|---|
-| `Epi.Obj` | `04-merge-controls/outputs/epithelia_EP.CTRL_data.processed(no-immune).RDS` |
-| `Immune.Obj` | `04-merge-controls/outputs/immune_Immune.CTRL_data.processed.RDS` |
+| `Epi.Obj` | `04-merge-controls/outputs/epithelia_EP.CTRL_data.processed.RDS` — 17,567 cells; the atlas's per-dataset QC keeps 17,552 |
+| `Immune.Obj` | `04-merge-controls/outputs/immune_Immune.CTRL_data.processed.RDS` — 27,868 cells; QC keeps 27,863 |
 | `SpaceFold.Obj` | `06-downstream-handoffs/data/SI-data_SpaceFold-paper.RDS` |
 
 That Rmd says only that these *"arrive already processed"* — stages 00–05 above are the
 processing it refers to.
-
-> **Two bugs to fix in the reference script.** `epi_path`, `immune_path` and `fib_path`
-> are used at lines 67–69 but **never defined anywhere in that Rmd**, so it cannot run as
-> written. And `SI-data_SpaceFold-paper.RDS` is read from
-> `Reference-Single-Cell-Data/rds-objects/` but actually lives here.
 
 **Handoff B — stem and TA cells for LIANA/NicheNet.** The Biomni session received three
 pre-extracted objects that still carry the `EP_CTRL` naming:

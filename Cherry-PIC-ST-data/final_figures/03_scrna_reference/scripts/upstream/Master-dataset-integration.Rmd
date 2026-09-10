@@ -79,8 +79,9 @@ set.seed(42)
 # Base paths
 # Source objects for this study's epithelial and immune compartments
 # (one sequencing run, split by compartment). Deposited with the manuscript.
-source_scrna_dir <- Sys.getenv("CHERRYPIC_SOURCE_SCRNA", "Source-Single-Cell-Data/output")
-local_rds_dir <- "Reference-Single-Cell-Data/rds-objects"
+source_scrna_dir <- Sys.getenv("CHERRYPIC_SOURCE_SCRNA",
+                              "../../../../../DR26001-scRNA-project/final_figures/DR26001-scRNA/04-merge-controls/outputs")
+local_rds_dir <- "../../data/rds-objects"
 
 # ── 1a. Fibroblast object (saved before HPC step) ────────────────────────────
 fib_path <- file.path(local_rds_dir, "Fibroblast.Obj.rds")
@@ -92,12 +93,7 @@ cat("Fibroblast cells:", ncol(Fib.Obj), "\n")
 cat("Fibroblast metadata columns:", paste(colnames(Fib.Obj@meta.data), collapse = ", "), "\n\n")
 
 # ── 1b. Epithelial object ─────────────────────────────────────────────────────
-epi_path <- file.path(
-  source_scrna_dir,
-  "Clustering-Analysis-LT-ST-combined-Epithelia",
-  "RDS",
-  "EP.CTRL_data.processed.RDS"
-)
+epi_path <- file.path(source_scrna_dir, "epithelia_EP.CTRL_data.processed.RDS")
 if (!file.exists(epi_path)) {
   stop("Missing epithelial object: ", epi_path)
 }
@@ -109,14 +105,8 @@ cat("\n")
 
 # ── 1c. Immune object ─────────────────────────────────────────────────────────
 immune_candidates <- c(
-  file.path(source_scrna_dir,
-            "Clustering-Analysis-LT-ST-combined-Immune",
-            "RDS",
-            "Immune.CTRL_data.processed.RDS"),
-  file.path(source_scrna_dir,
-            "Clustering-Analysis-LT-ST-combined-Immune",
-            "RDS",
-            "Immune.CTRL_data.filtered.RDS")
+  file.path(source_scrna_dir, "immune_Immune.CTRL_data.processed.RDS"),
+  file.path(source_scrna_dir, "immune_Immune.CTRL_data.filtered.RDS")
 )
 immune_path <- immune_candidates[file.exists(immune_candidates)][1]
 if (is.na(immune_path) || length(immune_path) == 0) {
@@ -136,7 +126,7 @@ print(colnames(Immune.Obj@meta.data))
 ## 2a. SpaceFold SI single-cell (pre-converted RDS)
 ```{r load-spacefold}
 # Load pre-converted SpaceFold Seurat object
-spacefold_path <- "Reference-Single-Cell-Data/rds-objects/SI-data_SpaceFold-paper.RDS"
+spacefold_path <- "../../data/rds-objects/SI-data_SpaceFold-paper.RDS"
 
 if (!file.exists(spacefold_path)) {
   stop("Missing SpaceFold object: ", spacefold_path)
@@ -1141,7 +1131,7 @@ if (!is.null(selected_markers) && nrow(selected_markers) > 0) {
 ## 11a. Load marker gene signatures
 ```{r load-daniel-markers}
 # Load custom marker genes from Daniel
-markers_df <- read.csv("Custom-Marker-genes-only-from-Daniel.csv", stringsAsFactors = FALSE)
+markers_df <- read.csv("../../data/Custom-Marker-genes-only-from-Daniel.csv", stringsAsFactors = FALSE)
 markers_df <- markers_df[, c("Cell_Type", "Marker")]  # Keep only relevant columns
 markers_df <- markers_df[markers_df$Cell_Type != "Cell_Type", ]  # Remove header row if duplicated
 

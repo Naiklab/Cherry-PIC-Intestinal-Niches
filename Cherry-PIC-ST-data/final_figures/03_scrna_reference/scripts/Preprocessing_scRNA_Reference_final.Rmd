@@ -64,12 +64,19 @@ if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_L
 library(Seurat); library(tidyverse); library(patchwork); library(harmony); library(clustree)
 
 # Lab-supplied processed objects (note: two different Daniels — see Stage 2 naming note)
+# Inputs, relative to this scripts/ folder. The two in-house objects live in the
+# DR26001 project; the fibroblast and SpaceFold objects are vendored under ../data.
+dr26001_out <- "../../../../DR26001-scRNA-project/final_figures/DR26001-scRNA/04-merge-controls/outputs"
+rds_path    <- "../data/rds-objects"                       # the six public datasets, vendored
+fib_path    <- file.path(rds_path, "Fibroblast.Obj.rds")
+epi_path    <- file.path(dr26001_out, "epithelia_EP.CTRL_data.processed.RDS")      # 17,567 cells; atlas QC keeps 17,552
+immune_path <- file.path(dr26001_out, "immune_Immune.CTRL_data.processed.RDS")     # 27,868 cells; atlas QC keeps 27,863
 Fib.Obj    <- readRDS(fib_path)      # Glisovic fibroblast — public, GEO GSE269017
 Epi.Obj    <- readRDS(epi_path)      # Rosenblum epithelial, this manuscript (cell_type_labels/broad/narrow)
 Immune.Obj <- readRDS(immune_path)   # Rosenblum immune, this manuscript
 
 # Reference datasets prepared in Stage 0
-SpaceFold.Obj  <- readRDS("Reference-Single-Cell-Data/rds-objects/SI-data_SpaceFold-paper.RDS")
+SpaceFold.Obj  <- readRDS("../data/rds-objects/SI-data_SpaceFold-paper.RDS")
 rds_path <- "Reference-Single-Cell-Data/rds-objects"
 Degirmenci.Obj <- readRDS(file.path(rds_path, "Degirmenci.Obj.rds"))
 Kinchen.Obj    <- readRDS(file.path(rds_path, "Kinchen.Obj.rds"))

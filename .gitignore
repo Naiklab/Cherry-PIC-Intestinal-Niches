@@ -76,3 +76,7 @@ PROJECT_NOTES.md
 # Manuscript documents — this repository is code only
 *.docx
 *.doc
+
+# Python bytecode
+__pycache__/
+*.pyc

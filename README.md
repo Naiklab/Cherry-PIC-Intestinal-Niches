@@ -175,7 +175,7 @@ to a sensible default.
 |---|---|---|
 | `CHERRYPIC_R_LIB` | R's own library paths | Prepend a library holding the analysis packages |
 | `CHERRYPIC_RAWDATA` | `rawdata` | Space Ranger output root, one folder per sample |
-| `CHERRYPIC_SOURCE_SCRNA` | `Source-Single-Cell-Data/output` | Source scRNA objects for the atlas build |
+| `CHERRYPIC_SOURCE_SCRNA` | the DR26001 project's `04-merge-controls/outputs` | Source scRNA objects for the atlas build |
 
 ```bash
 export CHERRYPIC_R_LIB=/path/to/your/R/library
