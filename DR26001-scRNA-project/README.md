@@ -136,10 +136,15 @@ Biomni-code-external/Full-data/Biomni_lab_downloads_20260826_164206/
 ```
 
 They are subsets of `epithelia_EP.CTRL_data.processed(no-immune).RDS` on
-`cell_type_labels`, split by `Location`. **The subset-and-export step is in neither
-project** — `06-downstream-handoffs/scripts/` is empty and should hold it. It is a few
-lines, but worth writing down because it defines which clusters counted as "stem" and
-"TA" for every ligand–receptor result in Figures 6F, 6G and S8.
+`cell_type_labels == "SC"`, split by `Location` — 2,907 cells, 1,583 duodenum and 1,324
+ileum. The export step is now reconstructed in
+`06-downstream-handoffs/scripts/export_stem_cells_for_LR.R`, written by reading the three
+objects back and reproducing the subset that yields them exactly.
+
+**This project supplies the stem-cell receiver only.** The TA receiver (199 cells) and
+every sender population come from the Cherry-PIC sorted-niche object, as do the 73 CLU+
+reserve stem cells that join these 2,907 as `Stem_cells` in the merged LIANA input and are
+excluded before scoring.
 
 ## Script cleanup (done)
 
