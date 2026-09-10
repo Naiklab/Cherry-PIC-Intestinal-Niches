@@ -168,8 +168,14 @@ cd <notebook folder>
 Rscript Fig3_VisiumHD_final.R
 ```
 
-If your R packages live outside the default library, point `CHERRYPIC_R_LIB` at them and
-every script will prepend it:
+Three environment variables adapt the code to your system. All are optional; each falls back
+to a sensible default.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `CHERRYPIC_R_LIB` | R's own library paths | Prepend a library holding the analysis packages |
+| `CHERRYPIC_RAWDATA` | `rawdata` | Space Ranger output root, one folder per sample |
+| `CHERRYPIC_SOURCE_SCRNA` | `Source-Single-Cell-Data/output` | Source scRNA objects for the atlas build |
 
 ```bash
 export CHERRYPIC_R_LIB=/path/to/your/R/library
