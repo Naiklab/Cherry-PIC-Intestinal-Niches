@@ -136,15 +136,25 @@ Biomni-code-external/Full-data/Biomni_lab_downloads_20260826_164206/
 ```
 
 They are subsets of `epithelia_EP.CTRL_data.processed(no-immune).RDS` on
-`cell_type_labels == "SC"`, split by `Location` — 2,907 cells, 1,583 duodenum and 1,324
-ileum. The export step is now reconstructed in
-`06-downstream-handoffs/scripts/export_stem_cells_for_LR.R`, written by reading the three
-objects back and reproducing the subset that yields them exactly.
+`cell_type_labels`, split by `Location`. The export step is reconstructed in
+`06-downstream-handoffs/scripts/export_receivers_for_LR.R`.
 
-**This project supplies the stem-cell receiver only.** The TA receiver (199 cells) and
-every sender population come from the Cherry-PIC sorted-niche object, as do the 73 CLU+
-reserve stem cells that join these 2,907 as `Stem_cells` in the merged LIANA input and are
-excluded before scoring.
+**This project supplies both receivers.** In the scored LIANA tables they appear as
+`Stem cells` and `TA cells`, renamed from the `SC` and `TA` labels here:
+
+| Receiver | Label here | All | Duodenum | Ileum |
+|---|---|---|---|---|
+| `Stem cells` | `SC` | 2,907 | 1,583 | 1,324 |
+| `TA cells` | `TA` | 5,036 | 3,326 | 1,710 |
+
+`TA cells` is distinct from the Cherry-PIC niche object's own
+`TA cells/early progenitors` (199 cells), which supplies senders; the sender-count figure
+merges the two labels but they are separate populations. CLU+ reserve stem cells are not
+stem cells for this analysis and appear nowhere in the scored tables — the `_noclu` suffix
+on those files records their exclusion.
+
+Only the three stem exports are available here, and they match the counts above exactly.
+The TA exports are not present, so those counts come from the source object.
 
 ## Script cleanup (done)
 
