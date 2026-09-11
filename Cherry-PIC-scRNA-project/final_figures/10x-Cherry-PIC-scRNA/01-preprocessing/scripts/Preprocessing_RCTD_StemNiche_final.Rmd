@@ -90,11 +90,19 @@ saveRDS(merged.object, "output_8um/RDS-files/final_analysis_object_8um_with_stem
 
 ## Stage 2 — Build RCTD reference + run per sample (`04_RCTD_Deconvolution_StemCellNiche_8um.Rmd`)
 
+An independent audit found this stage's reference construction and per-sample loop
+incomplete: a literal `colSums(...)`, `spatial_rctd` used without ever being built, and
+the counts matrix passed to `Reference()` not subset to the same cells as `cell_types`
+(a length mismatch RCTD would reject). Restored verbatim from the original interactive
+script (`04_RCTD_Deconvolution_StemCellNiche_8um.Rmd`), condensed but functionally
+complete.
+
 ```{r stage2-rctd, eval=FALSE}
 merged.object <- readRDS("output_8um/RDS-files/final_analysis_object_8um_with_stem_niche.RDS")
 niche_object  <- merged.object[, !is.na(merged.object$stem_niche_zone) &
                                   merged.object$stem_niche_zone %in%
                                   c("Stem_cell", "Immediate_periphery")]
+assay.name <- grep("^Spatial", names(niche_object@assays), value = TRUE)[1]
 
 sc_ref <- readRDS("outputs/DR26001_v2_annotated_seurat_singlets.rds")
 
@@ -106,22 +114,82 @@ REMOVE_LABELS <- c("Unknown", "Unassigned", "Doublet",
                    "Regenerative Brunners gland-like epithelial cells")
 MIN_CELLS_PER_CT <- 25
 
+ref_counts    <- GetAssayData(sc_ref, layer = "counts")
 ref_celltypes <- factor(sc_ref$cell_type)
-valid_cts <- names(table(ref_celltypes))[table(ref_celltypes) >= MIN_CELLS_PER_CT &
-                                          !names(table(ref_celltypes)) %in% REMOVE_LABELS]
-ref_rctd <- Reference(counts = round(GetAssayData(sc_ref, layer = "counts")),
-                      cell_types = droplevels(ref_celltypes[ref_celltypes %in% valid_cts]),
-                      nUMI = colSums(...))
+ct_table  <- table(ref_celltypes)
+valid_cts <- names(ct_table)[ct_table >= MIN_CELLS_PER_CT & !names(ct_table) %in% REMOVE_LABELS]
 
-# Per sample: SpatialRNA() from tissue coordinates + counts, then
+# Subset counts and cell_types to the SAME cells — Reference() requires both to have
+# the same number of columns; the counts matrix must not be left at full size.
+cells_keep         <- names(ref_celltypes)[ref_celltypes %in% valid_cts]
+ref_counts_filt    <- as(round(ref_counts[, cells_keep]), "dgCMatrix")   # SCT counts can be non-integer
+ref_celltypes_filt <- droplevels(ref_celltypes[cells_keep])
+levels(ref_celltypes_filt) <- gsub("/", "-", levels(ref_celltypes_filt))  # RCTD prohibits "/"
+
+ref_rctd <- Reference(counts = ref_counts_filt, cell_types = ref_celltypes_filt,
+                      nUMI = colSums(ref_counts_filt))
+
+# Per sample: build SpatialRNA from that image's own coordinates and counts, run RCTD,
+# and keep the weights matrix and spot_class vector for the merge step below.
+rctd_results <- list(); rctd_spotclass <- list()
 for (img in Images(niche_object)) {
+  coords <- GetTissueCoordinates(niche_object, image = img)
+  if ("cell" %in% colnames(coords)) rownames(coords) <- coords$cell
+  spot_barcodes <- rownames(coords)
+  counts <- GetAssayData(niche_object, assay = assay.name, layer = "counts")[, spot_barcodes, drop = FALSE]
+  numeric_cols <- colnames(coords)[sapply(coords, is.numeric)]
+  coord_df <- data.frame(x = as.numeric(coords[[numeric_cols[1]]]),
+                         y = as.numeric(coords[[numeric_cols[2]]]),
+                         row.names = rownames(coords))
+
+  spatial_rctd <- SpatialRNA(coords = coord_df, counts = counts, nUMI = colSums(counts))
   rctd <- create.RCTD(spatial_rctd, ref_rctd, max_cores = 1, UMI_min = 50)
   rctd <- run.RCTD(rctd, doublet_mode = "doublet")
   saveRDS(rctd, paste0("rctd_niche_result_", img, ".RDS"))
+
+  rctd_results[[img]]   <- as.matrix(rctd@results[["weights"]])
+  rctd_spotclass[[img]] <- setNames(as.character(rctd@results[["results_df"]][["spot_class"]]),
+                                    rownames(rctd@results[["results_df"]]))
+  rm(rctd); gc()
 }
 
-# Merge per-sample weights -> DR_RCTD_<celltype> proportion columns,
-# DR_RCTD_dominant_celltype, DR_RCTD_spot_class
+# Merge per-sample weights: align columns across samples (absent cell types filled 0),
+# rbind, row-normalise, and write DR_RCTD_<celltype> proportion columns plus
+# DR_RCTD_dominant_celltype and DR_RCTD_spot_class.
+all_cts <- unique(unlist(lapply(rctd_results, colnames)))
+rctd_results_filled <- lapply(rctd_results, function(m) {
+  missing <- setdiff(all_cts, colnames(m))
+  if (length(missing) > 0) {
+    z <- matrix(0, nrow(m), length(missing), dimnames = list(rownames(m), missing))
+    m <- cbind(m, z)
+  }
+  m[, all_cts, drop = FALSE]
+})
+combined_weights <- do.call(rbind, rctd_results_filled)
+weights_norm <- sweep(combined_weights, 1, rowSums(combined_weights), "/")
+weights_norm[is.nan(weights_norm)] <- 0
+
+deconv_df <- as.data.frame(weights_norm)
+colnames(deconv_df) <- paste0("DR_RCTD_", gsub("[^[:alnum:]]", "_", colnames(deconv_df)))
+common_cells <- intersect(rownames(deconv_df), colnames(niche_object))
+niche_object <- AddMetaData(niche_object, metadata = deconv_df[common_cells, , drop = FALSE])
+
+dominant_ct <- apply(weights_norm[common_cells, ], 1, function(x) {
+  if (all(is.na(x)) || sum(x) == 0) return("Unknown")
+  gsub("[^[:alnum:]]", "_", gsub("/", "-", colnames(weights_norm)[which.max(x)]))
+})
+niche_object <- AddMetaData(niche_object,
+  metadata = data.frame(DR_RCTD_dominant_celltype = dominant_ct, row.names = names(dominant_ct)))
+niche_object@meta.data$DR_RCTD_dominant_celltype[
+  is.na(niche_object@meta.data$DR_RCTD_dominant_celltype)] <- "Unknown"
+
+sc_names <- unlist(lapply(unname(rctd_spotclass), names))
+sc_vals  <- unlist(lapply(unname(rctd_spotclass), as.character), use.names = FALSE)
+sc_matched <- setNames(sc_vals, sc_names)[match(common_cells, sc_names)]
+names(sc_matched) <- common_cells
+niche_object <- AddMetaData(niche_object,
+  metadata = data.frame(DR_RCTD_spot_class = sc_matched, row.names = common_cells))
+
 saveRDS(niche_object, "outputs/RCTD/8um_stem_niche/RDS-files/niche_object_8um_with_DR_RCTD.RDS")
 ```
 
