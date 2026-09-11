@@ -1,0 +1,234 @@
+<!--
+Pre-processing Pipeline — Visium HD 16 µm object (FINAL, documentation).
+Designed to be included via `{r child=...}` in the figure notebook, so this file
+has NO YAML header (a child's YAML would render as stray text in the parent).
+To knit standalone: rmarkdown::render("Preprocessing_VisiumHD_16um_final.Rmd").
+-->
+
+# Pre-processing Pipeline — Visium HD 16 µm object
+
+## Purpose
+
+**Reproducibility record** for the 16 µm Visium HD object behind Figure 3E. The
+8 µm and 16 µm binnings were pre-processed **independently** from the same Space
+Ranger run — this is not a re-binning of the 8 µm object — so this notebook is the
+16 µm counterpart of `Preprocessing_VisiumHD_8um_final.Rmd`.
+
+**All chunks are `eval = FALSE`** — code-of-record, not re-run at figure time
+(`Fig3E_16um_final.Rmd` reads the frozen RDS). To rebuild, run the stages in order
+on a compute node (submit through your scheduler; cap BLAS threads).
+
+### What differs from the 8 µm pipeline
+
+The two pipelines run the same steps with the same settings and differ in **one
+parameter**: the UMI floor is **50** here against **25** at 8 µm, because a 16 µm bin
+covers four times the area and so collects roughly four times the transcripts. Every
+other choice — sketch size, PC count, resolution grid, chosen resolution — is identical.
+
+The epithelial subset (Stage 6) is the exception: it is re-embedded on the **full**
+`Spatial.016um` assay with **30** PCs and 3,000 variable features, not on the sketch
+with 50, because the subset is small enough to embed directly.
+
+### Object build DAG
+
+```
+rawdata/<sample>/binned_outputs/square_016um/   (Space Ranger 4.0.1)
+   │  Stages 1–4
+   ▼
+merged_object_clustered_16um.RDS                 (QC→normalize→sketch→cluster res2→UMAP→project)
+   │  Stage 5
+   ▼
+final_analysis_object_16um.RDS                   ← Fig 3E all-clusters QC UMAP
+   │  Stage 6
+   ▼
+epi.subset_object_16um.RDS                       ← Fig 3E epithelial panel (as `epi_subset_16um.RDS`)
+                                                    carries `pca.epi` / `umap.epi`
+```
+
+No RCTD deconvolution was run on the 16 µm object for any published panel; the
+deconvolution in Figures 3–4 is the 8 µm object's.
+
+> **Annotation note.** Stage 5 attaches cluster labels from
+> `16um-binned-updated-annotations(res2).csv`. Those labels are **superseded** at
+> figure time: `Fig3E_16um_final.Rmd` re-annotates from
+> `16um-epithelial-annotations-Aug29-FINAL.csv`, which corrects the EEC, Tuft and
+> Tip-villus-proximal labels. Stage 5 is kept here because the `compartment_annotation`
+> column it writes is what Stage 6 subsets on.
+
+```{r pp16-doc-setup, include=FALSE}
+# Documentation notebook — every pipeline chunk below is marked eval=FALSE
+# individually (so this file is safe to include as a knitr child without
+# disabling the parent figure notebook's chunks).
+```
+
+---
+
+# Stage 1 — Environment & parameters
+
+```{r pp16-params, eval=FALSE}
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
+library(Seurat); library(tidyverse); library(patchwork); library(RColorBrewer)
+future::plan("multicore", workers = future::availableCores())
+options(future.globals.maxSize = 2 * 10^12)
+
+# Samples & raw data location (Space Ranger 4.0.1, Visium Mouse Transcriptome Probe v2.0)
+sample.names <- c("SHNA03_D3-7um_0_v1","SHNA03_D4-7um_0_v1","SHNA03_I2-7um_0_v1","SHNA03_I3-7um_0_v1")
+data.dir     <- Sys.getenv("CHERRYPIC_RAWDATA", "rawdata")
+bin.size     <- c(16)
+image.names  <- list("SHNA03_D3-7um_0_v1" = "Duodenum-3", "SHNA03_D4-7um_0_v1" = "Duodenum-4",
+                     "SHNA03_I2-7um_0_v1" = "Ileum-2",    "SHNA03_I3-7um_0_v1" = "Ileum-3")
+
+# QC thresholds (min.counts APPLIED; max.mt.percent a guideline, NOT applied as a filter)
+min.counts     <- 50   # 16 µm bins collect ~4x the transcripts of 8 µm bins (25)
+max.mt.percent <- 20
+
+# Clustering: sketch-based; res 2 is the FINAL resolution used downstream
+sketch.ncells       <- 5000
+cluster.resolutions <- c(0.2, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4)
+```
+
+---
+
+# Stage 2 — Load Visium HD data (per sample, with image)
+
+```{r pp16-load, eval=FALSE}
+load_visium_hd_data <- function(sample.name, data.dir, bin.size) {
+  spatial.dir <- file.path(data.dir, sample.name)
+  if (!dir.exists(spatial.dir)) { warning("Spatial directory not found: ", spatial.dir); return(NULL) }
+  object <- Load10X_Spatial(data.dir = spatial.dir, bin.size = bin.size,
+                            slice = image.names[[sample.name]])
+  cat("Loaded sample:", sample.name, "with", ncol(object), "spots\n")
+  object
+}
+
+object.list <- lapply(sample.names, function(s) load_visium_hd_data(s, data.dir, bin.size[1]))
+names(object.list) <- sample.names
+# Samples carrying more than one image are split one object per image before QC.
+```
+
+---
+
+# Stage 3 — QC metrics & filter (UMI ≥ 50)
+
+`percent.mt` is computed and plotted, but **no bin is removed on it**. Crypt
+enterocytes are among the most mitochondria-rich cells in the intestine, so a
+mitochondrial cut would preferentially delete the compartment this study is about.
+The 20% line appears on the QC plots as a visual reference only.
+
+```{r pp16-qc, eval=FALSE}
+split.object.list <- lapply(split.object.list, function(obj)
+  PercentageFeatureSet(obj, pattern = "^mt-|^MT-", col.name = "percent.mt"))
+
+assay.name  <- names(split.object.list[[1]]@assays)[1]   # Spatial.016um
+count.col   <- paste0("nCount_",   assay.name)
+feature.col <- paste0("nFeature_", assay.name)
+
+# The ONLY filter applied: UMI floor. percent.mt is recorded, never used to subset.
+filtered.object.list <- lapply(split.object.list, function(obj) {
+  count.col.local <- grep('^nCount_Spatial', colnames(obj@meta.data), value = TRUE)[1]
+  if (is.na(count.col.local)) stop('No nCount_Spatial column found in metadata!')
+  cells.keep <- obj@meta.data[[count.col.local]] >= min.counts
+  obj[, cells.keep]
+})
+```
+
+---
+
+# Stage 4 — Normalize, merge, sketch, cluster (res 2), project to full data
+
+```{r pp16-cluster, eval=FALSE}
+normalized.object.list <- lapply(filtered.object.list, function(obj)
+  NormalizeData(obj, assay = assay.name))
+
+merged.object <- merge(normalized.object.list[[1]],
+                       normalized.object.list[2:length(normalized.object.list)])
+
+DefaultAssay(merged.object) <- assay.name
+merged.object <- FindVariableFeatures(merged.object)
+merged.object <- ScaleData(merged.object)
+merged.object <- SketchData(merged.object, ncells = 5000L, method = "Uniform",
+                            sketched.assay = "sketch")
+
+# Cluster on the sketch
+DefaultAssay(merged.object) <- "sketch"
+merged.object <- FindVariableFeatures(merged.object)
+merged.object <- ScaleData(merged.object)
+merged.object <- RunPCA(merged.object, assay = "sketch", reduction.name = "pca.sketch")
+merged.object <- FindNeighbors(merged.object, assay = "sketch",
+                               reduction = "pca.sketch", dims = 1:50)
+merged.object <- FindClusters(merged.object, resolution = cluster.resolutions)
+merged.object <- RunUMAP(merged.object, reduction = "pca.sketch",
+                         reduction.name = "umap.sketch", return.model = TRUE, dims = 1:50)
+
+# Project every resolution back onto all bins
+merged.object <- ProjectData(
+  object = merged.object, assay = assay.name,
+  full.reduction = "full.pca.sketch", sketched.assay = "sketch",
+  sketched.reduction = "pca.sketch", umap.model = "umap.sketch", dims = 1:50,
+  refdata = setNames(lapply(cluster.resolutions, function(res) paste0("sketch_snn_res.", res)),
+                     paste0("sketch_snn_res.", cluster.resolutions)))
+
+saveRDS(merged.object, file = "output_16um/RDS-files/merged_object_clustered_16um.RDS")
+```
+
+Resolution 2 was selected from the nine-resolution grid by clustree inspection, matching
+the 8 µm pipeline; `sketch_snn_res.2` is the label used downstream.
+
+---
+
+# Stage 5 — Attach cluster annotations (resolution 2)
+
+Superseded at figure time (see the annotation note above); retained because
+`compartment_annotation` is what Stage 6 subsets on.
+
+```{r pp16-annotate, eval=FALSE}
+annotations <- read.csv("16um-binned-updated-annotations(res2).csv", stringsAsFactors = FALSE)
+annotations <- annotations[!is.na(annotations$Cluster) & annotations$Cluster != "", ]
+
+fill_na <- function(x, fill = "Unknown") { x[is.na(x) | x == "" | x == "NA"] <- fill; x }
+cid <- as.character(annotations$Cluster)
+cell.clusters <- as.character(merged.object$sketch_snn_res.2)
+
+merged.object <- AddMetaData(merged.object, metadata = data.frame(
+  cluster_annotation     = fill_na(setNames(annotations$Annotation,                cid)[cell.clusters]),
+  region_annotation      = fill_na(setNames(annotations$Spatial.region.annotation, cid)[cell.clusters]),
+  location_annotation    = fill_na(setNames(annotations$Region.Annotation,         cid)[cell.clusters]),
+  compartment_annotation = fill_na(setNames(annotations$Compartment,               cid)[cell.clusters]),
+  granular_annotation    = fill_na(setNames(annotations$Granular.annotation,       cid)[cell.clusters]),
+  row.names = colnames(merged.object)))
+
+saveRDS(merged.object, file = "output_16um/RDS-files/final_analysis_object_16um.RDS")
+```
+
+---
+
+# Stage 6 — Epithelial subset & re-embedding → Figure 3E
+
+Re-embedded on the **full** `Spatial.016um` assay rather than the sketch, so every
+epithelial bin carries coordinates: 3,000 variable features, **30** PCs, UMAP on
+`dims = 1:30`. The resulting `pca.epi` / `umap.epi` reductions are what
+`Fig3E_16um_final.Rmd` plots — it reuses them as-is and does not re-run this stage.
+
+```{r pp16-epi, eval=FALSE}
+epi.object <- subset(merged.object, subset = compartment_annotation == "Epithelia")
+cat("Epithelia subset:", ncol(epi.object), "spots\n")   # 229,070
+
+DefaultAssay(epi.object) <- "Spatial.016um"             # full assay, NOT the sketch
+epi.object <- NormalizeData(epi.object, assay = "Spatial.016um")
+epi.object <- FindVariableFeatures(epi.object, assay = "Spatial.016um", nfeatures = 3000)
+epi.object <- ScaleData(epi.object)
+epi.object <- RunPCA(epi.object, npcs = 30, reduction.name = "pca.epi")
+epi.object <- RunUMAP(epi.object, reduction = "pca.epi", dims = 1:30,
+                      reduction.name = "umap.epi")
+
+saveRDS(epi.object, file = "output_16um/RDS-files/epi.subset_object_16um.RDS")
+```
+
+---
+
+## Scope of this record
+
+The 16 µm run also carried exploratory analyses that no published panel derives from —
+per-resolution marker tables, BANKSY spatial-domain clustering, cluster-composition
+plots, and a parallel RCTD deconvolution against `Master.Obj.rds`. They are omitted
+here so this notebook documents exactly the chain behind Figure 3E and nothing else.
