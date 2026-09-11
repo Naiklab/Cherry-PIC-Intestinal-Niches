@@ -214,10 +214,13 @@ p_umap_broad
 
 ## 5.1 Proportions per replicate + propeller() test
 
-`propeller()` uses arcsin-square-root transformed proportions with a limma
-empirical-Bayes model. With n = 2 replicates per group (OB1/OB2 = Ileum;
-OB3/OB4 = Duodenum), statistical testing is possible but power is limited —
-treat p-values as exploratory.
+`propeller()` uses logit-transformed proportions (the package default; this
+notebook's calls do not override `transform`) with a limma empirical-Bayes
+model — an earlier version of this note said "arcsin-square-root", which was
+never what this call computed; confirmed against the original interactive
+script on Minerva, which has the same call with the same default. With n = 2
+replicates per group (OB1/OB2 = Ileum; OB3/OB4 = Duodenum), statistical
+testing is possible but power is limited — treat p-values as exploratory.
 
 ```{r propeller_fine}
 prop_df <- as.data.frame(seu@meta.data) %>%
@@ -226,7 +229,7 @@ prop_df <- as.data.frame(seu@meta.data) %>%
   mutate(pct = n_cells / sum(n_cells) * 100) %>%
   ungroup()
 
-prop_results <- propeller(clusters = seu$cell_type, sample = seu$replicate, group = seu$region)
+prop_results <- propeller(clusters = seu$cell_type, sample = seu$replicate, group = seu$region, transform = "logit")
 cat("propeller() results (sorted by FDR):\n")
 print(prop_results[order(prop_results$FDR), ])
 write.csv(prop_results, op("supporting_propeller_results_fine.csv"), row.names = TRUE)
@@ -301,7 +304,7 @@ prop_df_broad <- as.data.frame(seu_broad@meta.data) %>%
   ungroup()
 
 prop_results_broad <- propeller(clusters = seu_broad$broad_cell_type,
-                                sample = seu_broad$replicate, group = seu_broad$region)
+                                sample = seu_broad$replicate, group = seu_broad$region, transform = "logit")
 cat("propeller() results, broad cell types (sorted by FDR):\n")
 print(prop_results_broad[order(prop_results_broad$FDR), ])
 write.csv(prop_results_broad, op("supporting_propeller_results_broad.csv"), row.names = TRUE)

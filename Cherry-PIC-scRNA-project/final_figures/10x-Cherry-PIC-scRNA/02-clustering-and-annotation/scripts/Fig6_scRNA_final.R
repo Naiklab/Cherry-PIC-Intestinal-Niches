@@ -191,7 +191,7 @@ prop_df <- as.data.frame(seu@meta.data) %>%
   mutate(pct = n_cells / sum(n_cells) * 100) %>%
   ungroup()
 
-prop_results <- propeller(clusters = seu$cell_type, sample = seu$replicate, group = seu$region)
+prop_results <- propeller(clusters = seu$cell_type, sample = seu$replicate, group = seu$region, transform = "logit")
 cat("propeller() results (sorted by FDR):\n")
 print(prop_results[order(prop_results$FDR), ])
 write.csv(prop_results, op("supporting_propeller_results_fine.csv"), row.names = TRUE)
@@ -254,7 +254,7 @@ prop_df_broad <- as.data.frame(seu_broad@meta.data) %>%
   ungroup()
 
 prop_results_broad <- propeller(clusters = seu_broad$broad_cell_type,
-                                sample = seu_broad$replicate, group = seu_broad$region)
+                                sample = seu_broad$replicate, group = seu_broad$region, transform = "logit")
 cat("propeller() results, broad cell types (sorted by FDR):\n")
 print(prop_results_broad[order(prop_results_broad$FDR), ])
 write.csv(prop_results_broad, op("supporting_propeller_results_broad.csv"), row.names = TRUE)
