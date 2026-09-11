@@ -285,7 +285,7 @@ merged.object <- AddMetaData(merged.object,
 merged.object@meta.data$M_RCTD_dominant_celltype[
   is.na(merged.object@meta.data$M_RCTD_dominant_celltype)] <- "Unknown"
 
-cat("Added", length(rctd_cols), "cell type proportions to metadata\n")
+cat("Added", length(colnames(deconv_df)), "cell type proportions to metadata\n")
 cat("Added dominant cell type assignments\n\n")
 
 # =============================================================================
@@ -294,7 +294,7 @@ cat("Added dominant cell type assignments\n\n")
 
 cat("Creating color palette for cell types...\n")
 
-celltype_names <- gsub("M_RCTD_", "", rctd_cols)
+celltype_names <- gsub("M_RCTD_", "", colnames(deconv_df))
 dominant_celltypes <- unique(merged.object$M_RCTD_dominant_celltype)
 dominant_celltypes <- dominant_celltypes[!is.na(dominant_celltypes)]
 all_celltypes <- unique(c(celltype_names, dominant_celltypes))
