@@ -78,6 +78,11 @@ needs well over 24 GB of RAM to load. Run on a compute node, BLAS threads capped
 OPENBLAS_NUM_THREADS=1 Rscript -e 'rmarkdown::render("Fig4A_VisiumHD_final.Rmd")'
 ```
 
+Full build of the object loaded below — raw Space Ranger → `..._with_master_deconv_hires.RDS` — documented as code-of-record (not re-executed here; the figure runs from the frozen RDS).
+
+```{r pipeline-provenance, child='Preprocessing_VisiumHD_8um_final.Rmd'}
+```
+
 ```{r setup, include=FALSE}
 if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 

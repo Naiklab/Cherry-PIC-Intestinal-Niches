@@ -70,6 +70,11 @@ The 8 µm object needs more than 24 GB of RAM once loaded, so this runs on a com
 OPENBLAS_NUM_THREADS=1 Rscript Fig3_VisiumHD_final.R
 ```
 
+Full build of the object loaded below — raw Space Ranger → `..._with_master_deconv_hires.RDS` — documented as code-of-record (not re-executed here; the figure runs from the frozen RDS).
+
+```{r pipeline-provenance, child='Preprocessing_VisiumHD_8um_final.Rmd'}
+```
+
 ```{r setup, include=FALSE}
 # Only prepend the HPC library when it actually exists, so the notebook still opens locally.
 if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library

@@ -12,7 +12,7 @@ To knit standalone: rmarkdown::render("Preprocessing_VisiumHD_8um_final.Rmd").
 **Reproducibility record** for the 8 µm Visium HD object that the figure notebooks
 load. This notebook documents the *entire* build chain from raw Space Ranger output
 to the frozen RDS objects. It is included at the top of `Fig3_VisiumHD_final.Rmd`,
-`Fig4B_VisiumHD_final.Rmd` and `FigS3_VisiumHD_QC_Clusters_final.Rmd` via a
+`Fig4A_VisiumHD_final.Rmd` and `FigS3_VisiumHD_QC_Clusters_final.Rmd` via a
 `{r child=...}` chunk so each figure notebook shows the full provenance.
 
 **All chunks are `eval = FALSE`** — this is code-of-record, not re-run at figure time
