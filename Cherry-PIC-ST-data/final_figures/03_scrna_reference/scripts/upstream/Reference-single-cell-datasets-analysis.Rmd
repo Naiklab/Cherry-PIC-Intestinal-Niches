@@ -50,10 +50,15 @@ dir.create("output_reference_integration/tables", showWarnings = FALSE)
 cat("Loading reference datasets...\n")
 
 # Epithelial cells 
-Epithelial.cells.DR.data <- readRDS("../../shared/Daniel-Single-Cell-for-Ikjot/Ikjot-analysis-folder/output/Clustering-Analysis-LT-ST-combined-Epithelia/RDS/EP.CTRL_data.processed.RDS")
+# The two in-house compartment objects, built by the DR26001 project. Same convention as
+# Master-dataset-integration.Rmd: override the location with CHERRYPIC_SOURCE_SCRNA.
+source_scrna_dir <- Sys.getenv("CHERRYPIC_SOURCE_SCRNA",
+                              "../../../../../DR26001-scRNA-project/final_figures/DR26001-scRNA/04-merge-controls/outputs")
+
+Epithelial.cells.DR.data <- readRDS(file.path(source_scrna_dir, "epithelia_EP.CTRL_data.processed.RDS"))
 
 # Immune cells 
-Immune.cells.DR.data <- readRDS("../../shared/Daniel-Single-Cell-for-Ikjot/Ikjot-analysis-folder/output/Clustering-Analysis-LT-ST-combined-Immune/RDS/Immune.CTRL_data.filtered.RDS")
+Immune.cells.DR.data <- readRDS(file.path(source_scrna_dir, "immune_Immune.CTRL_data.filtered.RDS"))
 
 # Single cell data from SpaceFold paper
 SpaceFold.SI.data <- readRDS("../../data/rds-objects/SI-data_SpaceFold-paper.RDS")
