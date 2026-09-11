@@ -1,6 +1,6 @@
 <!--
 Pre-processing Pipeline — Visium HD 16 µm object (FINAL, documentation).
-Designed to be included via `{r child=...}` in the figure notebook, so this file
+Designed to be included via `{r child=...}` in Fig3E_16um_final.Rmd, so this file
 has NO YAML header (a child's YAML would render as stray text in the parent).
 To knit standalone: rmarkdown::render("Preprocessing_VisiumHD_16um_final.Rmd").
 -->

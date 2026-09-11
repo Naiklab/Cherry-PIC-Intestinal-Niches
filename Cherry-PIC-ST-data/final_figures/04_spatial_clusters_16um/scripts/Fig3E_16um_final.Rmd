@@ -68,6 +68,15 @@ Both objects are around 2 GB, so no compute node is needed:
 Rscript Fig3E_16um_final.R
 ```
 
+Full build of the 16 µm object loaded below — raw Space Ranger → `epi_subset_16um.RDS`
+— documented as code-of-record (not re-executed here; the figure runs from the frozen
+RDS). The 8 µm and 16 µm binnings were pre-processed **independently**, so this is a
+separate pipeline from `Preprocessing_VisiumHD_8um_final.Rmd` rather than a re-binning
+of that object.
+
+```{r pipeline-provenance, child='upstream/Preprocessing_VisiumHD_16um_final.Rmd'}
+```
+
 ```{r setup, include=FALSE}
 if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 
