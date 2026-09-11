@@ -88,5 +88,5 @@ Biomni-code-external/Full-data/**/reproducible_package/**/scripts/
 # Ligand-receptor scoring object (285 MB) - deposit with the processed data
 Biomni-code-external/01_liana_nichenet/data/nichenet_obj.rds
 
-# Submission material, not code
-Cherry-PIC_GEO_metadata.xlsx
+# Submission material, not code — GEO metadata workbooks in any form
+Cherry-PIC_GEO_*.xlsx

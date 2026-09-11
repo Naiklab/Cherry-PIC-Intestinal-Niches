@@ -40,6 +40,18 @@ MISS=$(wc -l < /tmp/_relcheck_paths.$$ | tr -d ' ')
                   || { fail "$MISS documentation path(s) do not resolve"; cat /tmp/_relcheck_paths.$$; }
 rm -f /tmp/_relcheck_paths.$$
 
+head "3b. Sandbox and site paths in tracked code"
+# /mnt/user-uploads and /mnt/results are the analysis sandbox's paths; they resolve
+# nowhere else. Documentation may mention them when describing what a delivery contained.
+SBX=0
+while IFS= read -r f; do
+  echo "    $f"; SBX=$((SBX+1))
+# earlier-per-region-qc/ is kept as the record of a superseded processing pass; its paths
+# are part of that record and are documented as unreachable.
+done < <(git grep -lE "/mnt/(user-uploads|results)|/sc/arion|/gpfs/|/hpc/packages" -- '*.R' '*.Rmd' '*.py' ':!**/Full-data/**' ':!**/earlier-per-region-qc/**' 2>/dev/null)
+[ "$SBX" = "0" ] && pass "no sandbox or site paths in tracked code" \
+                 || fail "$SBX tracked script(s) carry a path that resolves only on another system"
+
 head "4. Stale status language in documentation"
 STALE=$(grep -rniE "still missing|not yet (fixed|rendered|deposited)|blocked on|TODO|FIXME|decide whether|version of record|does not reproduce" \
         $(git ls-files '*.md') 2>/dev/null | grep -v "^.checks/" || true)
