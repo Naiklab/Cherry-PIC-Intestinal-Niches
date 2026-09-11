@@ -119,11 +119,10 @@ repository: its two inputs are read from `../data/` or from `CHERRYPIC_MASTER_OB
 `Cherry-PIC-ST-data/final_figures/03_scrna_reference/`; it is on the analysis cluster and
 belongs with the Zenodo deposit.
 
-`curated_10_genes_per_cluster_res1_2.xlsx` is **missing entirely** — not in this repository,
-not on the cluster, and not any of the annotation workbooks here under another name (none
-contains the `Curated 10 genes` worksheet the script reads). It was uploaded directly to the
-analysis sandbox and exists only wherever it was uploaded from. **Figure S5C–E cannot be
-regenerated until it is added**; everything else in this folder can.
+`curated_10_genes_per_cluster_res1_2.xlsx` is tracked at `04_marker_dotplots/data/` — supplied
+after an earlier version of this note called it missing entirely. Only `Master.Obj.rds` (5.8 GB,
+on the cluster and in the Zenodo deposit) is absent from this repository; Figure S5C–E can be
+regenerated once that object is available.
 
 ## A note on `Full-data/`
 

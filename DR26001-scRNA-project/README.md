@@ -5,7 +5,8 @@ merged across a short-term and a long-term experiment. Organised to match the la
 in `Cherry-PIC-ST-data/` and `Cherry-PIC-scRNA-project/`: numbered stage folders, each
 with a flat `scripts/`, `data/` and `outputs/`.
 
-This project produces no manuscript figure of its own. It feeds two downstream analyses:
+This project produces one manuscript panel of its own — Figure 3F, the enterocyte dot plots
+(`04-merge-controls/scripts/Fig3F_DotPlots_final.Rmd`) — and feeds two downstream analyses:
 
 1. **Master single-cell reference (Figure S5)** — supplies the "Daniel epithelial" and
    "Daniel immune" objects, two of the twelve inputs to `Master.Obj.rds`.
