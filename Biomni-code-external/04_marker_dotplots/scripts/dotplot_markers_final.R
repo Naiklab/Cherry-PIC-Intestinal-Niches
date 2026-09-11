@@ -29,6 +29,8 @@ suppressPackageStartupMessages({
 options(timeout = 1200)
 set.seed(1)
 
+dir.create("../outputs", showWarnings = FALSE, recursive = TRUE)  # gitignored; absent on a fresh checkout
+
 # ---- 1. Load Seurat object ----
 cat("Loading Seurat object...\n")
 t0 <- Sys.time()

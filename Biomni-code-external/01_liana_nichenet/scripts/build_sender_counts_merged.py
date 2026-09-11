@@ -7,6 +7,7 @@ OUTS = os.path.normpath(os.path.join(_HERE, "..", "outputs"))
 L = DATA
 NN = DATA
 OUTDIR = f"{OUTS}/sender_summary_circles"
+os.makedirs(OUTDIR, exist_ok=True)  # outputs/ is gitignored; a fresh checkout has neither directory
 CSV = f"{OUTDIR}/sender_summary_interaction_counts.csv"
 
 # Back up original (separate TA) CSV
