@@ -105,7 +105,7 @@ Cherry-PIC-ST-data/            Visium HD spatial transcriptomics
     01_spatial_clusters/       Fig 3B–3D, Fig S3, Fig S4
     02_regional_genes/         Fig 4A
     03_scrna_reference/        Fig S5A/B — integrated reference atlas
-    04_spatial_clusters_16um/  Fig 3E
+    04_spatial_clusters_16um/  Fig 3E, and the 16 um preprocessing under scripts/upstream/
 
 Cherry-PIC-scRNA-project/      10x scRNA of Cherry-PIC niches
   final_figures/10x-Cherry-PIC-scRNA/

@@ -1,0 +1,2005 @@
+---
+title: "General Visium HD Data Analysis Workflow - 16um Binned"
+author: "Ikjot Sidhu"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: united
+    code_folding: hide
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 8)
+
+#Not using these for now
+
+#
+#"~/R/x86_64-pc-linux-gnu-library/4.4/",
+
+# Set library paths - adjust according to your environment
+if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
+
+# Load required libraries
+library(Seurat)
+library(ggplot2)
+library(patchwork)
+library(dplyr)
+library(tidyr)
+library(RColorBrewer)
+library(ggpubr)
+
+# Define custom colors for clusters (60 colors - professional colors first, neon at end)
+custom_colors <- c(
+  # Professional/muted colors first (0-29)
+  "0" = "#4876FF",   # Royal blue
+  "1" = "#CD853F",   # Peru/tan
+  "2" = "#8B4513",   # Saddle brown
+  "3" = "#6B8E23",   # Olive drab
+  "4" = "#708090",   # Slate gray
+  "5" = "#8B008B",   # Dark magenta
+  "6" = "#2F4F4F",   # Dark slate gray
+  "7" = "#8B0000",   # Dark red
+  "8" = "#483D8B",   # Dark slate blue
+  "9" = "#556B2F",   # Dark olive green
+  "10" = "#8B4726",  # Sienna
+  "11" = "#4682B4",  # Steel blue
+  "12" = "#6A5ACD",  # Slate blue
+  "13" = "#A0522D",  # Sienna brown
+  "14" = "#5F9EA0",  # Cadet blue
+  "15" = "#9370DB",  # Medium purple
+  "16" = "#BC8F8F",  # Rosy brown
+  "17" = "#B8860B",  # Dark goldenrod
+  "18" = "#3CB371",  # Medium sea green
+  "19" = "#7B68EE",  # Medium slate blue
+  "20" = "#CD5C5C",  # Indian red
+  "21" = "#4169E1",  # Royal blue
+  "22" = "#D2691E",  # Chocolate
+  "23" = "#6495ED",  # Cornflower blue
+  "24" = "#DC143C",  # Crimson
+  "25" = "#008B8B",  # Dark cyan
+  "26" = "#B22222",  # Fire brick
+  "27" = "#228B22",  # Forest green
+  "28" = "#DAA520",  # Goldenrod
+  "29" = "#808000",  # Olive
+  # Medium saturation colors (30-44)
+  "30" = "#DB7093",  # Pale violet red
+  "31" = "#48D1CC",  # Medium turquoise
+  "32" = "#C71585",  # Medium violet red
+  "33" = "#191970",  # Midnight blue
+  "34" = "#800000",  # Maroon
+  "35" = "#BA55D3",  # Medium orchid
+  "36" = "#9932CC",  # Dark orchid
+  "37" = "#FF8C00",  # Dark orange
+  "38" = "#E9967A",  # Dark salmon
+  "39" = "#8FBC8F",  # Dark sea green
+  "40" = "#00CED1",  # Dark turquoise
+  "41" = "#9400D3",  # Dark violet
+  "42" = "#696969",  # Dim gray
+  "43" = "#1E90FF",  # Dodger blue
+  "44" = "#B0C4DE",  # Light steel blue
+  # Brighter colors (45-54)
+  "45" = "#FF6347",  # Tomato
+  "46" = "#40E0D0",  # Turquoise
+  "47" = "#EE82EE",  # Violet
+  "48" = "#FF4500",  # Orange red
+  "49" = "#DA70D6",  # Orchid
+  "50" = "#87CEEB",  # Sky blue
+  "51" = "#6A5ACD",  # Slate blue
+  "52" = "#00FA9A",  # Medium spring green
+  "53" = "#87CEFA",  # Light sky blue
+  "54" = "#FFA07A",  # Light salmon
+  # Neon/bright colors at the end (55-59)
+  "55" = "#32CD32",  # Lime green
+  "56" = "#00FF7F",  # Spring green
+  "57" = "#7FFF00",  # Chartreuse
+  "58" = "#ADFF2F",  # Green yellow
+  "59" = "#CAF178"   # Light neon green
+)
+
+# Set up parallel processing
+future::plan("multicore", workers = future::availableCores())
+options('future.globals.maxSize' = 2*10^12)
+
+# Create output directories for 16um analysis
+dir.create("output_16um", showWarnings = FALSE)
+dir.create("output_16um/plots", showWarnings = FALSE, recursive = TRUE)
+dir.create("output_16um/tables", showWarnings = FALSE, recursive = TRUE)
+dir.create("output_16um/RDS-files", showWarnings = FALSE, recursive = TRUE)
+```
+
+# Visium HD Data Analysis Workflow - 16um Binned
+
+This is a comprehensive workflow for analyzing Visium HD spatial transcriptomics data at **16um bin resolution**. The workflow includes data loading, quality control, normalization, clustering, and spatial analysis.
+
+## 1. Data Loading and Initial Setup
+
+### 1.1 Configure Analysis Parameters
+
+```{r parameters}
+# =============================================================================
+# ANALYSIS PARAMETERS - MODIFY THESE FOR YOUR DATASET
+# =============================================================================
+
+# Sample information
+sample.names <- c("SHNA03_D3-7um_0_v1","SHNA03_D4-7um_0_v1","SHNA03_I2-7um_0_v1","SHNA03_I3-7um_0_v1")  # Update with your sample names
+# Space Ranger output root, one folder per sample.
+data.dir <- Sys.getenv("CHERRYPIC_RAWDATA", "rawdata")
+bin.size <- c(16)  # Bin size for analysis - 16um bins
+
+# Image names for each sample (if multiple images per sample)
+image.names <- list(
+  "SHNA03_D3-7um_0_v1"= c("Duodenum-3"),  # Update with your image names
+  "SHNA03_D4-7um_0_v1"= c("Duodenum-4"),
+  "SHNA03_I2-7um_0_v1"= c("Ileum-2"),
+  "SHNA03_I3-7um_0_v1"= c("Ileum-3")
+)
+
+# QC thresholds - adjusted for 16um bins (larger bins = higher counts expected)
+min.counts <- 50      # Minimum UMI counts per spot (higher for 16um vs 8um)
+max.mt.percent <- 20  # Maximum mitochondrial gene percentage
+
+# Clustering parameters
+sketch.ncells <- 5000  # Number of cells for sketching
+cluster.resolutions <- c(0.2, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4)  # Clustering resolutions to test
+
+# Spatial analysis parameters
+banksy.lambda <- c(0.2, 0.8)  # BANKSY lambda values
+banksy.k <- c(15, 20)          # BANKSY k-neighbors
+```
+
+### 1.2 Load Visium HD Data
+
+```{r load_data}
+# Minimal function to load Visium HD data (with image)
+load_visium_hd_data <- function(sample.name, data.dir, bin.size) {
+  # Construct the path to the spatial directory for the given bin size
+  spatial.dir <- file.path(data.dir, sample.name)
+  if (!dir.exists(spatial.dir)) {
+    warning("Spatial directory not found: ", spatial.dir)
+    return(NULL)
+  }
+  # Load the data and image
+  object <- Load10X_Spatial(data.dir = spatial.dir, bin.size = bin.size, slice = image.names[[sample.name]])
+  cat("Loaded sample:", sample.name, "with", ncol(object), "spots\n")
+  return(object)
+}
+
+# Load all samples
+object.list <- lapply(sample.names, function(sample.name) {
+  load_visium_hd_data(sample.name, data.dir, bin.size[1])
+})
+names(object.list) <- sample.names
+object.list <- object.list[!sapply(object.list, is.null)]
+cat("Successfully loaded", length(object.list), "samples\n")
+```
+
+### 1.3 Split Multi-Image Samples (if applicable)
+
+```{r split_samples}
+# Function to split samples with multiple images
+split_multi_image_samples <- function(object.list, image.names) {
+  split.object.list <- list()
+  
+  for (sample.name in names(object.list)) {
+    obj <- object.list[[sample.name]]
+    images <- image.names[[sample.name]]
+    
+    if (length(images) > 1) {
+      # If CSV files exist for image splitting
+      csv.dir <- file.path(dirname(obj@images[[1]]@image), "cloupe_csvs")
+      
+      if (dir.exists(csv.dir)) {
+        csv.files <- list.files(csv.dir, pattern = "\\.csv$", full.names = TRUE)
+        
+        for (i in seq_along(images)) {
+          image.name <- images[i]
+          csv.file <- csv.files[grep(image.name, csv.files)][1]
+          
+          if (!is.na(csv.file) && file.exists(csv.file)) {
+            cells.to.keep <- read.csv(csv.file)$Barcode
+            sub.obj <- subset(obj, cells = cells.to.keep)
+            sub.obj$orig.ident <- image.name
+            sub.obj$sample <- sample.name
+            
+            split.object.list[[paste(sample.name, image.name, sep = "_")]] <- sub.obj
+          }
+        }
+      } else {
+        # If no CSV files, keep the whole sample
+        obj$orig.ident <- sample.name
+        obj$sample <- sample.name
+        split.object.list[[sample.name]] <- obj
+      }
+    } else {
+      # Single image sample
+      obj$orig.ident <- images[1]
+      obj$sample <- sample.name
+      split.object.list[[sample.name]] <- obj
+    }
+  }
+  
+  return(split.object.list)
+}
+
+# Split samples if needed
+split.object.list <- split_multi_image_samples(object.list, image.names)
+cat("After splitting:", length(split.object.list), "objects\n")
+```
+
+## 2. Quality Control Analysis
+
+### 2.1 Calculate QC Metrics
+
+```{r qc_metrics}
+# Calculate mitochondrial gene percentage
+split.object.list <- lapply(split.object.list, function(obj) {
+  obj <- PercentageFeatureSet(obj, pattern = "^mt-|^MT-", col.name = "percent.mt")
+  return(obj)
+})
+
+# Get assay name dynamically (should be Spatial.016um for 16um bins)
+assay.name <- names(split.object.list[[1]]@assays)[1]
+count.col <- paste0("nCount_", assay.name)
+feature.col <- paste0("nFeature_", assay.name)
+
+cat("Using assay:", assay.name, "\n")
+cat("Count column:", count.col, "\n")
+cat("Feature column:", feature.col, "\n")
+```
+
+### 2.2 QC Visualization
+
+```{r qc_plots, fig.height=12, fig.width=14}
+# Combine metadata for visualization
+merged.md <- bind_rows(
+  lapply(split.object.list, function(obj) {
+    return(obj@meta.data)
+  }), 
+  .id = "sampleName"
+)
+
+# QC violin plots
+p1 <- merged.md %>%
+  ggplot(aes_string(x = "sampleName", y = paste0("log10(", count.col, ")"), fill = "sampleName")) +
+  geom_violin() +
+  theme_classic() +
+  geom_hline(yintercept = log10(min.counts), lty = 2, color = "red") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("UMI Counts per Spot (16um bins)")
+
+p2 <- merged.md %>%
+  ggplot(aes_string(x = "sampleName", y = paste0("log10(", feature.col, ")"), fill = "sampleName")) +
+  geom_violin() +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Features per Spot (16um bins)")
+
+p3 <- merged.md %>%
+  ggplot(aes(x = sampleName, y = percent.mt, fill = sampleName)) +
+  geom_violin() +
+  theme_classic() +
+  geom_hline(yintercept = max.mt.percent, lty = 2, color = "red") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Mitochondrial Gene %")
+
+p4 <- merged.md %>%
+  ggplot(aes_string(x = "sampleName", 
+                   y = paste0(count.col, "/", feature.col), 
+                   fill = "sampleName")) +
+  geom_violin() +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("UMI per Feature Ratio")
+
+# Density plots
+p5 <- merged.md %>%
+  ggplot(aes_string(x = paste0("log10(", count.col, ")"), fill = "sampleName")) +
+  geom_density(alpha = 0.5) +
+  geom_vline(xintercept = log10(min.counts), color = "red", linetype = "dashed") +
+  theme_classic() +
+  ggtitle("UMI Count Distribution")
+
+p6 <- merged.md %>%
+  ggplot(aes_string(x = paste0("log10(", feature.col, ")"), fill = "sampleName")) +
+  geom_density(alpha = 0.5) +
+  theme_classic() +
+  ggtitle("Feature Count Distribution")
+
+pdf("output_16um/plots/qc_distribution_plots.pdf", height = 12, width = 14)
+# Combine plots (log-transformed)
+(p1 | p2) / (p3 | p4) / (p5 | p6)
+dev.off()
+
+# ============================================================================
+# NON-LOG TRANSFORMED QC PLOTS
+# ============================================================================
+
+# QC violin plots (non-log transformed)
+p1_nolog <- merged.md %>%
+  ggplot(aes_string(x = "sampleName", y = count.col, fill = "sampleName")) +
+  geom_violin() +
+  theme_classic() +
+  geom_hline(yintercept = min.counts, lty = 2, color = "red") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("UMI Counts per Spot - 16um (Non-log)")
+
+p2_nolog <- merged.md %>%
+  ggplot(aes_string(x = "sampleName", y = feature.col, fill = "sampleName")) +
+  geom_violin() +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Features per Spot - 16um (Non-log)")
+
+p3_nolog <- merged.md %>%
+  ggplot(aes(x = sampleName, y = percent.mt, fill = sampleName)) +
+  geom_violin() +
+  theme_classic() +
+  geom_hline(yintercept = max.mt.percent, lty = 2, color = "red") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Mitochondrial Gene %")
+
+p4_nolog <- merged.md %>%
+  ggplot(aes_string(x = "sampleName", 
+                   y = paste0(count.col, "/", feature.col), 
+                   fill = "sampleName")) +
+  geom_violin() +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("UMI per Feature Ratio")
+
+# Density plots (non-log transformed)
+p5_nolog <- merged.md %>%
+  ggplot(aes_string(x = count.col, fill = "sampleName")) +
+  geom_density(alpha = 0.5) +
+  geom_vline(xintercept = min.counts, color = "red", linetype = "dashed") +
+  theme_classic() +
+  ggtitle("UMI Count Distribution (Non-log)")
+
+p6_nolog <- merged.md %>%
+  ggplot(aes_string(x = feature.col, fill = "sampleName")) +
+  geom_density(alpha = 0.5) +
+  theme_classic() +
+  ggtitle("Feature Count Distribution (Non-log)")
+
+p7_nolog <- merged.md %>%
+  ggplot(aes(x = percent.mt, fill = sampleName)) +
+  geom_density(alpha = 0.5) +
+  geom_vline(xintercept = max.mt.percent, color = "red", linetype = "dashed") +
+  theme_classic() +
+  ggtitle("Mitochondrial % Distribution")
+
+# Save non-log QC plots to separate PDF
+pdf("output_16um/plots/qc_distribution_plots_nolog.pdf", height = 12, width = 14)
+(p1_nolog | p2_nolog) / (p3_nolog | p4_nolog) / (p5_nolog | p6_nolog) / p7_nolog
+dev.off()
+
+# Spatial QC plots
+pdf("output_16um/plots/spatial_qc_plots.pdf", height = 8, width = 12)
+for (obj.name in names(split.object.list)) {
+  obj <- split.object.list[[obj.name]]
+  
+  p1 <- SpatialFeaturePlot(obj, features = count.col) + 
+    ggtitle(paste(obj.name, "- UMI Counts (16um)"))
+  p2 <- SpatialFeaturePlot(obj, features = feature.col) + 
+    ggtitle(paste(obj.name, "- Feature Counts (16um)"))
+  p3 <- SpatialFeaturePlot(obj, features = "percent.mt") + 
+    ggtitle(paste(obj.name, "- Mitochondrial %"))
+  
+  print((p1 | p2) / p3)
+}
+dev.off()
+```
+
+### 2.3 Apply QC Filters
+
+```{r qc_filter}
+# Apply QC filters - dynamically handle column name
+filtered.object.list <- lapply(split.object.list, function(obj) {
+  cat("Before filtering:", ncol(obj), "spots\n")
+  
+  # Get the count column dynamically
+  count.col.local <- grep('^nCount_Spatial', colnames(obj@meta.data), value = TRUE)[1]
+  if (is.na(count.col.local)) stop('No nCount_Spatial column found in metadata!')
+  
+  cat("Using count column:", count.col.local, "\n")
+  
+  # Filter based on metadata
+  cells.keep <- obj@meta.data[[count.col.local]] >= min.counts
+  obj <- obj[, cells.keep]
+  
+  cat("After filtering:", ncol(obj), "spots\n")
+  return(obj)
+})
+
+# Summary of filtering
+cat("\nFiltering Summary:\n")
+for (obj.name in names(filtered.object.list)) {
+  original <- ncol(split.object.list[[obj.name]])
+  filtered <- ncol(filtered.object.list[[obj.name]])
+  cat(obj.name, ":", original, "->", filtered, 
+      "(", round(100 * filtered/original, 1), "%)\n")
+}
+```
+
+## 3. Data Integration and Normalization
+
+### 3.1 Normalize and Merge Data
+
+```{r normalize_merge}
+# Normalize each sample individually
+normalized.object.list <- lapply(filtered.object.list, function(obj) {
+  obj <- NormalizeData(obj, assay = assay.name)
+  return(obj)
+})
+
+# Merge all samples
+if (length(normalized.object.list) > 1) {
+  merged.object <- merge(normalized.object.list[[1]], 
+                        normalized.object.list[2:length(normalized.object.list)])
+} else {
+  merged.object <- normalized.object.list[[1]]
+}
+
+cat("Merged object dimensions:", dim(merged.object), "\n")
+```
+
+### 3.2 Sketching for Large Datasets
+
+```{r sketching}
+# Set default assay
+DefaultAssay(merged.object) <- assay.name
+
+# Find variable features
+merged.object <- FindVariableFeatures(merged.object)
+merged.object <- ScaleData(merged.object)
+
+# Create sketch for large datasets
+merged.object <- SketchData(
+  object = merged.object,
+  ncells = 5000L,
+  method = "Uniform",
+  sketched.assay = "sketch"
+)
+
+cat("Sketched", sketch.ncells, "cells for downstream analysis\n")
+```
+
+## 4. Dimensionality Reduction and Clustering
+
+### 4.1 PCA and Clustering on Sketched Data
+
+```{r clustering}
+# Switch to sketched assay
+DefaultAssay(merged.object) <- "sketch"
+
+# Perform clustering workflow on sketched data
+merged.object <- FindVariableFeatures(merged.object)
+merged.object <- ScaleData(merged.object)
+merged.object <- RunPCA(merged.object, assay = "sketch", reduction.name = "pca.sketch")
+merged.object <- FindNeighbors(merged.object, assay = "sketch", 
+                              reduction = "pca.sketch", dims = 1:50)
+merged.object <- FindClusters(merged.object, resolution = cluster.resolutions)
+merged.object <- RunUMAP(merged.object, reduction = "pca.sketch", 
+                        reduction.name = "umap.sketch", return.model = TRUE, dims = 1:50)
+```
+
+### 4.2 Project Results to Full Dataset
+
+```{r projection}
+# Project clustering results to full dataset
+merged.object <- ProjectData(
+  object = merged.object,
+  assay = assay.name,
+  full.reduction = "full.pca.sketch",
+  sketched.assay = "sketch",
+  sketched.reduction = "pca.sketch",
+  umap.model = "umap.sketch",
+  dims = 1:50,
+  refdata = setNames(
+    lapply(cluster.resolutions, function(res) paste0("sketch_snn_res.", res)),
+    paste0("sketch_snn_res.", cluster.resolutions)
+  )
+)
+
+# Save intermediate results
+saveRDS(merged.object, file = "output_16um/RDS-files/merged_object_clustered_16um.RDS")
+cat("Saved clustered object\n")
+```
+
+## 5. Cluster Visualization and Analysis
+
+### 5.1 UMAP Visualization
+
+```{r umap_viz, fig.width=16, fig.height=12}
+# =============================================================================
+# UMAP PLOTS - SKETCHED DATA ONLY (4 plots per page)
+# =============================================================================
+
+DefaultAssay(merged.object) <- "sketch"
+
+# Create UMAP plots for all resolutions
+cat("Generating UMAP plots for", length(cluster.resolutions), "resolutions...\n")
+
+
+# --- Save UMAP plots as annotated ggplot2 objects for easier editing ---
+umap_annotated_list <- list()
+for (i in seq_along(cluster.resolutions)) {
+  res <- cluster.resolutions[i]
+  colname <- paste0("sketch_snn_res.", res)
+  if (colname %in% colnames(merged.object@meta.data)) {
+    Idents(merged.object) <- colname
+    p <- DimPlot(
+      merged.object,
+      reduction = "umap.sketch",
+      group.by = colname,
+      label = TRUE,
+      repel = TRUE,
+      pt.size = 1.5,
+      cols = custom_colors,
+      raster = FALSE
+    ) +
+      ggtitle(paste("UMAP (sketch) - Resolution", res)) +
+      theme_minimal(base_size = 18)
+    umap_annotated_list[[paste0("res_", res)]] <- p
+    # Save each plot as an RDS file for later editing
+    saveRDS(p, file = paste0("output_16um/plots/umap_sketch_annotated_res_", res, ".rds"))
+  }
+}
+
+# Optionally, save all plots in a single RDS list for batch editing
+saveRDS(umap_annotated_list, file = "output_16um/plots/umap_sketch_annotated_all_res.rds")
+
+# Also save as PDF for quick viewing (4 per page)
+pdf("output_16um/plots/umap_multiple_resolutions.pdf", height = 12, width = 16)
+n_plots <- length(umap_annotated_list)
+n_pages <- ceiling(n_plots / 4)
+umap.plots <- unname(umap_annotated_list)
+for (page in 1:n_pages) {
+  start_idx <- (page - 1) * 4 + 1
+  end_idx <- min(page * 4, n_plots)
+  plots_this_page <- umap.plots[start_idx:end_idx]
+  while (length(plots_this_page) < 4) {
+    plots_this_page[[length(plots_this_page) + 1]] <- ggplot() + theme_void()
+  }
+  print(wrap_plots(plots_this_page, ncol = 2, nrow = 2))
+}
+dev.off()
+
+cat("UMAP annotated plots (sketched data) saved as .rds and PDF in output_16um/plots/\n")
+cat("Total pages:", n_pages, "\n")
+```
+
+### 5.2 Clustree Analysis - Resolution Selection
+
+```{r clustree_analysis, fig.width=14, fig.height=12}
+# =============================================================================
+# CLUSTREE ANALYSIS - VISUALIZE CLUSTER STABILITY ACROSS RESOLUTIONS
+# =============================================================================
+
+library(clustree)
+
+cat("Generating clustree analysis for resolution selection...\n")
+
+# Check available clustering columns
+cluster_cols <- grep("sketch_snn_res", colnames(merged.object@meta.data), value = TRUE)
+cat("Available clustering columns:", paste(cluster_cols, collapse = ", "), "\n")
+
+# IMPORTANT: Remove the .score columns that interfere with clustree parsing
+# Keep only the actual cluster assignment columns (not the .score columns)
+cluster_cols_clean <- cluster_cols[!grepl("\\.score$", cluster_cols)]
+cat("Clustering columns for clustree:", paste(cluster_cols_clean, collapse = ", "), "\n")
+
+# Create a subset of metadata with only the required columns for clustree
+metadata_for_clustree <- merged.object@meta.data[, cluster_cols_clean, drop = FALSE]
+
+# Clustree plot showing cluster relationships across resolutions
+pdf("output_16um/plots/clustree_resolution_analysis.pdf", height = 14, width = 12)
+
+# Basic clustree plot
+p_clustree <- clustree(metadata_for_clustree, prefix = "sketch_snn_res.") +
+  ggtitle("Clustree: Cluster Stability Across Resolutions (16um)") +
+  theme(legend.position = "right")
+print(p_clustree)
+
+# Clustree with SC3 stability metric
+p_clustree_stability <- clustree(metadata_for_clustree, prefix = "sketch_snn_res.", 
+                                  node_colour = "sc3_stability") +
+  ggtitle("Clustree: Colored by SC3 Stability (16um)") +
+  scale_color_viridis_c(option = "plasma")
+print(p_clustree_stability)
+
+dev.off()
+
+# Also save as PNG for easier viewing
+png("output_16um/plots/clustree_resolution_analysis.png", height = 1200, width = 1000, res = 100)
+print(p_clustree)
+dev.off()
+
+# ---------------------------------------------------------------------------
+# CLUSTER COUNT SUMMARY
+# ---------------------------------------------------------------------------
+
+cat("\n--- Cluster Count Summary by Resolution ---\n")
+cluster_summary <- data.frame(
+  Resolution = cluster.resolutions,
+  NumClusters = sapply(cluster.resolutions, function(res) {
+    col_name <- paste0("sketch_snn_res.", res)
+    if (col_name %in% colnames(merged.object@meta.data)) {
+      length(unique(merged.object@meta.data[[col_name]]))
+    } else {
+      NA
+    }
+  })
+)
+print(cluster_summary)
+
+# Save summary
+write.csv(cluster_summary, "output_16um/tables/cluster_count_by_resolution.csv", row.names = FALSE)
+
+cat("\nClustree analysis complete!\n")
+cat("Review the clustree plots to identify the optimal resolution.\n")
+cat("Look for: stable branches (less mixing between resolutions)\n")
+```
+
+### 5.3 Spatial Cluster Visualization
+
+```{r spatial_viz, fig.width=20, fig.height=16}
+# Spatial plots for each resolution - SEPARATE PDF FOR EACH RESOLUTION
+for (res in cluster.resolutions) {
+  cat("Generating spatial cluster plot for resolution", res, "\n")
+  
+  pdf(paste0("output_16um/plots/spatial_clusters_res_", res, ".pdf"), 
+      height = 12, width = 20)
+  
+  p <- SpatialDimPlot(merged.object, 
+                     group.by = paste0("sketch_snn_res.", res),
+                     label = TRUE, repel = TRUE, label.size = 4,
+                     pt.size.factor = 1.5, cols = custom_colors) +
+    ggtitle(paste("Spatial Clusters 16um - Resolution", res)) +
+    theme(legend.position = "right")
+  print(p)
+  
+  dev.off()
+}
+cat("Spatial cluster plots completed for all resolutions!\n")
+
+# =============================================================================
+# INDIVIDUAL CLUSTER HIGHLIGHTING
+# =============================================================================
+
+# Get the image names from the merged object
+available.images <- Images(merged.object)
+cat("Available images in merged object:", paste(available.images, collapse = ", "), "\n")
+
+# -----------------------------------------------------------------------------
+# PART 1: Combined plots (all samples together) for each cluster
+# -----------------------------------------------------------------------------
+cat("\n--- Generating COMBINED individual cluster plots (all samples) ---\n")
+
+for (res in cluster.resolutions) {
+  cat("Generating combined cluster plots for resolution", res, "\n")
+  
+  Idents(merged.object) <- paste0("sketch_snn_res.", res)
+  clusters.to.plot <- sort(unique(as.character(Idents(merged.object))))
+  
+  # Create PDF for combined view (all samples)
+  pdf(paste0("output_16um/plots/individual_clusters_combined_res_", res, ".pdf"), 
+      height = 10, width = 14)
+  
+  for (cluster in clusters.to.plot) {
+    # Get cells in this cluster using CellsByIdentities (returns proper format)
+    cells <- CellsByIdentities(merged.object, idents = cluster)
+    
+    # Get the custom color for this cluster
+    cluster_color <- ifelse(as.character(cluster) %in% names(custom_colors), 
+                           custom_colors[as.character(cluster)], 
+                           "red")
+    
+    p <- SpatialDimPlot(merged.object,
+                       cells.highlight = cells,
+                       cols.highlight = c(cluster_color, "grey90"),
+                       pt.size.factor = 1.5) +
+      theme(legend.position = "none") +
+      ggtitle(paste("All Samples - Cluster", cluster, "- Resolution", res, "(16um)"))
+    print(p)
+  }
+  dev.off()
+}
+cat("Combined cluster plots completed!\n")
+
+# -----------------------------------------------------------------------------
+# PART 2: Separate plots for each sample/image
+# -----------------------------------------------------------------------------
+cat("\n--- Generating SEPARATE individual cluster plots (per sample) ---\n")
+
+for (res in cluster.resolutions) {
+  cat("Generating per-sample cluster plots for resolution", res, "\n")
+  
+  Idents(merged.object) <- paste0("sketch_snn_res.", res)
+  clusters.to.plot <- sort(unique(as.character(Idents(merged.object))))
+  
+  # Loop through each image (which corresponds to each sample)
+  for (img.name in available.images) {
+    cat("  Processing image:", img.name, "\n")
+    
+    # Create PDF for this image and resolution
+    pdf(paste0("output_16um/plots/individual_clusters_res_", res, "_", 
+               gsub("[^[:alnum:]]", "_", img.name), ".pdf"), 
+        height = 8, width = 12)
+    
+    for (cluster in clusters.to.plot) {
+      # Get cells in this cluster
+      cells <- CellsByIdentities(merged.object, idents = cluster)
+      
+      # Get the custom color for this cluster (consistent across samples)
+      cluster_color <- ifelse(as.character(cluster) %in% names(custom_colors), 
+                             custom_colors[as.character(cluster)], 
+                             "red")
+      
+      p <- SpatialDimPlot(merged.object,
+                         images = img.name,
+                         cells.highlight = cells,
+                         cols.highlight = c(cluster_color, "grey90"),
+                         pt.size.factor = 1.5) +
+        theme(legend.position = "none",
+              plot.title = element_text(hjust = 0.5, vjust = -10)) +
+        ggtitle(paste(img.name, "- Cluster", cluster, "- Resolution", res, "(16um)"))
+      print(p)
+    }
+    dev.off()
+  }
+}
+```
+
+## 6. Marker Gene Analysis
+
+### 6.1 Find Cluster Markers
+
+```{r markers}
+# Join layers for marker analysis
+merged.object <- JoinLayers(merged.object)
+
+# Find markers for each resolution
+marker.list <- list()
+for (res in cluster.resolutions) {
+  cat("Finding markers for resolution", res, "\n")
+  
+  Idents(merged.object) <- paste0("sketch_snn_res.", res)
+  markers <- FindAllMarkers(merged.object, assay = assay.name, only.pos = TRUE)
+  
+  marker.list[[paste0("res_", res)]] <- markers
+  
+  # Save markers
+  write.csv(markers, 
+           file = paste0("output_16um/tables/markers_resolution_", res, ".csv"),
+           row.names = FALSE)
+}
+
+# Display top markers for optimal resolution (e.g., 0.5)
+optimal.res <- "0.5"
+if (paste0("res_", optimal.res) %in% names(marker.list)) {
+  top.markers <- marker.list[[paste0("res_", optimal.res)]] %>%
+    group_by(cluster) %>%
+    top_n(n = 5, wt = avg_log2FC)
+  
+  print(top.markers)
+}
+```
+
+### 6.2 Visualize Key Markers
+
+```{r marker_viz, fig.width=16, fig.height=12}
+# Generate marker visualization for ALL resolutions
+for (res in cluster.resolutions) {
+  cat("Generating marker plots for resolution", res, "\n")
+  
+  res.key <- paste0("res_", res)
+  
+  if (res.key %in% names(marker.list)) {
+    top2.markers <- marker.list[[res.key]] %>%
+      group_by(cluster) %>%
+      top_n(n = 2, wt = avg_log2FC) %>%
+      pull(gene) %>%
+      unique()
+    
+    # Limit to first 16 markers for visualization
+    markers.to.plot <- head(top2.markers, 16)
+    
+    if (length(markers.to.plot) > 0) {
+      # Feature plots - UMAP (DISABLED - takes too long)
+      # pdf(paste0("output_16um/plots/top_marker_features_res_", res, ".pdf"), height = 16, width = 20)
+      # print(FeaturePlot(merged.object, features = markers.to.plot, 
+      #                  reduction = "full.umap.sketch", ncol = 4))
+      # dev.off()
+      
+      # Spatial feature plots (DISABLED - takes too long)
+      # pdf(paste0("output_16um/plots/top_marker_spatial_res_", res, ".pdf"), height = 20, width = 16)
+      # for (marker in markers.to.plot) {
+      #   p <- SpatialFeaturePlot(merged.object, features = marker,
+      #                          pt.size.factor = 1.5) +
+      #     theme(legend.position = "right")
+      #   print(p)
+      # }
+      # dev.off()
+      
+      # Violin plots (DISABLED - takes too long)
+      # pdf(paste0("output_16um/plots/top_marker_violins_res_", res, ".pdf"), height = 16, width = 14)
+      # Idents(merged.object) <- paste0("sketch_snn_res.", res)
+      # for (i in seq(1, min(length(markers.to.plot), 12), by = 6)) {
+      #   markers.subset <- markers.to.plot[i:min(i+5, length(markers.to.plot))]
+      #   p <- VlnPlot(merged.object, features = markers.subset, 
+      #               ncol = 2, pt.size = 0.01)
+      #   print(p)
+      # }
+      # dev.off()
+      
+      # Heatmap
+      top10.markers <- marker.list[[res.key]] %>%
+        group_by(cluster) %>%
+        top_n(n = 10, wt = avg_log2FC)
+      
+      pdf(paste0("output_16um/plots/marker_heatmap_res_", res, ".pdf"), height = 14, width = 12)
+      print(DoHeatmap(merged.object, features = top10.markers$gene, size = 3) +
+        scale_fill_gradientn(colors = c("blue", "white", "red")))
+      dev.off()
+    }
+  }
+}
+
+cat("Marker visualization completed for all resolutions!\n")
+```
+
+## 7. Spatial Analysis with BANKSY
+
+### 7.1 BANKSY Setup and Analysis
+
+```{r banksy_setup}
+# Load BANKSY libraries
+suppressPackageStartupMessages({
+  library(Banksy)
+  library(SeuratWrappers)
+})
+
+# Prepare data for BANKSY
+merged.object <- NormalizeData(merged.object, assay = assay.name)
+merged.object <- FindVariableFeatures(merged.object, nfeatures = 5000)
+
+# Get consensus variable features across samples if multiple samples
+if (length(unique(merged.object$orig.ident)) > 1) {
+  # This would need custom implementation based on your specific needs
+  # For now, use standard variable features
+  consensus.var.feats <- VariableFeatures(merged.object)
+} else {
+  consensus.var.feats <- VariableFeatures(merged.object)
+}
+
+VariableFeatures(merged.object) <- consensus.var.feats
+```
+
+### 7.2 Prepare Spatial Coordinates
+
+```{r banksy_coords}
+# Extract spatial coordinates
+locs.df.list <- lapply(unique(merged.object$orig.ident), function(sample_name) {
+  # Get the image name for this sample
+  available_images <- names(merged.object@images)
+  image_name <- available_images[grepl(sample_name, available_images)][1]
+  
+  if (!is.na(image_name)) {
+    loc.df <- GetTissueCoordinates(merged.object, image = image_name)
+    return(loc.df)
+  } else {
+    # Fallback: use first available image
+    loc.df <- GetTissueCoordinates(merged.object, image = available_images[1])
+    return(loc.df)
+  }
+})
+
+names(locs.df.list) <- unique(merged.object$orig.ident)
+locs.df <- bind_rows(locs.df.list, .id = "orig.ident")
+colnames(locs.df) <- c("orig.ident", "dimx", "dimy", "cell")
+
+# Add coordinates to metadata
+merged.object <- AddMetaData(merged.object, metadata = locs.df)
+```
+
+### 7.3 Run BANKSY Analysis
+
+```{r banksy_analysis}
+# Run BANKSY for different lambda values
+for (lambda.val in banksy.lambda) {
+  for (k.val in banksy.k) {
+    cat("Running BANKSY with lambda =", lambda.val, "and k =", k.val, "\n")
+    
+    assay.banksy.name <- paste0("BANKSY_l", lambda.val, "_k", k.val)
+    
+    try({
+      merged.object <- RunBanksy(merged.object,
+        lambda = lambda.val,
+        assay_name = assay.banksy.name,
+        group = "orig.ident",
+        verbose = FALSE,
+        dimx = "dimx",
+        dimy = "dimy",
+        split.scale = TRUE,
+        assay = assay.name,
+        slot = "data",
+        features = "variable",
+        k_geom = k.val
+      )
+      
+      # Run clustering on BANKSY features
+      DefaultAssay(merged.object) <- assay.banksy.name
+      merged.object <- RunPCA(merged.object, assay = assay.banksy.name, 
+                             reduction.name = paste0("pca.banksy_l", lambda.val, "_k", k.val),
+                             features = rownames(merged.object), npcs = 30)
+      merged.object <- FindNeighbors(merged.object, 
+                                   reduction = paste0("pca.banksy_l", lambda.val, "_k", k.val),
+                                   dims = 1:30)
+      merged.object <- FindClusters(merged.object, 
+                                  cluster.name = paste0("banksy_l", lambda.val, "_k", k.val, "_res.", cluster.resolutions),
+                                  resolution = cluster.resolutions)
+      
+      cat("BANKSY analysis completed for lambda =", lambda.val, "k =", k.val, "\n")
+    })
+  }
+}
+
+gc()  # Garbage collection
+```
+
+### 7.4 BANKSY Visualization
+
+```{r banksy_viz, fig.width=20, fig.height=16}
+# Visualize BANKSY results - separate file for each resolution
+for (res in cluster.resolutions) {
+  cat("Generating BANKSY plots for resolution", res, "\n")
+  
+  pdf(paste0("output_16um/plots/banksy_clustering_res_", res, ".pdf"), height = 16, width = 24)
+  
+  for (lambda.val in banksy.lambda) {
+    for (k.val in banksy.k) {
+      cluster.col <- paste0("banksy_l", lambda.val, "_k", k.val, "_res.", res)
+      
+      if (cluster.col %in% colnames(merged.object@meta.data)) {
+        p <- SpatialDimPlot(merged.object, group.by = cluster.col,
+                           label = TRUE, repel = TRUE, label.size = 3,
+                           pt.size.factor = 1.5, cols = custom_colors) +
+          ggtitle(paste("BANKSY 16um λ =", lambda.val, "k =", k.val, "res =", res)) +
+          theme(legend.position = "right")
+        print(p)
+      }
+    }
+  }
+  dev.off()
+}
+
+cat("BANKSY visualization completed for all resolutions!\n")
+```
+
+## 8. Final Analysis and Export
+
+### 8.1 Cluster Composition Analysis
+
+```{r composition_analysis, fig.width=14, fig.height=8}
+# Analyze cluster composition across samples for ALL resolutions
+
+# Loop through all resolutions and generate composition plots
+for (res in cluster.resolutions) {
+  cat("\nGenerating composition plots for resolution", res, "\n")
+  
+  cluster.col <- paste0("sketch_snn_res.", res)
+  
+  # Check if this clustering exists
+  if (!cluster.col %in% colnames(merged.object@meta.data)) {
+    cat("Warning: Column", cluster.col, "not found. Skipping...\n")
+    next
+  }
+  
+  # Composition: Clusters per Sample
+  composition.df <- merged.object@meta.data %>%
+    select(orig.ident, all_of(cluster.col)) %>%
+    group_by(orig.ident, !!sym(cluster.col)) %>%
+    summarise(counts = n(), .groups = "drop") %>%
+    group_by(orig.ident) %>%
+    mutate(percentage = counts / sum(counts) * 100)
+  
+  # Composition bar plot - Clusters per Sample
+  p1 <- ggplot(composition.df, aes(x = orig.ident, y = percentage, 
+                                  fill = !!sym(cluster.col))) +
+    geom_bar(stat = "identity", position = "stack") +
+    scale_fill_manual(values = custom_colors) +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(title = paste("Cluster Composition 16um - Resolution", res),
+         x = "Sample", y = "Percentage", fill = "Cluster")
+  
+  print(p1)
+  
+  # Composition: Samples per Cluster (flipped view)
+  composition.df2 <- merged.object@meta.data %>%
+    select(orig.ident, all_of(cluster.col)) %>%
+    group_by(!!sym(cluster.col), orig.ident) %>%
+    summarise(counts = n(), .groups = "drop") %>%
+    group_by(!!sym(cluster.col)) %>%
+    mutate(percentage = counts / sum(counts) * 100)
+  
+  p2 <- ggplot(composition.df2, aes(x = !!sym(cluster.col), y = percentage, 
+                                   fill = orig.ident)) +
+    geom_bar(stat = "identity", position = "stack") +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(title = paste("Sample Composition 16um - Resolution", res),
+         x = "Cluster", y = "Percentage", fill = "Sample")
+  
+  print(p2)
+  
+  # Save plots for this resolution
+  pdf(paste0("output_16um/plots/cluster_composition_res_", res, ".pdf"), width = 14, height = 8)
+  print(p1)
+  print(p2)
+  dev.off()
+  
+  # Save composition data for this resolution
+  write.csv(composition.df, 
+            paste0("output_16um/tables/cluster_composition_by_sample_res_", res, ".csv"), 
+            row.names = FALSE)
+  write.csv(composition.df2, 
+            paste0("output_16um/tables/sample_composition_by_cluster_res_", res, ".csv"), 
+            row.names = FALSE)
+}
+
+cat("\nCluster composition analysis completed for all resolutions!\n")
+```
+
+### 8.2 Add Cluster Annotations (Resolution 2)
+
+```{r cluster_annotations, fig.width=20, fig.height=16, fig.show='hide'}
+# =============================================================================
+# ADD CLUSTER ANNOTATIONS FROM CSV FILE
+# =============================================================================
+
+# Load cluster annotations for resolution 2
+# CSV columns: Cluster, Annotation, Spatial.region.annotation, Region.Annotation,
+#              Compartment, Color, Granular.annotation, Granular.color
+annotation.file <- "16um-binned-updated-annotations(res2).csv"
+
+if (file.exists(annotation.file)) {
+  cat("Loading cluster annotations from:", annotation.file, "\n")
+
+  annotations <- read.csv(annotation.file, stringsAsFactors = FALSE)
+
+  # Display summary
+  cat("\nCluster Annotations Summary:\n")
+  print(annotations[, c("Cluster", "Annotation", "Spatial.region.annotation",
+                         "Region.Annotation", "Compartment", "Color")])
+
+  # Remove rows with NA/empty Cluster
+  annotations <- annotations[!is.na(annotations$Cluster) & annotations$Cluster != "", ]
+
+  # Helper: replace NA/empty/"NA" with a fill value
+  fill_na <- function(x, fill = "Unknown") {
+    x[is.na(x) | x == "" | x == "NA"] <- fill
+    x
+  }
+
+  annotations$Annotation                <- fill_na(annotations$Annotation)
+  annotations$Spatial.region.annotation <- fill_na(annotations$Spatial.region.annotation)
+  annotations$Region.Annotation         <- fill_na(annotations$Region.Annotation)
+  annotations$Compartment               <- fill_na(annotations$Compartment)
+  annotations$Granular.annotation       <- fill_na(annotations$Granular.annotation)
+
+  # Create cluster-to-value mappings
+  cid <- as.character(annotations$Cluster)
+
+  cluster.to.annotation  <- setNames(annotations$Annotation,                cid)
+  cluster.to.region      <- setNames(annotations$Spatial.region.annotation, cid)
+  cluster.to.location    <- setNames(annotations$Region.Annotation,         cid)
+  cluster.to.compartment <- setNames(annotations$Compartment,               cid)
+  cluster.to.granular    <- setNames(annotations$Granular.annotation,       cid)
+
+  # Map to all cells using resolution 2 clusters
+  cell.clusters <- as.character(merged.object$sketch_snn_res.2)
+
+  cluster_annotation_vec     <- fill_na(cluster.to.annotation[cell.clusters])
+  region_annotation_vec      <- fill_na(cluster.to.region[cell.clusters])
+  location_annotation_vec    <- fill_na(cluster.to.location[cell.clusters])
+  compartment_annotation_vec <- fill_na(cluster.to.compartment[cell.clusters])
+  granular_annotation_vec    <- fill_na(cluster.to.granular[cell.clusters])
+
+  # Add all annotations to metadata
+  merged.object <- AddMetaData(merged.object, metadata = data.frame(
+    cluster_annotation     = cluster_annotation_vec,
+    region_annotation      = region_annotation_vec,
+    location_annotation    = location_annotation_vec,
+    compartment_annotation = compartment_annotation_vec,
+    granular_annotation    = granular_annotation_vec,
+    row.names = colnames(merged.object)
+  ))
+
+  cat("\nAnnotations added to metadata:\n")
+  cat("- cluster_annotation (broad)\n- region_annotation\n- location_annotation\n")
+  cat("- compartment_annotation\n- granular_annotation\n")
+
+  # ---------------------------------------------------------------------------
+  # BUILD COLOR PALETTES FROM CSV HEX CODES
+  # ---------------------------------------------------------------------------
+
+  # Helper: build named color vector (annotation name → hex), deduplicating by name
+  make_color_map <- function(ann_names, colors, fallback = custom_colors) {
+    valid <- !is.na(colors) & colors != "" & colors != "NA"
+    cmap  <- setNames(colors[valid], ann_names[valid])
+    cmap  <- cmap[!duplicated(names(cmap))]
+    # Fill any annotation not covered by the CSV Color column
+    missing <- setdiff(unique(ann_names), names(cmap))
+    if (length(missing) > 0) {
+      extra <- fallback[which(!fallback %in% cmap)][seq_along(missing)]
+      cmap  <- c(cmap, setNames(extra, missing))
+    }
+    cmap
+  }
+
+  # Broad cluster annotation colors (from Color column)
+  annotation_colors   <- make_color_map(annotations$Annotation, annotations$Color)
+
+  # Granular annotation colors (from Granular.color column)
+  granular_colors     <- make_color_map(annotations$Granular.annotation, annotations$Granular.color)
+
+  # Spatial region colors (reuse Color column, keyed by region name)
+  region_colors       <- make_color_map(annotations$Spatial.region.annotation, annotations$Color)
+
+  # Location (proximal/distal/both) - fixed palette
+  unique_locations    <- unique(location_annotation_vec)
+  location_colors     <- setNames(
+    c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00")[seq_along(unique_locations)],
+    unique_locations
+  )
+
+  # Compartment colors - fixed palette
+  unique_compartments <- unique(compartment_annotation_vec)
+  compartment_colors  <- setNames(
+    c("#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#66A61E")[seq_along(unique_compartments)],
+    unique_compartments
+  )
+
+  # ---------------------------------------------------------------------------
+  # VISUALIZATION: UMAP with Annotations
+  # ---------------------------------------------------------------------------
+
+  p_umap_annot <- DimPlot(merged.object,
+                          reduction = "full.umap.sketch",
+                          group.by = "cluster_annotation",
+                          label = TRUE, label.size = 3, repel = TRUE,
+                          raster = FALSE, pt.size = 1.5,
+                          cols = annotation_colors) +
+    ggtitle("UMAP - Broad Cluster Annotations (16um, res=2)") +
+    theme(legend.position = "right", legend.text = element_text(size = 8))
+
+  p_umap_gran <- DimPlot(merged.object,
+                         reduction = "full.umap.sketch",
+                         group.by = "granular_annotation",
+                         label = TRUE, label.size = 3, repel = TRUE,
+                         raster = FALSE, pt.size = 1.5,
+                         cols = granular_colors) +
+    ggtitle("UMAP - Granular Annotations (16um, res=2)") +
+    theme(legend.position = "right", legend.text = element_text(size = 8))
+
+  p_umap_region <- DimPlot(merged.object,
+                           reduction = "full.umap.sketch",
+                           group.by = "region_annotation",
+                           label = TRUE, label.size = 4,
+                           raster = FALSE, pt.size = 1.5,
+                           cols = region_colors) +
+    ggtitle("UMAP - Region Annotations (16um)")
+
+  p_umap_compartment <- DimPlot(merged.object,
+                                reduction = "full.umap.sketch",
+                                group.by = "compartment_annotation",
+                                label = TRUE, label.size = 4,
+                                raster = FALSE, pt.size = 1.5,
+                                cols = compartment_colors) +
+    ggtitle("UMAP - Compartment Annotations (16um)")
+
+  ggsave("output_16um/plots/umap_annotations_res2_cluster.pdf",     plot = p_umap_annot,       height = 12, width = 16)
+  ggsave("output_16um/plots/umap_annotations_res2_granular.pdf",    plot = p_umap_gran,        height = 12, width = 16)
+  ggsave("output_16um/plots/umap_annotations_res2_region.pdf",      plot = p_umap_region,      height = 12, width = 16)
+  ggsave("output_16um/plots/umap_annotations_res2_compartment.pdf", plot = p_umap_compartment, height = 12, width = 16)
+
+  # ---------------------------------------------------------------------------
+  # VISUALIZATION: Spatial plots with Annotations (per-image, using ggsave)
+  # ---------------------------------------------------------------------------
+
+  available.images <- Images(merged.object)
+
+  spatial_annot_list <- list(
+    list(group = "cluster_annotation",     cols = annotation_colors,   title = "Cluster_Annotations"),
+    list(group = "granular_annotation",    cols = granular_colors,     title = "Granular_Annotations"),
+    list(group = "region_annotation",      cols = region_colors,       title = "Region_Annotations"),
+    list(group = "compartment_annotation", cols = compartment_colors,  title = "Compartment_Annotations"),
+    list(group = "location_annotation",    cols = location_colors,     title = "Location_Annotations")
+  )
+
+  for (annot_info in spatial_annot_list) {
+    for (img in available.images) {
+      p <- SpatialDimPlot(merged.object,
+                          group.by = annot_info$group,
+                          images = img,
+                          label = TRUE, repel = TRUE, label.size = 3,
+                          pt.size.factor = 1.5,
+                          cols = annot_info$cols) +
+        ggtitle(paste("Spatial -", annot_info$title, "(16um) -", img)) +
+        theme(legend.position = "right", legend.text = element_text(size = 7))
+
+      fname <- paste0("output_16um/plots/spatial_", annot_info$title, "_", img, "_res2.pdf")
+      ggsave(fname, plot = p, height = 10, width = 14)
+      cat("Saved:", fname, "\n")
+    }
+  }
+
+  cat("\nAnnotation plots saved to output_16um/plots/\n")
+
+} else {
+  cat("Warning: Annotation file not found:", annotation.file, "\n")
+  cat("Expected CSV columns: Cluster, Annotation, Spatial.region.annotation,\n")
+  cat("  Region.Annotation, Compartment, Color, Granular.annotation, Granular.color\n")
+}
+```
+
+### 8.3 Epithelia Subset Analysis
+
+```{r epithelia_subset, fig.width=16, fig.height=12}
+# =============================================================================
+# SUBSET TO EPITHELIA COMPARTMENT AND RE-RUN UMAP
+# =============================================================================
+
+epi.object <- subset(merged.object, subset = compartment_annotation == "Epithelia")
+cat("Epithelia subset:", ncol(epi.object), "spots\n")
+cat("Clusters present:", paste(sort(unique(epi.object$sketch_snn_res.2)), collapse = ", "), "\n")
+
+# Re-run dimensionality reduction on the Epithelia subset
+# Use full Spatial assay (not sketch) to include all Epithelia spots
+DefaultAssay(epi.object) <- "Spatial.016um"
+
+epi.object <- NormalizeData(epi.object, assay = "Spatial.016um")
+epi.object <- FindVariableFeatures(epi.object, assay = "Spatial.016um", nfeatures = 3000)
+epi.object <- ScaleData(epi.object)
+epi.object <- RunPCA(epi.object, npcs = 30, reduction.name = "pca.epi")
+epi.object <- RunUMAP(epi.object, reduction = "pca.epi", dims = 1:30,
+                      reduction.name = "umap.epi")
+
+# UMAP colored by broad cluster annotation
+p_epi_broad <- DimPlot(epi.object,
+                       reduction = "umap.epi",
+                       group.by = "cluster_annotation",
+                       label = TRUE, label.size = 3, repel = TRUE,
+                       raster = FALSE, pt.size = 1.5,
+                       cols = annotation_colors) +
+  ggtitle("UMAP - Epithelia Subset, Broad Annotations (16um, res=2)") +
+  theme(legend.position = "right", legend.text = element_text(size = 8))
+
+# UMAP colored by granular annotation
+p_epi_gran <- DimPlot(epi.object,
+                      reduction = "umap.epi",
+                      group.by = "granular_annotation",
+                      label = TRUE, label.size = 3, repel = TRUE,
+                      raster = FALSE, pt.size = 1.5,
+                      cols = granular_colors) +
+  ggtitle("UMAP - Epithelia Subset, Granular Annotations (16um, res=2)") +
+  theme(legend.position = "right", legend.text = element_text(size = 8))
+
+print(p_epi_broad)
+print(p_epi_gran)
+
+ggsave("output_16um/plots/umap_epithelia_subset_broad.pdf",    plot = p_epi_broad, height = 12, width = 16)
+ggsave("output_16um/plots/umap_epithelia_subset_granular.pdf", plot = p_epi_gran,  height = 12, width = 16)
+
+cat("Epithelia subset UMAP plots saved to output_16um/plots/\n")
+```
+## Quick update removed cluster 18, and replotting the output
+```{r}
+epi.updated <- subset(epi.object,epi.object@meta.data$sketch_snn_res.2!="18")
+
+# UMAP colored by broad cluster annotation
+p_epi_broad <- DimPlot(epi.updated ,
+                       reduction = "umap.epi",
+                       group.by = "cluster_annotation",
+                       label = TRUE, label.size = 3, repel = TRUE,
+                       raster = FALSE, pt.size = 1.5,
+                       cols = annotation_colors) +
+  ggtitle("UMAP - Epithelia Subset, Broad Annotations (16um, res=2)") +
+  theme(legend.position = "right", legend.text = element_text(size = 8))
+
+# UMAP colored by granular annotation
+p_epi_gran <- DimPlot(epi.updated ,
+                      reduction = "umap.epi",
+                      group.by = "granular_annotation",
+                      label = TRUE, label.size = 3, repel = TRUE,
+                      raster = FALSE, pt.size = 1.5,
+                      cols = granular_colors) +
+  ggtitle("UMAP - Epithelia Subset, Granular Annotations (16um, res=2)") +
+  theme(legend.position = "right", legend.text = element_text(size = 8))
+
+ggsave("output_16um/plots/umap_epithelia_subset_broad.pdf",    plot = p_epi_broad, height = 12, width = 16)
+ggsave("output_16um/plots/umap_epithelia_subset_granular.pdf", plot = p_epi_gran,  height = 12, width = 16)
+
+
+```
+
+### 8.4 Save Final Results
+
+```{r save_results}
+# Save final object
+saveRDS(merged.object, file = "output_16um/RDS-files/final_analysis_object_16um.RDS")
+saveRDS(epi.object, file = "output_16um/RDS-files/epi.subset_object_16um.RDS")
+
+# Create analysis summary
+analysis.summary <- list(
+  bin_size = "16um",
+  n_samples = length(unique(merged.object$orig.ident)),
+  n_spots_total = ncol(merged.object),
+  n_features = nrow(merged.object),
+  resolutions_tested = cluster.resolutions,
+  optimal_resolution = optimal.res,
+  qc_thresholds = list(
+    min_counts = min.counts,
+    max_mt_percent = max.mt.percent
+  ),
+  banksy_parameters = list(
+    lambda = banksy.lambda,
+    k = banksy.k
+  )
+)
+
+# Save summary as JSON
+jsonlite::write_json(analysis.summary, "output_16um/analysis_summary_16um.json", 
+                    pretty = TRUE, auto_unbox = TRUE)
+
+cat("Analysis completed successfully!\n")
+cat("Results saved in the 'output_16um' directory\n")
+```
+
+## 9. RCTD Deconvolution with Annotated Master Single-Cell Reference
+
+This section uses the annotated Master single-cell dataset (all cell types from
+multiple reference datasets, annotated at resolution 1.2) to run a new round of
+RCTD deconvolution on the 16um Visium HD data.
+
+### 9.1 Load Master Reference and Prepare for RCTD
+
+```{r master_rctd_load_ref}
+# =============================================================================
+# LOAD THE ANNOTATED MASTER SINGLE-CELL REFERENCE
+# =============================================================================
+library(spacexr)
+
+master_path <- "output/master_integration/rds/Master.Obj.rds"
+if (!file.exists(master_path)) {
+  stop("Master object not found: ", master_path,
+       "\nRun Master-dataset-integration.Rmd first.")
+}
+
+cat("Loading annotated Master single-cell reference...\n")
+Master.Obj <- readRDS(master_path)
+cat("Master object:", ncol(Master.Obj), "cells,", nrow(Master.Obj), "genes\n")
+
+# Verify annotation column exists
+if (!"cluster_annotation" %in% colnames(Master.Obj@meta.data)) {
+  stop("cluster_annotation column not found in Master.Obj metadata.\n",
+       "Run the annotation section in Master-dataset-integration.Rmd first.")
+}
+
+cat("\nCell type annotations (res 1.2):\n")
+print(table(Master.Obj$cluster_annotation))
+```
+
+### 9.2 Build RCTD Reference
+
+```{r master_rctd_build_ref}
+# =============================================================================
+# BUILD RCTD REFERENCE FROM MASTER OBJECT
+# =============================================================================
+
+cat("Building RCTD reference from Master object...\n")
+
+# Use RNA assay raw counts
+DefaultAssay(Master.Obj) <- "RNA"
+Master.Obj <- JoinLayers(Master.Obj)
+
+ref_counts <- GetAssayData(Master.Obj, assay = "RNA", layer = "counts")
+ref_celltypes <- factor(Master.Obj$cluster_annotation)
+names(ref_celltypes) <- colnames(Master.Obj)
+
+# Remove cell types with too few cells and special labels
+min_cells_per_type <- 25
+remove_labels <- c("Unannotated", "Mix cluster remove", "Unidentified", "Unknown")
+
+celltype_counts <- table(ref_celltypes)
+valid_celltypes <- names(celltype_counts)[
+  celltype_counts >= min_cells_per_type &
+  !names(celltype_counts) %in% remove_labels
+]
+
+cat("Valid cell types (>=", min_cells_per_type, "cells, excluding special labels):",
+    length(valid_celltypes), "\n")
+
+removed <- setdiff(names(celltype_counts), valid_celltypes)
+if (length(removed) > 0) {
+  cat("Removed cell types:", paste(removed, collapse = ", "), "\n")
+}
+
+# Filter
+cells_to_keep <- names(ref_celltypes)[ref_celltypes %in% valid_celltypes]
+ref_counts_filt <- ref_counts[, cells_to_keep]
+ref_celltypes_filt <- droplevels(ref_celltypes[cells_to_keep])
+
+# Ensure counts are integers (merged SCT objects may store non-integer RNA counts)
+ref_counts_filt <- as(round(ref_counts_filt), "dgCMatrix")
+
+# Sanitize cell type names — RCTD prohibits "/" in cell type labels
+levels(ref_celltypes_filt) <- gsub("/", "-", levels(ref_celltypes_filt))
+
+# Create RCTD Reference
+master_reference_rctd <- Reference(
+  counts = ref_counts_filt,
+  cell_types = ref_celltypes_filt,
+  nUMI = colSums(ref_counts_filt)
+)
+
+cat("RCTD Reference created:", ncol(ref_counts_filt), "cells,",
+    length(levels(ref_celltypes_filt)), "cell types\n")
+
+# Free Master.Obj
+rm(Master.Obj, ref_counts, ref_counts_filt, ref_celltypes, ref_celltypes_filt)
+gc()
+```
+
+### 9.3 Run RCTD Per Sample
+
+```{r master_rctd_run}
+# =============================================================================
+# RUN RCTD ON EACH SAMPLE USING MASTER REFERENCE
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Fix for spacexr ".doSnowGlobals not found" error:
+# doFuture (auto-loaded by future) deeply hijacks foreach's %dopar% dispatch.
+# Clearing .foreachGlobals is not enough — doFuture re-registers itself.
+# Nuclear fix: fully detach + unload the doFuture package so doSNOW can
+# cleanly own %dopar%, then reload doFuture after RCTD completes.
+# ---------------------------------------------------------------------------
+future::plan("sequential")
+
+# Detach doFuture completely so it can't intercept %dopar%
+if ("package:doFuture" %in% search()) {
+  detach("package:doFuture", unload = TRUE, force = TRUE)
+  cat("Detached doFuture package.\n")
+}
+if ("doFuture" %in% loadedNamespaces()) {
+  try(unloadNamespace("doFuture"), silent = TRUE)
+  cat("Unloaded doFuture namespace.\n")
+}
+
+# Clear any leftover foreach backend registration
+env <- foreach:::.foreachGlobals
+rm(list = ls(name = env), envir = env)
+
+# Load doSNOW so spacexr's internal registerDoSNOW(cl) works cleanly
+library(doSNOW)
+library(foreach)
+
+cat("Parallel backend reset for spacexr (doSNOW with 8 cores).\n")
+
+merged.object <- JoinLayers(merged.object)
+
+sample_images <- Images(merged.object)
+cat("Running RCTD per sample with Master reference...\n")
+cat("Samples:", paste(sample_images, collapse = ", "), "\n\n")
+
+master_rctd_results <- list()
+
+for (img in sample_images) {
+  cat("  Processing:", img, "\n")
+  
+  # Get spatial coords and counts for this image
+  coords <- GetTissueCoordinates(merged.object, image = img)
+  if ("cell" %in% colnames(coords)) {
+    rownames(coords) <- coords$cell
+  }
+  spot_barcodes <- rownames(coords)
+  counts <- GetAssayData(merged.object, assay = assay.name, layer = "counts")[, spot_barcodes, drop = FALSE]
+  
+  # Build coordinate data.frame
+  numeric_cols <- colnames(coords)[sapply(coords, is.numeric)]
+  coord_df <- data.frame(
+    x = as.numeric(coords[[numeric_cols[1]]]),
+    y = as.numeric(coords[[numeric_cols[2]]]),
+    row.names = rownames(coords)
+  )
+  
+  # Create SpatialRNA
+  spatial_rctd <- SpatialRNA(
+    coords = coord_df,
+    counts = counts,
+    nUMI = colSums(counts)
+  )
+  
+  cat("    Spots:", ncol(counts), "\n")
+  
+  # Run RCTD (8 cores via spacexr's internal doSNOW parallelism)
+  # tryCatch: if doSNOW still fails, fall back to single-core
+  rctd <- tryCatch({
+    r <- create.RCTD(spatial_rctd, master_reference_rctd, max_cores = 8)
+    run.RCTD(r, doublet_mode = "full")
+  }, error = function(e) {
+    cat("    WARNING: Parallel RCTD failed (", conditionMessage(e),
+        "). Retrying with max_cores = 1...\n")
+    r <- create.RCTD(spatial_rctd, master_reference_rctd, max_cores = 1)
+    run.RCTD(r, doublet_mode = "full")
+  })
+  
+  # Save per-sample result
+  out_file <- paste0("output_16um/RDS-files/master_rctd_result_", img, ".RDS")
+  saveRDS(rctd, file = out_file)
+  cat("    Saved:", out_file, "\n")
+  
+  # Extract weights
+  weights <- as.matrix(rctd@results[["weights"]])
+  master_rctd_results[[img]] <- weights
+  
+  rm(rctd); gc()
+}
+
+cat("\nRCTD complete for all samples.\n")
+
+# Restore parallel processing for downstream Seurat operations
+future::plan("multicore", workers = 8)
+cat("Restored future::plan('multicore') with 8 workers.\n")
+```
+
+### 9.4 Add Master RCTD Results to Seurat Object
+
+```{r master_rctd_add_metadata}
+# =============================================================================
+# COMBINE MASTER RCTD RESULTS AND ADD TO SEURAT OBJECT
+# =============================================================================
+
+cat("Combining Master RCTD results...\n")
+
+# If results not in memory, reload from disk
+if (length(master_rctd_results) == 0) {
+  sample_images <- Images(merged.object)
+  for (img in sample_images) {
+    rctd_file <- paste0("output_16um/RDS-files/master_rctd_result_", img, ".RDS")
+    if (file.exists(rctd_file)) {
+      rctd <- readRDS(rctd_file)
+      master_rctd_results[[img]] <- as.matrix(rctd@results[["weights"]])
+      rm(rctd)
+    }
+  }
+  gc()
+}
+
+# Combine all weights
+combined_weights <- do.call(rbind, master_rctd_results)
+cat("Combined weights:", nrow(combined_weights), "spots x", ncol(combined_weights), "cell types\n")
+
+# Normalize to sum to 1
+weights_norm <- sweep(combined_weights, 1, rowSums(combined_weights), "/")
+weights_norm[is.nan(weights_norm)] <- 0
+
+# Add to metadata with M_RCTD_ prefix (to distinguish from original RCTD)
+deconv_df <- as.data.frame(weights_norm)
+colnames(deconv_df) <- paste0("M_RCTD_", gsub("[^[:alnum:]]", "_", colnames(deconv_df)))
+
+common_cells <- intersect(rownames(deconv_df), colnames(merged.object))
+cat("Matching cells:", length(common_cells), "of", nrow(deconv_df), "\n")
+
+merged.object <- AddMetaData(merged.object, metadata = deconv_df[common_cells, , drop = FALSE])
+
+# Dominant cell type
+dominant_ct <- apply(weights_norm[common_cells, ], 1, function(x) {
+  if (all(is.na(x)) || sum(x) == 0) return("Unknown")
+  colnames(weights_norm)[which.max(x)]
+})
+
+merged.object <- AddMetaData(merged.object,
+                              metadata = data.frame(M_RCTD_dominant_celltype = dominant_ct,
+                                                    row.names = names(dominant_ct)))
+merged.object@meta.data$M_RCTD_dominant_celltype[
+  is.na(merged.object@meta.data$M_RCTD_dominant_celltype)] <- "Unknown"
+
+cat("\nMaster RCTD metadata added.\n")
+cat("Unique dominant cell types:", length(unique(merged.object$M_RCTD_dominant_celltype)), "\n")
+
+# Save updated object
+saveRDS(merged.object, file = "output_16um/RDS-files/final_analysis_object_16um_with_master_deconv.RDS")
+cat("Saved: final_analysis_object_16um_with_master_deconv.RDS\n")
+```
+
+### 9.5 Master Deconvolution — Visualization Setup
+
+```{r master_deconv_setup}
+# =============================================================================
+# COLOR PALETTE AND COLUMN SETUP
+# =============================================================================
+
+m_rctd_cols <- grep("^M_RCTD_", colnames(merged.object@meta.data), value = TRUE)
+m_rctd_cols <- m_rctd_cols[m_rctd_cols != "M_RCTD_dominant_celltype"]
+
+cat("Master RCTD proportion columns:", length(m_rctd_cols), "\n")
+
+# Build cell type color mapping
+m_celltype_names <- gsub("M_RCTD_", "", m_rctd_cols)
+m_dominant_cts <- unique(merged.object$M_RCTD_dominant_celltype)
+m_dominant_cts <- m_dominant_cts[!is.na(m_dominant_cts)]
+m_all_cts <- sort(unique(c(m_celltype_names, m_dominant_cts)))
+m_all_cts <- m_all_cts[m_all_cts != "Unknown"]
+
+# Generate enough colors for all cell types
+# Use custom_colors first, then extend with hcl palette if needed
+n_cts <- length(m_all_cts)
+if (n_cts <= length(custom_colors)) {
+  base_palette <- unname(custom_colors[seq_len(n_cts)])
+} else {
+  base_palette <- c(
+    unname(custom_colors),
+    grDevices::hcl.colors(n_cts - length(custom_colors), palette = "Dark 3")
+  )
+}
+
+m_ct_colors <- setNames(base_palette, m_all_cts)
+m_ct_colors["Unknown"] <- "#D3D3D3"
+
+cat("Cell types:", n_cts, "\n")
+cat("Colors assigned:", sum(!is.na(m_ct_colors)), "of", length(m_ct_colors), "\n")
+```
+
+### 9.6 Master Deconvolution — Dominant Cell Type Spatial Plots
+
+```{r master_deconv_spatial_dominant, fig.show='hide'}
+# =============================================================================
+# SPATIAL: DOMINANT CELL TYPE PER SAMPLE
+# =============================================================================
+
+cat("Generating Master RCTD dominant cell type spatial plots...\n")
+
+sample_images <- Images(merged.object)
+
+for (img in sample_images) {
+  p <- SpatialDimPlot(merged.object,
+                      images = img,
+                      group.by = "M_RCTD_dominant_celltype",
+                      label = FALSE,
+                      pt.size.factor = 1.5,
+                      cols = m_ct_colors) +
+    ggtitle(paste("Master RCTD Dominant Cell Type -", img, "(16um)")) +
+    theme(legend.position = "right", legend.text = element_text(size = 7))
+  
+  ggsave(paste0("output_16um/plots/master_deconv_dominant_", gsub("\\.", "_", img), ".pdf"),
+         plot = p, height = 12, width = 14)
+  cat("  Saved:", img, "\n")
+}
+```
+
+### 9.7 Master Deconvolution — Cell Type Proportion Spatial Plots
+
+```{r master_deconv_spatial_proportions, fig.show='hide'}
+# =============================================================================
+# SPATIAL FEATURE PLOTS: CELL TYPE PROPORTIONS
+# =============================================================================
+
+cat("Generating Master RCTD cell type proportion spatial plots...\n")
+
+for (col in m_rctd_cols) {
+  ct_name <- gsub("M_RCTD_", "", col)
+  
+  for (img in sample_images) {
+    p <- SpatialFeaturePlot(merged.object,
+                            features = col,
+                            images = img,
+                            pt.size.factor = 1.5) +
+      scale_fill_gradientn(
+        colors = c("grey90", "grey70", "mediumpurple", "purple4"),
+        limits = c(0, max(merged.object@meta.data[[col]], na.rm = TRUE)),
+        na.value = "grey90"
+      ) +
+      ggtitle(paste(ct_name, "-", img, "(16um)")) +
+      theme(legend.position = "right")
+    
+    ggsave(paste0("output_16um/plots/master_deconv_proportion_", 
+                  gsub("[^[:alnum:]]", "_", ct_name), "_", gsub("\\.", "_", img), ".pdf"),
+           plot = p, height = 10, width = 12)
+  }
+  cat("  Saved:", ct_name, "\n")
+}
+```
+
+### 9.8 Master Deconvolution — Heatmaps
+
+```{r master_deconv_heatmaps, fig.width=16, fig.height=12}
+# =============================================================================
+# HEATMAP: CELL TYPE PROPORTIONS BY CLUSTER (res 2) AND BY SAMPLE
+# =============================================================================
+
+library(pheatmap)
+cluster_col <- "sketch_snn_res.2"
+
+# --- By cluster ---
+cluster_deconv <- merged.object@meta.data %>%
+  filter(!is.na(.data[[cluster_col]])) %>%
+  select(all_of(cluster_col), all_of(m_rctd_cols)) %>%
+  group_by(.data[[cluster_col]]) %>%
+  summarise(across(everything(), ~mean(.x, na.rm = TRUE)), .groups = "drop")
+
+cluster_mat <- as.matrix(cluster_deconv[, -1])
+rownames(cluster_mat) <- cluster_deconv[[cluster_col]]
+colnames(cluster_mat) <- gsub("M_RCTD_", "", colnames(cluster_mat))
+
+write.csv(cluster_deconv, "output_16um/tables/master_deconv_by_cluster_res2.csv", row.names = FALSE)
+
+pdf("output_16um/plots/master_deconv_heatmap_cluster_res2.pdf", height = 14, width = 16)
+pheatmap(t(cluster_mat),
+         cluster_rows = TRUE, cluster_cols = TRUE,
+         scale = "none",
+         color = colorRampPalette(c("white", "mediumpurple", "purple4"))(100),
+         main = "Master RCTD — Cell Type Proportions by Cluster (res 2, 16um)",
+         fontsize_row = 8, fontsize_col = 9, border_color = NA)
+dev.off()
+
+# --- By sample ---
+sample_deconv <- merged.object@meta.data %>%
+  select(orig.ident, all_of(m_rctd_cols)) %>%
+  group_by(orig.ident) %>%
+  summarise(across(everything(), ~mean(.x, na.rm = TRUE)), .groups = "drop")
+
+sample_mat <- as.matrix(sample_deconv[, -1])
+rownames(sample_mat) <- sample_deconv$orig.ident
+colnames(sample_mat) <- gsub("M_RCTD_", "", colnames(sample_mat))
+
+write.csv(sample_deconv, "output_16um/tables/master_deconv_by_sample.csv", row.names = FALSE)
+
+pdf("output_16um/plots/master_deconv_heatmap_sample.pdf", height = 12, width = 14)
+pheatmap(t(sample_mat),
+         cluster_rows = TRUE, cluster_cols = TRUE,
+         scale = "none",
+         color = colorRampPalette(c("white", "mediumpurple", "purple4"))(100),
+         main = "Master RCTD — Cell Type Proportions by Sample (16um)",
+         fontsize_row = 9, fontsize_col = 12, border_color = NA)
+dev.off()
+
+cat("Heatmaps saved.\n")
+```
+
+### 9.9 Master Deconvolution — Bar Plots
+
+```{r master_deconv_barplots, fig.width=16, fig.height=10}
+# =============================================================================
+# BAR PLOTS: CELL TYPE COMPOSITION BY SAMPLE AND CLUSTER
+# =============================================================================
+
+# --- By sample ---
+bar_sample <- merged.object@meta.data %>%
+  select(orig.ident, all_of(m_rctd_cols)) %>%
+  group_by(orig.ident) %>%
+  summarise(across(everything(), ~mean(.x, na.rm = TRUE)), .groups = "drop") %>%
+  pivot_longer(-orig.ident, names_to = "celltype", values_to = "proportion")
+bar_sample$celltype <- gsub("M_RCTD_", "", bar_sample$celltype)
+
+p_bar_sample <- ggplot(bar_sample, aes(x = orig.ident, y = proportion, fill = celltype)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = m_ct_colors) +
+  theme_classic() +
+  labs(title = "Master RCTD — Mean Cell Type Proportions by Sample (16um)",
+       x = "Sample", y = "Proportion", fill = "Cell Type") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "right", legend.text = element_text(size = 7))
+
+ggsave("output_16um/plots/master_deconv_barplot_by_sample.pdf",
+       plot = p_bar_sample, height = 10, width = 14)
+
+# --- By cluster ---
+cluster_col <- "sketch_snn_res.2"
+bar_cluster <- merged.object@meta.data %>%
+  filter(!is.na(.data[[cluster_col]])) %>%
+  select(all_of(cluster_col), all_of(m_rctd_cols)) %>%
+  group_by(.data[[cluster_col]]) %>%
+  summarise(across(everything(), ~mean(.x, na.rm = TRUE)), .groups = "drop") %>%
+  pivot_longer(-all_of(cluster_col), names_to = "celltype", values_to = "proportion")
+bar_cluster$celltype <- gsub("M_RCTD_", "", bar_cluster$celltype)
+
+p_bar_cluster <- ggplot(bar_cluster,
+                        aes(x = factor(.data[[cluster_col]]), y = proportion, fill = celltype)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = m_ct_colors) +
+  theme_classic() +
+  labs(title = "Master RCTD — Mean Cell Type Proportions by Cluster (res 2, 16um)",
+       x = "Cluster", y = "Proportion", fill = "Cell Type") +
+  theme(axis.text.x = element_text(size = 9),
+        legend.position = "right", legend.text = element_text(size = 7))
+
+ggsave("output_16um/plots/master_deconv_barplot_by_cluster.pdf",
+       plot = p_bar_cluster, height = 10, width = 16)
+
+cat("Bar plots saved.\n")
+```
+
+### 9.10 Master Deconvolution — Bar Plots by Spatial Annotations
+
+```{r master_deconv_barplots_annotations, fig.width=16, fig.height=12}
+# =============================================================================
+# BAR PLOTS GROUPED BY SPATIAL ANNOTATIONS (cluster / region / location / celltype)
+# =============================================================================
+
+annotation_cols <- c("cluster_annotation", "region_annotation",
+                     "location_annotation", "celltype_annotation")
+available_annots <- annotation_cols[annotation_cols %in% colnames(merged.object@meta.data)]
+
+cat("Generating Master RCTD bar plots by annotations:", paste(available_annots, collapse = ", "), "\n")
+
+for (annot_col in available_annots) {
+  annot_values <- merged.object@meta.data[[annot_col]]
+  if (all(is.na(annot_values))) next
+  
+  title_annot <- gsub("_", " ", tools::toTitleCase(gsub("_annotation", "", annot_col)))
+  
+  # Mean proportions
+  mean_df <- merged.object@meta.data %>%
+    filter(!is.na(.data[[annot_col]])) %>%
+    select(all_of(annot_col), all_of(m_rctd_cols)) %>%
+    group_by(.data[[annot_col]]) %>%
+    summarise(across(everything(), ~mean(.x, na.rm = TRUE)), .groups = "drop") %>%
+    pivot_longer(-all_of(annot_col), names_to = "celltype", values_to = "proportion")
+  mean_df$celltype <- gsub("M_RCTD_", "", mean_df$celltype)
+  
+  p_mean <- ggplot(mean_df, aes(x = .data[[annot_col]], y = proportion, fill = celltype)) +
+    geom_bar(stat = "identity", position = "stack") +
+    scale_fill_manual(values = m_ct_colors) +
+    theme_classic() +
+    labs(title = paste("Master RCTD — Proportions by", title_annot, "(16um)"),
+         x = title_annot, y = "Mean Proportion", fill = "Cell Type") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.text = element_text(size = 7))
+  
+  # Normalized bar plot
+  p_norm <- ggplot(mean_df, aes(x = .data[[annot_col]], y = proportion, fill = celltype)) +
+    geom_bar(stat = "identity", position = "fill") +
+    scale_fill_manual(values = m_ct_colors) +
+    scale_y_continuous(labels = scales::percent) +
+    theme_classic() +
+    labs(title = paste("Master RCTD — Composition by", title_annot, "(%, 16um)"),
+         x = title_annot, y = "Percentage", fill = "Cell Type") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.text = element_text(size = 7))
+  
+  # Dominant cell type
+  dom_df <- merged.object@meta.data %>%
+    filter(!is.na(.data[[annot_col]]) & !is.na(M_RCTD_dominant_celltype)) %>%
+    count(.data[[annot_col]], M_RCTD_dominant_celltype) %>%
+    group_by(.data[[annot_col]]) %>%
+    mutate(pct = n / sum(n) * 100)
+  
+  p_dom <- ggplot(dom_df, aes(x = .data[[annot_col]], y = pct, fill = M_RCTD_dominant_celltype)) +
+    geom_bar(stat = "identity", position = "stack") +
+    scale_fill_manual(values = m_ct_colors) +
+    theme_classic() +
+    labs(title = paste("Master RCTD — Dominant Cell Type by", title_annot, "(16um)"),
+         x = title_annot, y = "%", fill = "Dominant") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.text = element_text(size = 7))
+  
+  combined <- (p_mean | p_norm) / p_dom +
+    plot_layout(heights = c(1, 1)) +
+    plot_annotation(title = paste("Master RCTD Deconvolution by", title_annot, "(16um)"))
+  
+  ggsave(paste0("output_16um/plots/master_deconv_barplot_by_", annot_col, ".pdf"),
+         plot = combined, height = 14, width = 18)
+  
+  # Save tables
+  mean_wide <- mean_df %>%
+    pivot_wider(names_from = celltype, values_from = proportion)
+  write.csv(mean_wide,
+            paste0("output_16um/tables/master_deconv_proportions_by_", annot_col, ".csv"),
+            row.names = FALSE)
+  
+  cat("  Saved:", annot_col, "\n")
+}
+```
+
+### 9.11 Master Deconvolution — Dominant Cell Type Summary
+
+```{r master_deconv_dominant_summary, fig.width=14, fig.height=8}
+# =============================================================================
+# SUMMARY: DOMINANT CELL TYPE DISTRIBUTION
+# =============================================================================
+
+cat("Generating Master RCTD dominant cell type summary...\n")
+
+# Overall summary
+dom_summary <- merged.object@meta.data %>%
+  count(M_RCTD_dominant_celltype) %>%
+  mutate(pct = n / sum(n) * 100) %>%
+  arrange(desc(n))
+
+print(dom_summary)
+write.csv(dom_summary, "output_16um/tables/master_deconv_dominant_summary.csv", row.names = FALSE)
+
+# Dominant by sample
+dom_by_sample <- merged.object@meta.data %>%
+  count(orig.ident, M_RCTD_dominant_celltype) %>%
+  group_by(orig.ident) %>%
+  mutate(pct = n / sum(n) * 100)
+
+p_dom_sample <- ggplot(dom_by_sample,
+                       aes(x = orig.ident, y = pct, fill = M_RCTD_dominant_celltype)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = m_ct_colors) +
+  theme_classic() +
+  labs(title = "Master RCTD — Dominant Cell Type Distribution by Sample (16um)",
+       x = "Sample", y = "%", fill = "Dominant Cell Type") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.text = element_text(size = 7))
+
+ggsave("output_16um/plots/master_deconv_dominant_by_sample.pdf",
+       plot = p_dom_sample, height = 10, width = 14)
+
+# Save final object
+saveRDS(merged.object, file = "output_16um/RDS-files/final_analysis_object_16um_with_master_deconv.RDS")
+
+cat("\n=== MASTER RCTD DECONVOLUTION COMPLETE (16um) ===\n")
+cat("Outputs in output_16um/plots/master_deconv_*.pdf\n")
+cat("Tables in output_16um/tables/master_deconv_*.csv\n")
+```
+
+## 10. Session Information
+
+```{r session_info}
+sessionInfo()
+```
+
+---
+
+## Analysis Notes and Next Steps
+
+### Key Differences from 8um Analysis:
+1. **Larger bin size**: 16um bins contain ~4x the area of 8um bins
+2. **Higher UMI counts**: Expect higher counts per spot due to larger bins
+3. **Lower spatial resolution**: Trade-off between sensitivity and resolution
+4. **Fewer total spots**: Fewer but more informative spots per sample
+
+### Key Outputs:
+1. **RDS files**: Saved Seurat objects in `output_16um/RDS-files/`
+2. **Plots**: Visualization files in `output_16um/plots/`
+3. **Tables**: Marker genes and compositions in `output_16um/tables/`
+4. **Summary**: JSON file with analysis parameters
+
+### Master RCTD Deconvolution Output Files (Section 9):
+- `master_deconv_dominant_<sample>.pdf` - Dominant cell type per sample (spatial)
+- `master_deconv_proportion_<celltype>_<sample>.pdf` - Per-cell-type proportion spatial plots
+- `master_deconv_heatmap_cluster_res2.pdf` - Heatmap by cluster
+- `master_deconv_heatmap_sample.pdf` - Heatmap by sample
+- `master_deconv_barplot_by_sample.pdf` / `_by_cluster.pdf` - Bar plots
+- `master_deconv_barplot_by_<annotation>.pdf` - Bar plots by spatial annotations
+- `master_deconv_dominant_summary.csv` - Summary table
+- `master_deconv_dominant_by_sample.pdf` - Dominant cell type by sample
+
+### Recommended Next Steps:
+1. **Compare with 8um analysis**: Identify resolution-dependent patterns
+2. **Biological Interpretation**: Annotate clusters based on marker genes
+3. **Functional Analysis**: Perform pathway enrichment on cluster markers
+4. **Spatial Analysis**: Investigate spatial relationships between clusters
+5. **Integration**: Combine insights from different bin sizes
+
+### Customization Options:
+- Adjust QC thresholds based on 16um bin characteristics
+- Modify clustering resolutions for optimal granularity
+- Compare clustering results with 8um analysis
+- Include additional spatial analysis methods
+
+This workflow provides analysis at 16um resolution, which is useful for:
+- Reducing computational load
+- Getting a broader overview of spatial patterns
+- Identifying major tissue domains
+- Preliminary exploration before detailed 8um or 2um analysis
