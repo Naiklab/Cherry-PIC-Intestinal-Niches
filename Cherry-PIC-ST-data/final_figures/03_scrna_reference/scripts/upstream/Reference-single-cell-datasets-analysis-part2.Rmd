@@ -12,15 +12,15 @@ library(patchwork)  # For combining plots
 ## HPC: Load saved objects (run this on HPC instead of steps 1-2)
 ```{r}
 # Uncomment and run this block on the HPC after transferring the rds-objects/ folder
-Fibroblast.Obj <- readRDS("Reference-Single-Cell-Data/rds-objects/Fibroblast.Obj.rds")
-Degirmenci.Obj <- readRDS("Reference-Single-Cell-Data/rds-objects/Degirmenci.Obj.rds")
-Kinchen.Obj    <- readRDS("Reference-Single-Cell-Data/rds-objects/Kinchen.Obj.rds")
-McCarthy.Obj   <- readRDS("Reference-Single-Cell-Data/rds-objects/McCarthy.Obj.rds")
-Roulis.Obj.1   <- readRDS("Reference-Single-Cell-Data/rds-objects/Roulis.Obj.C1A.rds")
-Roulis.Obj.2   <- readRDS("Reference-Single-Cell-Data/rds-objects/Roulis.Obj.C1B.rds")
-Roulis.Obj.3   <- readRDS("Reference-Single-Cell-Data/rds-objects/Roulis.Obj.C2A.rds")
-Roulis.Obj.4   <- readRDS("Reference-Single-Cell-Data/rds-objects/Roulis.Obj.C2B.rds")
-Roulis.Obj.5   <- readRDS("Reference-Single-Cell-Data/rds-objects/Roulis.Obj.C2C.rds")
+Fibroblast.Obj <- readRDS("../../data/rds-objects/Fibroblast.Obj.rds")
+Degirmenci.Obj <- readRDS("../../data/rds-objects/Degirmenci.Obj.rds")
+Kinchen.Obj    <- readRDS("../../data/rds-objects/Kinchen.Obj.rds")
+McCarthy.Obj   <- readRDS("../../data/rds-objects/McCarthy.Obj.rds")
+Roulis.Obj.1   <- readRDS("../../data/rds-objects/Roulis.Obj.C1A.rds")
+Roulis.Obj.2   <- readRDS("../../data/rds-objects/Roulis.Obj.C1B.rds")
+Roulis.Obj.3   <- readRDS("../../data/rds-objects/Roulis.Obj.C2A.rds")
+Roulis.Obj.4   <- readRDS("../../data/rds-objects/Roulis.Obj.C2B.rds")
+Roulis.Obj.5   <- readRDS("../../data/rds-objects/Roulis.Obj.C2C.rds")
 ```
 
 ## 4. SCTransform each public dataset and add labels
@@ -237,12 +237,12 @@ print(top_integrated_markers)
 ## 12. Save integrated object
 ```{r}
 # Save the final integrated object
-saveRDS(Integrated.Obj, "Reference-Single-Cell-Data/rds-objects/Fibroblast_Integrated_CCA.rds")
+saveRDS(Integrated.Obj, "../../data/rds-objects/Fibroblast_Integrated_CCA.rds")
 cat("Saved integrated object to: Reference-Single-Cell-Data/rds-objects/Fibroblast_Integrated_CCA.rds\n")
 
 # Save markers table
 write.csv(Integrated.markers, 
-          "Reference-Single-Cell-Data/tables/fibroblast_integrated_markers.csv",
+          "../../outputs/fibroblast_integrated_markers.csv",
           row.names = FALSE)
 cat("Saved markers to: Reference-Single-Cell-Data/tables/fibroblast_integrated_markers.csv\n")
 ```

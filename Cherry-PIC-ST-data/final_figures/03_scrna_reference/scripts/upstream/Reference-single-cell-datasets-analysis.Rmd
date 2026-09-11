@@ -56,7 +56,7 @@ Epithelial.cells.DR.data <- readRDS("../../shared/Daniel-Single-Cell-for-Ikjot/I
 Immune.cells.DR.data <- readRDS("../../shared/Daniel-Single-Cell-for-Ikjot/Ikjot-analysis-folder/output/Clustering-Analysis-LT-ST-combined-Immune/RDS/Immune.CTRL_data.filtered.RDS")
 
 # Single cell data from SpaceFold paper
-SpaceFold.SI.data <- readRDS("Reference-Single-Cell-Data/SI-data_SpaceFold-paper.RDS")
+SpaceFold.SI.data <- readRDS("../../data/rds-objects/SI-data_SpaceFold-paper.RDS")
 
 cat("Datasets loaded successfully!\n")
 ```
