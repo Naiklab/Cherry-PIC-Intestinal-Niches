@@ -63,11 +63,6 @@ The Rosenblum Epithelial/Immune objects and the Niec SpaceFold SI object arrive 
 if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_LIB"), .libPaths()))  # optional custom library
 library(Seurat); library(tidyverse); library(patchwork); library(harmony); library(clustree)
 
-# Lab-supplied processed objects (note: two different Daniels — see Stage 2 naming note)
-Fib.Obj    <- readRDS(fib_path)      # Glisovic fibroblast — public, GEO GSE269017
-Epi.Obj    <- readRDS(epi_path)      # Rosenblum epithelial, this manuscript (cell_type_labels/broad/narrow)
-Immune.Obj <- readRDS(immune_path)   # Rosenblum immune, this manuscript
-
 # Reference datasets prepared in Stage 0
 # Inputs, relative to this scripts/ folder. The two in-house objects live in the
 # DR26001 project; the public reference objects are vendored under 03_scrna_reference.
@@ -76,6 +71,11 @@ rds_path    <- "../../03_scrna_reference/data/rds-objects"
 fib_path    <- file.path(rds_path, "Fibroblast.Obj.rds")
 epi_path    <- file.path(dr26001_out, "epithelia_EP.CTRL_data.processed.RDS")      # 17,567 cells; atlas QC keeps 17,552
 immune_path <- file.path(dr26001_out, "immune_Immune.CTRL_data.processed.RDS")     # 27,868 cells; atlas QC keeps 27,863
+
+# Lab-supplied processed objects (note: two different Daniels — see Stage 2 naming note)
+Fib.Obj    <- readRDS(fib_path)      # Glisovic fibroblast — public, GEO GSE269017
+Epi.Obj    <- readRDS(epi_path)      # Rosenblum epithelial, this manuscript (cell_type_labels/broad/narrow)
+Immune.Obj <- readRDS(immune_path)   # Rosenblum immune, this manuscript
 
 SpaceFold.Obj  <- readRDS(file.path(rds_path, "SI-data_SpaceFold-paper.RDS"))
 Degirmenci.Obj <- readRDS(file.path(rds_path, "Degirmenci.Obj.rds"))
