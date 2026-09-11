@@ -103,7 +103,57 @@ load_visium_hd_data <- function(sample.name, data.dir, bin.size) {
 
 object.list <- lapply(sample.names, function(s) load_visium_hd_data(s, data.dir, bin.size[1]))
 names(object.list) <- sample.names
-# Samples carrying more than one image are split one object per image before QC.
+object.list <- object.list[!sapply(object.list, is.null)]
+```
+
+---
+
+# Stage 2b — Split multi-image samples
+
+An earlier version of this record left this step as a one-line comment ("split one object
+per image before QC") without the function it names — Stage 3 onward consumes
+`split.object.list`, which was never defined. Restored from the original interactive
+script. For this dataset every sample carries exactly one image, so the function's
+multi-image branch is inert here; it still runs, since it is also what sets `orig.ident`
+and `sample` on every object.
+
+```{r pp16-split, eval=FALSE}
+split_multi_image_samples <- function(object.list, image.names) {
+  split.object.list <- list()
+  for (sample.name in names(object.list)) {
+    obj <- object.list[[sample.name]]
+    images <- image.names[[sample.name]]
+    if (length(images) > 1) {
+      csv.dir <- file.path(dirname(obj@images[[1]]@image), "cloupe_csvs")
+      if (dir.exists(csv.dir)) {
+        csv.files <- list.files(csv.dir, pattern = "\\.csv$", full.names = TRUE)
+        for (i in seq_along(images)) {
+          image.name <- images[i]
+          csv.file <- csv.files[grep(image.name, csv.files)][1]
+          if (!is.na(csv.file) && file.exists(csv.file)) {
+            cells.to.keep <- read.csv(csv.file)$Barcode
+            sub.obj <- subset(obj, cells = cells.to.keep)
+            sub.obj$orig.ident <- image.name
+            sub.obj$sample <- sample.name
+            split.object.list[[paste(sample.name, image.name, sep = "_")]] <- sub.obj
+          }
+        }
+      } else {
+        obj$orig.ident <- sample.name
+        obj$sample <- sample.name
+        split.object.list[[sample.name]] <- obj
+      }
+    } else {
+      obj$orig.ident <- images[1]
+      obj$sample <- sample.name
+      split.object.list[[sample.name]] <- obj
+    }
+  }
+  split.object.list
+}
+
+split.object.list <- split_multi_image_samples(object.list, image.names)
+cat("After splitting:", length(split.object.list), "objects\n")
 ```
 
 ---
