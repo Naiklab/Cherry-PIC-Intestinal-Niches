@@ -173,7 +173,7 @@ its record is the session's own reports, which state every parameter:
 
 | Parameter | Value |
 |---|---|
-| Scoring object | `nichenet_obj.rds`, 19,280 cells, 17 cell types — the regional dataset's stem (2,907) and TA (5,036) cells merged with the sorted-niche object; duodenum 11,261 / ileum 8,019; not included here |
+| Scoring object | `nichenet_obj.rds`, 19,280 cells × 21,232 genes, 17 cell types; duodenum 11,261 / ileum 8,019. Supplied by the author and verified against this table; kept in `01_liana_nichenet/data/` but untracked at 285 MB — deposit it with the processed data |
 | LIANA | 0.1.14, `liana_wrap(idents_col = "cell_type", resource = "MouseConsensus")` per region, then `liana_aggregate()`; object converted to a `SingleCellExperiment` on logcounts |
 | Resource | `MouseConsensus`, 3,998 mouse pairs — the default human-symbol resource returned 40 rows |
 | Methods | NATMI, Connectome, LogFC, SingleCellSignalR, CellPhoneDB (500 permutations, single-threaded) |
@@ -188,6 +188,27 @@ its record is the session's own reports, which state every parameter:
 | Receptors | expressed in ≥ 10% of receiver cells |
 | Sender exclusions in figures | Bottom/Mid/Upper-villus enterocytes, Goblet, Enteroendocrine; Paneth kept |
 | Region-uniqueness | LIANA-significant in one region but not the other |
+
+### The scoring object, verified
+
+`01_liana_nichenet/data/nichenet_obj.rds` is the object LIANA and NicheNet were run on. It is
+untracked (285 MB) and belongs with the deposited data. Its composition confirms, cell for
+cell, what the tables and the run reports say:
+
+| | Cells | |
+|---|---|---|
+| `orig.ident == "EP"` | 7,943 | the regional dataset's receivers — `Stem cells` 2,907 + `TA cells` 5,036, exactly |
+| `orig.ident == "DR"` | 11,337 | the Cherry-PIC sorted-niche object, supplying the 15 sender populations |
+| Total | **19,280** | matching the run report's 19,280 across 17 cell types |
+| By region | 11,261 / 8,019 | duodenum / ileum, matching the report exactly |
+
+`CLU+ reserve stem cells` are **present in the object** (73 cells) and removed from the
+significant-pair tables afterwards, which is what the `_noclu` suffix records — the exclusion
+happens after scoring, not before it.
+
+This settles the provenance question the `merged_*.rds` files in the delivery could not: those
+carry the regional stem cells but no regional TA cells, so they are not what was scored. This
+object is.
 
 ### Cell populations in the LIANA tables
 

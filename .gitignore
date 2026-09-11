@@ -84,3 +84,6 @@ __pycache__/
 # Biomni deliveries are kept as received; the corrected copies in
 # Biomni-code-external/0*/scripts/ are the authoritative versions.
 Biomni-code-external/Full-data/**/reproducible_package/**/scripts/
+
+# Ligand-receptor scoring object (285 MB) - deposit with the processed data
+Biomni-code-external/01_liana_nichenet/data/nichenet_obj.rds
