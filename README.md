@@ -91,6 +91,16 @@ activity filter, the region-uniqueness set logic, counting and plotting — is i
 repository. The scoring step itself is two package calls, `liana_wrap()` and
 `predict_ligand_activities()`, with parameters given in the Methods.
 
+**6F and 6G do not plot the same set of pairs.** `plot_venn_region_overlap.py` (6F) keeps a
+pair significant in both regions only if NicheNet supports it in both; `build_sender_counts_merged.py`
+(6G) keeps any LIANA-significant pair with region-matched NicheNet support, with no such
+both-regions requirement. Recomputed directly from the tracked CSVs: combined-evidence
+distinct pairs are 282/341 (stem, duodenum/ileum) and 186/270 (TA), against 259/320 and
+171/199 actually represented in the 6F Venn — 23–71 pairs per receiver are LIANA-shared but
+NicheNet-asymmetric, and so appear in 6G's per-sender counts but not in 6F's Venn. An earlier
+version of this note said the two figures "summarise the same interaction set" differently
+counted; that was imprecise. Methods §9 is corrected accordingly.
+
 ---
 
 ## Repository layout
