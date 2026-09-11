@@ -238,11 +238,11 @@ print(top_integrated_markers)
 ```{r}
 # Save the final integrated object
 saveRDS(Integrated.Obj, "../../data/rds-objects/Fibroblast_Integrated_CCA.rds")
-cat("Saved integrated object to: Reference-Single-Cell-Data/rds-objects/Fibroblast_Integrated_CCA.rds\n")
+cat("Saved integrated object to: ../../data/rds-objects/Fibroblast_Integrated_CCA.rds\n")
 
 # Save markers table
 write.csv(Integrated.markers, 
           "../../outputs/fibroblast_integrated_markers.csv",
           row.names = FALSE)
-cat("Saved markers to: Reference-Single-Cell-Data/tables/fibroblast_integrated_markers.csv\n")
+cat("Saved markers to: ../../outputs/fibroblast_integrated_markers.csv\n")
 ```

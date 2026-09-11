@@ -142,8 +142,8 @@ cat("SpaceFold metadata columns:", paste(colnames(SpaceFold.Obj@meta.data), coll
 
 ## 2b. Integration reference datasets (Degirmenci, Kinchen, McCarthy, Roulis)
 ```{r load-integration-refs}
-# Load from project-level reference object folder.
-rds_path <- "Reference-Single-Cell-Data/rds-objects"
+# Load from the vendored reference-object folder (same location as local_rds_dir above).
+rds_path <- "../../data/rds-objects"
 
 required_rds <- c(
   "Degirmenci.Obj.rds",

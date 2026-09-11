@@ -55,7 +55,7 @@ Before master integration, each mesenchymal/fibroblast reference is prepared and
 dataset spans multiple libraries, integrated within itself: raw counts → label cleanup →
 `SCTransform` per library → `SelectIntegrationFeatures` → `PrepSCTIntegration` →
 `FindIntegrationAnchors` (CCA) → `IntegrateData` → PCA → clustering. The per-dataset objects
-are written to `Reference-Single-Cell-Data/rds-objects/` (`Fibroblast.Obj.rds`,
+are written to `../data/rds-objects/` (`Fibroblast.Obj.rds`,
 `Degirmenci.Obj.rds`, `Kinchen.Obj.rds`, `McCarthy.Obj.rds`, `Roulis.Obj.C1A..C2C.rds`).
 The Rosenblum Epithelial/Immune objects and the Niec SpaceFold SI object arrive already processed.
 

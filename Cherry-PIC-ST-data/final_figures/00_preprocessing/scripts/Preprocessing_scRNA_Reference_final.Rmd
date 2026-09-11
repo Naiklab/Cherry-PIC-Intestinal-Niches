@@ -55,7 +55,7 @@ Before master integration, each mesenchymal/fibroblast reference is prepared and
 dataset spans multiple libraries, integrated within itself: raw counts → label cleanup →
 `SCTransform` per library → `SelectIntegrationFeatures` → `PrepSCTIntegration` →
 `FindIntegrationAnchors` (CCA) → `IntegrateData` → PCA → clustering. The per-dataset objects
-are written to `Reference-Single-Cell-Data/rds-objects/` (`Fibroblast.Obj.rds`,
+are written to `../../03_scrna_reference/data/rds-objects/` (`Fibroblast.Obj.rds`,
 `Degirmenci.Obj.rds`, `Kinchen.Obj.rds`, `McCarthy.Obj.rds`, `Roulis.Obj.C1A..C2C.rds`).
 The Rosenblum Epithelial/Immune objects and the Niec SpaceFold SI object arrive already processed.
 
@@ -69,8 +69,15 @@ Epi.Obj    <- readRDS(epi_path)      # Rosenblum epithelial, this manuscript (ce
 Immune.Obj <- readRDS(immune_path)   # Rosenblum immune, this manuscript
 
 # Reference datasets prepared in Stage 0
-SpaceFold.Obj  <- readRDS("Reference-Single-Cell-Data/rds-objects/SI-data_SpaceFold-paper.RDS")
-rds_path <- "Reference-Single-Cell-Data/rds-objects"
+# Inputs, relative to this scripts/ folder. The two in-house objects live in the
+# DR26001 project; the public reference objects are vendored under 03_scrna_reference.
+dr26001_out <- "../../../../DR26001-scRNA-project/final_figures/DR26001-scRNA/04-merge-controls/outputs"
+rds_path    <- "../../03_scrna_reference/data/rds-objects"
+fib_path    <- file.path(rds_path, "Fibroblast.Obj.rds")
+epi_path    <- file.path(dr26001_out, "epithelia_EP.CTRL_data.processed.RDS")      # 17,567 cells; atlas QC keeps 17,552
+immune_path <- file.path(dr26001_out, "immune_Immune.CTRL_data.processed.RDS")     # 27,868 cells; atlas QC keeps 27,863
+
+SpaceFold.Obj  <- readRDS(file.path(rds_path, "SI-data_SpaceFold-paper.RDS"))
 Degirmenci.Obj <- readRDS(file.path(rds_path, "Degirmenci.Obj.rds"))
 Kinchen.Obj    <- readRDS(file.path(rds_path, "Kinchen.Obj.rds"))
 McCarthy.Obj   <- readRDS(file.path(rds_path, "McCarthy.Obj.rds"))
