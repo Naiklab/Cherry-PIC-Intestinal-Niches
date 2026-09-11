@@ -189,6 +189,12 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 #                                      row.names = coords$barcode)
 # }
 # all_results <- do.call(rbind, niche_results)
+# # rbind on a NAMED list can rename rows to avoid duplicates when raw per-image barcodes
+# # collide across samples (Visium barcodes are drawn from a shared whitelist and are not
+# # globally unique) — restoring rownames from the barcode column, as the original
+# # interactive script does, guarantees the lookup below matches on barcode, not on
+# # whatever rbind decided to call the row.
+# rownames(all_results) <- all_results$barcode
 # merged.object <- AddMetaData(merged.object,
 #   all_results[colnames(merged.object), c("dist_bins", "dist_um", "stem_niche_zone")])
 # merged.object$tissue_type <- ifelse(grepl("Duodenum", merged.object$orig.ident, ignore.case = TRUE),
