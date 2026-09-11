@@ -82,6 +82,13 @@ ann_df <- readxl::read_excel(
   "../data/New qc resolution 1 annotation  broad annotation and colors July07.xlsx")
 REMOVE_CLUSTERS <- ann_df$Cluster[ann_df$`Hex color` == "Remove"]
 
+# RES_COL/cluster_ids were missing from this reconstruction (an independent audit found
+# cluster_ids used below with no definition); recovered from the original interactive
+# script (03_annotation_and_doublet_filtering.Rmd) — resolution 1 on the SCT graph is the
+# annotation resolution, matching the xlsx's own "resolution 1" filename.
+RES_COL <- "SCT_snn_res.1"
+cluster_ids <- as.character(seu[[RES_COL, drop = TRUE]])
+
 seu$cell_type       <- unname(setNames(ann_df$Annotation, ann_df$Cluster)[cluster_ids])
 seu$broad_cell_type <- unname(setNames(ann_df[["Broad annotation"]], ann_df$Cluster)[cluster_ids])
 
