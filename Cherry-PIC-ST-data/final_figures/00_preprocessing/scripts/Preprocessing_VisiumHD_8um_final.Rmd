@@ -176,11 +176,33 @@ compute_min_dist_bins <- function(all_coords, stem_coords, spot_diam_px) {
   nn <- RANN::nn2(data = stem_coords, query = all_coords, k = 1)   # nearest stem spot
   as.numeric(nn$nn.dists[, 1]) / spot_diam_px
 }
+# Categories excluded from periphery counting. Recovered from the original interactive
+# script (Stem_Cell_Niche_Analysis_8um.Rmd) — an earlier pass through this reconstruction
+# defaulted all three to character(0) and passed none at the call site, silently applying
+# no exclusions at all. EXCL_CLUSTER_* is region-specific: Duodenum and Ileum images use
+# different cluster lists, keyed on cluster_annotation.
+EXCL_DOMINANT <- c("Unknown")
+EXCL_REGION   <- c("Tip_villus_distal_enterocytes", "Tip_villus_proximal_enterocytes")
+EXCL_CLUSTER_DUODENUM <- c("Mid-villus distal enterocytes-1", "Mid-villus distal enterocytes-2",
+                           "Mid-villus distal enterocytes-3",
+                           "Bottom-villus distal enterocytes",
+                           "Tip-villus distal enterocytes",
+                           "Tip-villus proximal enterocytes-2",
+                           "Tip-villus activated proximal enterocytes",
+                           "Brunner's gland", "Peyer's patch")
+EXCL_CLUSTER_ILEUM <- c("Mid-villus proximal enterocytes-1", "Mid-villus proximal enterocytes-2",
+                        "Mid-villus proximal enterocytes-3", "Mid-villus proximal enterocytes-4",
+                        "Bottom-villus proximal enterocytes",
+                        "Tip-villus distal enterocytes",
+                        "Tip-villus proximal enterocytes-1", "Tip-villus proximal enterocytes-2",
+                        "Tip-villus activated proximal enterocytes",
+                        "Brunner's gland", "Peyer's patch")
+
 # Zone by distance; Stem_cell overrides; excluded dominant/region/cluster → Outside_niche.
 classify_niche_zone <- function(dist_bins, is_stem, celltype_vec, region_ann_vec,
                                 cluster_ann_vec = NULL, immed_max = IMMED_PERI_MAX_BINS,
-                                excl_dominant = character(0),
-                                excl_region = character(0), excl_cluster = character(0)) {
+                                excl_dominant = EXCL_DOMINANT,
+                                excl_region = EXCL_REGION, excl_cluster = character(0)) {
   zone <- character(length(dist_bins))
   zone[is.na(dist_bins)] <- "No_tissue"
   zone[!is.na(dist_bins)] <- "Outside_niche"
@@ -207,8 +229,10 @@ for (img in Images(merged.object)) {
   all_mat  <- as.matrix(coords[, c("imagerow", "imagecol")]); rownames(all_mat) <- coords$barcode
   stem_mat <- all_mat[rownames(all_mat) %in% stem_bc, , drop = FALSE]
   dist_bins <- compute_min_dist_bins(all_mat, stem_mat, spot_diam_px)
+  excl_cluster <- if (grepl("Duodenum", img, ignore.case = TRUE)) EXCL_CLUSTER_DUODENUM else EXCL_CLUSTER_ILEUM
   zone <- classify_niche_zone(dist_bins, coords$barcode %in% stem_bc,
-                              meta$M_RCTD_dominant_celltype, meta$region_annotation, meta$cluster_annotation)
+                              meta$M_RCTD_dominant_celltype, meta$region_annotation, meta$cluster_annotation,
+                              excl_cluster = excl_cluster)
   niche_results[[img]] <- data.frame(barcode = coords$barcode, dist_bins = dist_bins,
                                      dist_um = dist_bins * 8, stem_niche_zone = zone,
                                      row.names = coords$barcode)
