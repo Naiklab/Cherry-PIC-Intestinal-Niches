@@ -99,8 +99,26 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 #                      paste0("sketch_snn_res.", cluster.resolutions)))
 # 
 # saveRDS(merged.object, "output_8um/RDS-files/merged_object_clustered.RDS")
-# # (Cluster annotations at res 2 are mapped from
-# #  "8um-binned-updated-annotations(res2) Apr 21 with exclusion.csv" downstream.)
+
+
+## ----pp8-annotate, eval=FALSE-------------------------------------------------
+# annotation.file <- "8um-binned-updated-annotations(res2) Apr 21 with exclusion.csv"
+# annotations <- read.csv(annotation.file, stringsAsFactors = FALSE)
+# annotations <- annotations[!is.na(annotations$Cluster) & annotations$Cluster != "", ]
+# 
+# fill_na <- function(x, fill = "Unknown") { x[is.na(x) | x == "" | x == "NA"] <- fill; x }
+# cid <- as.character(annotations$Cluster)
+# cell.clusters <- as.character(merged.object$sketch_snn_res.2)
+# 
+# merged.object <- AddMetaData(merged.object, metadata = data.frame(
+#   cluster_annotation     = fill_na(setNames(annotations$Annotation,                cid)[cell.clusters]),
+#   region_annotation      = fill_na(setNames(annotations$Spatial.region.annotation, cid)[cell.clusters]),
+#   location_annotation    = fill_na(setNames(annotations$Region.Annotation,         cid)[cell.clusters]),
+#   compartment_annotation = fill_na(setNames(annotations$Compartment,               cid)[cell.clusters]),
+#   granular_annotation    = fill_na(setNames(annotations$Granular.annotation,       cid)[cell.clusters]),
+#   row.names = colnames(merged.object)))
+# 
+# saveRDS(merged.object, "output_8um/RDS-files/final_analysis_object.RDS")
 
 
 ## ----pp8-rctd, eval=FALSE, code=readLines("Master_RCTD_Deconvolution_8um.R")----

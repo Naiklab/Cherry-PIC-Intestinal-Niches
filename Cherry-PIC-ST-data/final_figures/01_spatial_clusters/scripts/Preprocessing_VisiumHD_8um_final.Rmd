@@ -140,9 +140,49 @@ merged.object <- ProjectData(
                      paste0("sketch_snn_res.", cluster.resolutions)))
 
 saveRDS(merged.object, "output_8um/RDS-files/merged_object_clustered.RDS")
-# (Cluster annotations at res 2 are mapped from
-#  "8um-binned-updated-annotations(res2) Apr 21 with exclusion.csv" downstream.)
 ```
+
+---
+
+# Stage 5b — Attach cluster annotations → `final_analysis_object.RDS`
+
+An earlier version of this record said cluster annotations were mapped "downstream" —
+meaning at figure-plotting time — and left this stage out entirely. That was wrong: Stage
+6's own batch script (`Master_RCTD_Deconvolution_8um.R`) reads `final_analysis_object.RDS`,
+a file nothing upstream of it wrote. Checked the original interactive script on Minerva
+(`General_VisiumHD_Analysis_Workflow.Rmd`) and found this exact gap — a cluster-annotation
+CSV crosswalk attached between clustering and RCTD, identical in structure to Stage 5 of
+the 16 µm pipeline, just not carried into this notebook. Figure notebooks (e.g. Fig 3)
+separately re-derive the same columns from the same crosswalk at figure time; that
+redundancy is harmless since both read the same `sketch_snn_res.2` cluster IDs, but it
+means this stage's real purpose is producing the exact file Stage 6 expects, not the
+figures' own annotation.
+
+BANKSY spatial-domain clustering also runs in this interval in the original script but
+feeds no published panel — omitted here on the same basis as the 16 µm pipeline's excluded
+exploratory analyses.
+
+```{r pp8-annotate, eval=FALSE}
+annotation.file <- "8um-binned-updated-annotations(res2) Apr 21 with exclusion.csv"
+annotations <- read.csv(annotation.file, stringsAsFactors = FALSE)
+annotations <- annotations[!is.na(annotations$Cluster) & annotations$Cluster != "", ]
+
+fill_na <- function(x, fill = "Unknown") { x[is.na(x) | x == "" | x == "NA"] <- fill; x }
+cid <- as.character(annotations$Cluster)
+cell.clusters <- as.character(merged.object$sketch_snn_res.2)
+
+merged.object <- AddMetaData(merged.object, metadata = data.frame(
+  cluster_annotation     = fill_na(setNames(annotations$Annotation,                cid)[cell.clusters]),
+  region_annotation      = fill_na(setNames(annotations$Spatial.region.annotation, cid)[cell.clusters]),
+  location_annotation    = fill_na(setNames(annotations$Region.Annotation,         cid)[cell.clusters]),
+  compartment_annotation = fill_na(setNames(annotations$Compartment,               cid)[cell.clusters]),
+  granular_annotation    = fill_na(setNames(annotations$Granular.annotation,       cid)[cell.clusters]),
+  row.names = colnames(merged.object)))
+
+saveRDS(merged.object, "output_8um/RDS-files/final_analysis_object.RDS")
+```
+
+---
 
 # Stage 6 — RCTD deconvolution → `final_analysis_object_with_master_deconv.RDS`
 *(canonical batch script embedded verbatim; uses the master scRNA reference `Master.Obj.rds`,
