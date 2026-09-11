@@ -238,6 +238,7 @@ Also used, by stage:
 | circlize | 0.4.18 | circular layouts |
 | ggpubr | 0.6.3 | statistical annotation on plots |
 | ggrepel | 0.9.8 | non-overlapping labels |
+| ggsci | 5.0.0 | palettes |
 | svglite | 2.2.2 | SVG output |
 | data.table | 1.18.4 | fast table I/O |
 | jsonlite | 2.0.0 | metadata I/O |

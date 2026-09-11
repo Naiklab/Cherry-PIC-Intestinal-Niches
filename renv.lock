@@ -834,6 +834,12 @@
       "Source": "Repository",
       "Repository": "CRAN"
     },
+    "ggsci": {
+      "Package": "ggsci",
+      "Version": "5.0.0",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
     "ggsignif": {
       "Package": "ggsignif",
       "Version": "0.6.4",

@@ -28,6 +28,58 @@ library(tidyverse)
 library(harmony)
 library(glue)
 library(EnhancedVolcano)
+library(ggsci)
+```
+
+Set up color palettes for plots. A prior cleanup pass removed this chunk believing all
+seven of its objects were unused; four are actively called throughout this notebook
+(get_igv_colors, get_location_colors, get_condition_colors, get_sample_colors — 18 call
+sites combined). Restored those four and their base palettes; jco_colors/get_time_colors
+and ucscgb_colors are genuinely uncalled and are not restored.
+```{r chunk-03}
+# IGV colors for clusters (many distinct colors)
+igv_colors <- pal_igv("default")(51)
+
+# Different palettes for different variable types
+npg_colors <- pal_npg("nrc")(10)        # Nature Publishing Group - good for Location (2 categories)
+lancet_colors <- pal_lancet("lanonc")(9) # Lancet - good for Condition
+d3_colors <- pal_d3("category20")(20)    # D3 - good for Sample_ID/orig.ident (many categories)
+
+# Helper function to get colors based on number of clusters (for clustering)
+get_igv_colors <- function(n) {
+  if (n <= 51) {
+    return(igv_colors[1:n])
+  } else {
+    return(rep(igv_colors, length.out = n))
+  }
+}
+
+# Helper function to get colors for Location (NPG palette)
+get_location_colors <- function(n) {
+  if (n <= 10) {
+    return(npg_colors[1:n])
+  } else {
+    return(rep(npg_colors, length.out = n))
+  }
+}
+
+# Helper function to get colors for Condition (Lancet palette)
+get_condition_colors <- function(n) {
+  if (n <= 9) {
+    return(lancet_colors[1:n])
+  } else {
+    return(rep(lancet_colors, length.out = n))
+  }
+}
+
+# Helper function to get colors for Sample_ID/orig.ident (D3 palette)
+get_sample_colors <- function(n) {
+  if (n <= 20) {
+    return(d3_colors[1:n])
+  } else {
+    return(rep(d3_colors, length.out = n))
+  }
+}
 ```
 
 Import immune cells only for both time points

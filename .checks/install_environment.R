@@ -37,7 +37,7 @@ cran <- c(
   Matrix = "1.7-5",  RColorBrewer = "1.1-3", Seurat = "5.5.0",  SeuratObject = "5.4.0",
   sp = "2.2-1",      circlize = "0.4.18",    clustree = "0.5.1", data.table = "1.18.4",
   dplyr = "1.2.1",   ggplot2 = "4.0.3",      ggpubr = "0.6.3",   ggrepel = "0.9.8",
-  glue = "1.8.1",         harmony = "2.0.3",  jsonlite = "2.0.0",
+  ggsci = "5.0.0",   glue = "1.8.1",         harmony = "2.0.3",  jsonlite = "2.0.0",
   msigdbr = "26.1.0", patchwork = "1.3.2",   pheatmap = "1.0.13", png = "0.1-9",
   readxl = "1.5.0",  stringr = "1.6.0",      svglite = "2.2.2",  tibble = "3.3.1",
   tidyr = "1.3.2",   tidyverse = "2.0.0",    viridis = "0.6.5",  sctransform = "0.4.3",
