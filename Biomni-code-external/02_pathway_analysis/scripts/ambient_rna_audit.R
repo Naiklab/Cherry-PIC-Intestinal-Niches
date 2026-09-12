@@ -135,47 +135,68 @@ override_rec <- function(ct, pw, rec, reason_str) {
   }
 }
 
-# NOTE ON THE FOUR "borderline" OVERRIDES BELOW (bile acid signaling x2,
-# GOBP_RETINOL_METABOLIC_PROCESS, and KEGG_RETINOL_METABOLISM's REVIEW calls):
-# these represent a case this script builds for reconsidering pathways the biologist
-# asked to have excluded as ambient-driven. It was never adopted — the published
-# figure and the shipped ambient_annotated_pathway_table.csv / pathway_table_cleaned.csv
-# reflect the biologist's original exclusion, not these overrides. Running this script
-# end to end will NOT reproduce the shipped files; it will re-include these pathways.
-# Do not regenerate the shipped data from a run of this script without the biologist's
-# renewed sign-off on the specific cases below.
-cat("--- 6 pre-identified REMOVE pathways ---\n")
-override_rec("Fibroblasts", "REACTOME_ANTIMICROBIAL_PEPTIDES", "REMOVE_FROM_INTERPRETATION",
-  "13/14 LE genes are Paneth/secretory epithelial markers (Defa family, Reg3g, Reg3b, Itln1). Pathway identity is entirely defined by ambient epithelial transcripts.")
-override_rec("Macrophages", "REACTOME_DEFENSINS", "REMOVE_FROM_INTERPRETATION",
-  "10/13 LE genes are Defa family genes. Defensins are Paneth-cell-specific in mouse; mouse myeloid cells lack functional alpha-defensin genes. Pathway driven by ambient Paneth RNA.")
-override_rec("Macrophages", "REACTOME_ANTIMICROBIAL_PEPTIDES", "REMOVE_FROM_INTERPRETATION",
-  "11/15 LE genes are Defa/Itln1 genes. Same rationale as REACTOME_DEFENSINS — Paneth-specific antimicrobial peptides misattributed to macrophages via ambient RNA.")
-override_rec("Macrophages", "WP_DISORDERS_OF_BILE_ACID_SYNTHESIS_AND_BILIARY_TRANSPORT", "REMOVE_FROM_INTERPRETATION",
-  "4/6 LE genes are ileal bile acid transport genes (Fabp6, Slc10a2, Slc51a, Slc51b). These are enterocyte-specific transporters; remaining genes (Abcc3, Cyp27a1) are macrophage-compatible but insufficient to support pathway independently.")
-override_rec("Endothelial", "WP_DISORDERS_OF_BILE_ACID_SYNTHESIS_AND_BILIARY_TRANSPORT", "REMOVE_FROM_INTERPRETATION",
-  "4/7 LE genes are ileal bile acid transport genes (Fabp6, Slc10a2, Slc51a, Slc51b). Endothelial cells have no biological role in bile acid transport. Remaining genes (Abcb1a, Abcd3, Atp8b1) are generic transporters not specific to bile acid biology.")
-override_rec("Endothelial", "GOBP_BILE_ACID_AND_BILE_SALT_TRANSPORT", "REMOVE_FROM_INTERPRETATION",
-  "3/6 LE genes are bile acid transporters (Slc10a2, Slc51a, Slc51b). Endothelial cells do not transport bile acids. Nr1h4 (FXR) is a nuclear receptor not expressed in endothelium. Pathway entirely driven by ambient enterocyte RNA.")
-cat("\n")
+# A second independent review found the previous fix insufficient: gating only the
+# override_rec() calls for the 4 "borderline" + 2 "REVIEW" pathways does NOT reproduce
+# the biologist's adopted 11 REMOVE / 1 KEEP_WITH_CAUTION split, because 3 of those 6
+# pathways sit at "Borderline" ambient status, whose own mechanical DEFAULT (Step 3a,
+# above) is already KEEP_WITH_CAUTION -- disabling their override is a no-op, not a
+# reversion to REMOVE. The true adopted decision does not follow any single mechanical
+# rule: it removes every Borderline-status pathway in this list except one, and keeps
+# exactly one Strong-status pathway (Fibroblasts KEGG_RETINOL_METABOLISM) rather than
+# removing it. That can only be reproduced by encoding the adopted decision directly,
+# which is what ADOPTED_DECISIONS below does -- read off the shipped
+# ambient_annotated_pathway_table.csv itself, not inferred from the ambient-fraction
+# thresholds. This block is now the ONLY thing that sets recommendation for these 12
+# rows; nothing here is conditional, so a normal run always reproduces the shipped
+# decision.
+ADOPTED_DECISIONS <- list(
+  list("Fibroblasts", "REACTOME_ANTIMICROBIAL_PEPTIDES", "REMOVE_FROM_INTERPRETATION",
+    "13/14 LE genes are Paneth/secretory epithelial markers (Defa family, Reg3g, Reg3b, Itln1). Pathway identity is entirely defined by ambient epithelial transcripts."),
+  list("Macrophages", "REACTOME_DEFENSINS", "REMOVE_FROM_INTERPRETATION",
+    "10/13 LE genes are Defa family genes. Defensins are Paneth-cell-specific in mouse; mouse myeloid cells lack functional alpha-defensin genes. Pathway driven by ambient Paneth RNA."),
+  list("Macrophages", "REACTOME_ANTIMICROBIAL_PEPTIDES", "REMOVE_FROM_INTERPRETATION",
+    "11/15 LE genes are Defa/Itln1 genes. Same rationale as REACTOME_DEFENSINS — Paneth-specific antimicrobial peptides misattributed to macrophages via ambient RNA."),
+  list("Macrophages", "WP_DISORDERS_OF_BILE_ACID_SYNTHESIS_AND_BILIARY_TRANSPORT", "REMOVE_FROM_INTERPRETATION",
+    "4/6 LE genes are ileal bile acid transport genes (Fabp6, Slc10a2, Slc51a, Slc51b). These are enterocyte-specific transporters; remaining genes (Abcc3, Cyp27a1) are macrophage-compatible but insufficient to support pathway independently."),
+  list("Endothelial", "WP_DISORDERS_OF_BILE_ACID_SYNTHESIS_AND_BILIARY_TRANSPORT", "REMOVE_FROM_INTERPRETATION",
+    "4/7 LE genes are ileal bile acid transport genes (Fabp6, Slc10a2, Slc51a, Slc51b). Endothelial cells have no biological role in bile acid transport. Remaining genes (Abcb1a, Abcd3, Atp8b1) are generic transporters not specific to bile acid biology."),
+  list("Endothelial", "GOBP_BILE_ACID_AND_BILE_SALT_TRANSPORT", "REMOVE_FROM_INTERPRETATION",
+    "3/6 LE genes are bile acid transporters (Slc10a2, Slc51a, Slc51b). Endothelial cells do not transport bile acids. Nr1h4 (FXR) is a nuclear receptor not expressed in endothelium. Pathway entirely driven by ambient enterocyte RNA."),
+  list("Fibroblasts", "REACTOME_BILE_ACID_AND_BILE_SALT_METABOLISM", "REMOVE_FROM_INTERPRETATION",
+    "Cell-level validation resolved: Fabp6 is ambient (19% expr, mean=0.5, max=24 in Fibroblasts — low-level, not doublet). Ncoa1 (baseMean=275, padj=0.28) and Cyp7b1 (baseMean=349, padj=0.28) are present but NOT differentially expressed. Pathway enrichment driven entirely by ambient Fabp6 (log2FC=6.09, padj=9.2e-55)."),
+  list("Macrophages", "REACTOME_RECYCLING_OF_BILE_ACIDS_AND_SALTS", "REMOVE_FROM_INTERPRETATION",
+    "4/9 LE genes are ambient (Fabp6, Slc10a2, Slc51a, Slc51b). Remaining 5 genes (Abcc3, Stard5, Ncoa1, Rxra, Nr1h4) form a coherent FXR/RXR bile acid signaling program in macrophages. Abcc3 and Stard5 are macrophage-compatible. The signaling core is genuine; only the transport component is ambient. | GSEA without ambient genes: not significant (padj > 0.05). Significance was driven by ambient contamination."),
+  list("Macrophages", "REACTOME_BILE_ACID_AND_BILE_SALT_METABOLISM", "REMOVE_FROM_INTERPRETATION",
+    "4/9 LE genes are ambient (Fabp6, Slc10a2, Slc51a, Slc51b). Remaining 5 genes include Cyp27a1 (genuine macrophage bile acid synthesis enzyme), Abcc3, Stard5, Ncoa1, Rxra — a coherent bile acid metabolism and signaling program. The enzymatic/signaling core is genuine; only the uptake transport component is ambient. | GSEA without ambient genes: not significant (padj > 0.05). Significance was driven by ambient contamination."),
+  list("Macrophages", "GOBP_RETINOL_METABOLIC_PROCESS", "REMOVE_FROM_INTERPRETATION",
+    "Cell-level validation corrects prior assumption: Aldh1a2 (1% in Macro) and Dhrs9 (0% in Macro) are NOT macrophage retinoid genes — Aldh1a2 is Fibroblast-specific (76% in Fibro). The 5 ambient genes (Fabp1, Cyp3a13, Cyp2c65, Cyp3a11, Cyp2c66) are enterocyte/xenobiotic genes. The genuine signal is lipid transport: Abca1 (66%, padj=6.2e-67), Abcg1 (35%, padj=4.2e-24), Apoe (99%, padj=1.9e-97), Cd36 (37%), Fabp5 (46%), Abcc3 (55%), Stard5 (30%), Lpl (14%). Pathway label 'retinol metabolic process' is partly driven by ambient genes; genuine biology is lipid transport. | GSEA without ambient genes: not significant (padj > 0.05). Significance was driven by ambient contamination."),
+  list("Fibroblasts", "KEGG_RETINOL_METABOLISM", "KEEP_WITH_CAUTION",
+    "Cell-level validation confirms genuine retinoid metabolism program: Aldh1a2 (76% expr, padj=4.9e-04), Aldh1a3 (69%), Rbp1 (70%, padj=1.8e-05), Lrat (55%, padj=5.4e-14) are all highly expressed and significantly DE in Fibroblasts. The 7 ambient Cyp/UGT genes are <5% expr in Fibroblasts (enterocyte xenobiotic metabolism). Core retinoid program is genuine; ambient genes are irrelevant to interpretation."),
+  list("Macrophages", "KEGG_RETINOL_METABOLISM", "REMOVE_FROM_INTERPRETATION",
+    "Cell-level validation: Macrophages do NOT express classic retinoid metabolism enzymes (Aldh1a2 1%, Dhrs9 0%, Rbp1 0%, Lrat 0% — these are Fibroblast-specific). The 9 ambient genes include Cyp/UGT xenobiotic genes and Fibroblast retinoid genes. However, Macrophages have a robust genuine lipid transport program: Abca1 (66%, padj=6.2e-67), Abcg1 (35%, padj=4.2e-24), Apoe (99%, padj=1.9e-97), Cd36 (37%), Fabp5 (46%), Abcc3 (55%), Stard5 (30%), Lpl (14%). The 'retinol metabolism' label is partly misleading — genuine signal is lipid/cholesterol transport and homeostasis. | GSEA without ambient genes: not significant (padj > 0.05). Significance was driven by ambient contamination.")
+)
+for (d in ADOPTED_DECISIONS) override_rec(d[[1]], d[[2]], d[[3]], d[[4]])
+cat("\nApplied", length(ADOPTED_DECISIONS), "adopted decisions (11 REMOVE_FROM_INTERPRETATION, 1 KEEP_WITH_CAUTION).\n\n")
 
-cat("--- 2 REVIEW pathways (KEGG_RETINOL_METABOLISM) ---\n")
-override_rec("Fibroblasts", "KEGG_RETINOL_METABOLISM", "REVIEW",
-  "7/12 LE genes are suspicious CYP/UGT xenobiotic genes (Cyp2b10, Ugt2b34, Cyp3a13, Cyp3a11, Ugt2a3, Cyp3a25, Cyp2c65). However, 5 LE genes (Lrat, Aldh1a2, Rdh11, Dhrs3, Adh5) are biologically plausible retinoid genes in stromal cells. Must determine if genuine retinoid program remains after removing ambient contribution.")
-override_rec("Macrophages", "KEGG_RETINOL_METABOLISM", "REVIEW",
-  "9/16 LE genes are suspicious CYP/UGT genes (Cyp3a13, Ugt2b34, Cyp2b10, Cyp2c65, Ugt2a3, Cyp3a11, Cyp2c66, Cyp3a25, Ugt2b35). However, Aldh1a2, Dhrs9, Dhrs4, Adh1, Adh5, Dgat1, Dgat2 are macrophage-compatible retinoid/lipid genes. Must determine if genuine retinoid program remains.")
-cat("\n")
-
-cat("--- 4 borderline pathways ---\n")
-override_rec("Macrophages", "REACTOME_RECYCLING_OF_BILE_ACIDS_AND_SALTS", "KEEP_WITH_CAUTION",
-  "4/9 LE genes are ambient (Fabp6, Slc10a2, Slc51a, Slc51b). Remaining 5 genes (Abcc3, Stard5, Ncoa1, Rxra, Nr1h4) form a coherent FXR/RXR bile acid signaling program in macrophages. Abcc3 and Stard5 are macrophage-compatible. The signaling core is genuine; only the transport component is ambient.")
-override_rec("Macrophages", "REACTOME_BILE_ACID_AND_BILE_SALT_METABOLISM", "KEEP_WITH_CAUTION",
-  "4/9 LE genes are ambient (Fabp6, Slc10a2, Slc51a, Slc51b). Remaining 5 genes include Cyp27a1 (genuine macrophage bile acid synthesis enzyme), Abcc3, Stard5, Ncoa1, Rxra — a coherent bile acid metabolism and signaling program. The enzymatic/signaling core is genuine; only the uptake transport component is ambient.")
-override_rec("Macrophages", "GOBP_RETINOL_METABOLIC_PROCESS", "KEEP_WITH_CAUTION",
-  "5/14 LE genes are ambient (Fabp1, Cyp3a13, Cyp2c65, Cyp3a11, Cyp2c66). Remaining 9 genes include Aldh1a2, Dhrs9 (macrophage retinoid genes), Dgat1/2, Adh1, Akr1b3/8, Dhrs4, Rdh13 — a coherent retinoid metabolism program. The CYP/UGT component is ambient but the dehydrogenase/reductase core is genuine.")
-override_rec("Fibroblasts", "REACTOME_BILE_ACID_AND_BILE_SALT_METABOLISM", "NEEDS_CELL_LEVEL_VALIDATION",
-  "1/3 LE genes is ambient (Fabp6). Remaining genes (Ncoa1, Cyp7b1) could represent genuine bile acid metabolism signaling, but Cyp7b1 expression in fibroblasts requires cell-level validation. Small leading edge (3 genes) makes interpretation uncertain.")
-cat("\n")
+# --- Biomni's unadopted reconsideration case, for reference only ---
+# This is the case an earlier Biomni session built for revisiting 6 of the removals
+# above using cell-level validation. It was never adopted and must never modify `le`
+# or any saved file -- printed as text only, with no override_rec() call, so it cannot
+# accidentally leak into the plotting input the way the previous version of this
+# script's (correctly labeled but still executable) override_rec() calls did.
+cat("--- Biomni's unadopted reconsideration case (reference only, not applied) ---\n")
+cat("KEGG_RETINOL_METABOLISM (Fibroblasts, Macrophages): reconsidered as REVIEW --\n")
+cat("  Fibroblasts: 5/12 non-ambient LE genes (Lrat, Aldh1a2, Rdh11, Dhrs3, Adh5) plausible.\n")
+cat("  Macrophages: 7/16 non-ambient LE genes (Aldh1a2, Dhrs9, Dhrs4, Adh1, Adh5, Dgat1, Dgat2) plausible.\n")
+cat("Macrophages REACTOME_RECYCLING_OF_BILE_ACIDS_AND_SALTS: reconsidered as KEEP_WITH_CAUTION --\n")
+cat("  5/9 non-ambient LE genes (Abcc3, Stard5, Ncoa1, Rxra, Nr1h4) form a coherent FXR/RXR program.\n")
+cat("Macrophages REACTOME_BILE_ACID_AND_BILE_SALT_METABOLISM: reconsidered as KEEP_WITH_CAUTION --\n")
+cat("  5/9 non-ambient LE genes incl. Cyp27a1, a genuine macrophage synthesis enzyme.\n")
+cat("Macrophages GOBP_RETINOL_METABOLIC_PROCESS: reconsidered as KEEP_WITH_CAUTION --\n")
+cat("  9/14 non-ambient LE genes incl. Aldh1a2, Dhrs9, Dgat1/2, Adh1, Akr1b3/8, Dhrs4, Rdh13.\n")
+cat("Fibroblasts REACTOME_BILE_ACID_AND_BILE_SALT_METABOLISM: reconsidered as NEEDS_CELL_LEVEL_VALIDATION --\n")
+cat("  2/3 non-ambient LE genes (Ncoa1, Cyp7b1); small leading edge makes this uncertain.\n")
+cat("None of the above changes le or any saved file.\n\n")
 
 # --- Recommendation summary ---
 cat("=== Recommendation summary (non-epithelial) ===\n")
