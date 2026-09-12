@@ -328,8 +328,11 @@ Pins the ~40 packages the analysis loads directly: 29 CRAN via `remotes::install
 8 from Bioconductor 3.20, 4 from GitHub. Transitive dependencies resolve to whatever those
 require.
 
-**2. Restore the package closure** — pins all **304** packages at the versions used: the 32
-the code loads plus the 272 they pull in.
+**2. Restore the package closure** — pins all **308** packages at the versions used: the 41
+above (29 CRAN, 8 Bioconductor, 4 GitHub) plus the 267 they pull in. `presto`, `liana` and
+`nichenetr` were missing from this lockfile despite being declared everywhere else
+(the installer, the table above); added with the exact commit each declared version
+resolves to.
 
 ```r
 install.packages("renv")

@@ -1050,6 +1050,16 @@
       "Source": "Repository",
       "Repository": "CRAN"
     },
+    "liana": {
+      "Package": "liana",
+      "Version": "0.1.14",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "saezlab",
+      "RemoteRepo": "liana",
+      "RemoteSha": "6cab46c54234f861ea176c3de77c4b8aa45ecb3d"
+    },
     "lifecycle": {
       "Package": "lifecycle",
       "Version": "1.0.5",
@@ -1200,6 +1210,16 @@
       "Source": "Repository",
       "Repository": "CRAN"
     },
+    "nichenetr": {
+      "Package": "nichenetr",
+      "Version": "2.2.1.1",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "saeyslab",
+      "RemoteRepo": "nichenetr",
+      "RemoteSha": "66f90d5eeafef280b2b2f339b3fd70ffec1781dd"
+    },
     "nlme": {
       "Package": "nlme",
       "Version": "3.1-169",
@@ -1307,6 +1327,16 @@
       "Version": "1.4-1",
       "Source": "Repository",
       "Repository": "CRAN"
+    },
+    "presto": {
+      "Package": "presto",
+      "Version": "1.0.0",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "immunogenomics",
+      "RemoteRepo": "presto",
+      "RemoteSha": "7636b3d0465c468c35853f82f1717d3a64b3c8f6"
     },
     "prettyunits": {
       "Package": "prettyunits",
