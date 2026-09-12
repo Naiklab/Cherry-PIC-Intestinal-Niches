@@ -15,8 +15,15 @@ set.seed(42)
 ## ----stage1-niche-zones, eval=FALSE-------------------------------------------
 # # Distance to the nearest stem-cell-dominant bin, then zone assignment. The niche is
 # # the stem-cell bins plus their immediate periphery: within 3 bin widths (≤ 24 µm).
-# # classify_niche_zone() is defined in Preprocessing_VisiumHD_8um_final.Rmd, Stage 7.
-# # Per sample, verbatim from Preprocessing_VisiumHD_8um_final.Rmd, Stage 7.
+# # classify_niche_zone(), EXCL_CLUSTER_DUODENUM and EXCL_CLUSTER_ILEUM are all defined
+# # in Preprocessing_VisiumHD_8um_final.Rmd, Stage 7.
+# #
+# # A second independent review found this copy had drifted from that source: it
+# # predated both the barcode-rowname fix (do.call(rbind, <named list>) can rename
+# # colliding rows, since raw Visium barcodes are not globally unique across samples)
+# # and the region-specific excl_cluster argument, despite this comment's own claim of
+# # being "verbatim". Kept in sync here rather than de-duplicated -- see the note in
+# # Preprocessing_VisiumHD_8um_final.Rmd's own Stage 7 for the full rationale.
 # # Result levels: Stem_cell | Immediate_periphery | Outside_niche | No_tissue
 # niche_results <- list()
 # for (img in Images(merged.object)) {
@@ -28,13 +35,16 @@ set.seed(42)
 #   all_mat  <- as.matrix(coords[, c("imagerow", "imagecol")]); rownames(all_mat) <- coords$barcode
 #   stem_mat <- all_mat[rownames(all_mat) %in% stem_bc, , drop = FALSE]
 #   dist_bins <- compute_min_dist_bins(all_mat, stem_mat, spot_diam_px)
+#   excl_cluster <- if (grepl("Duodenum", img, ignore.case = TRUE)) EXCL_CLUSTER_DUODENUM else EXCL_CLUSTER_ILEUM
 #   zone <- classify_niche_zone(dist_bins, coords$barcode %in% stem_bc,
-#                               meta$M_RCTD_dominant_celltype, meta$region_annotation, meta$cluster_annotation)
+#                               meta$M_RCTD_dominant_celltype, meta$region_annotation, meta$cluster_annotation,
+#                               excl_cluster = excl_cluster)
 #   niche_results[[img]] <- data.frame(barcode = coords$barcode, dist_bins = dist_bins,
 #                                      dist_um = dist_bins * 8, stem_niche_zone = zone,
 #                                      row.names = coords$barcode)
 # }
 # all_results <- do.call(rbind, niche_results)
+# rownames(all_results) <- all_results$barcode   # see the barcode-collision note above
 # merged.object <- AddMetaData(merged.object,
 #   all_results[colnames(merged.object), c("dist_bins", "dist_um", "stem_niche_zone")])
 # saveRDS(merged.object, "output_8um/RDS-files/final_analysis_object_8um_with_stem_niche.RDS")

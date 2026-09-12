@@ -222,7 +222,7 @@ compute_min_dist_bins <- function(all_coords, stem_coords, spot_diam_px) {
 # no exclusions at all. EXCL_CLUSTER_* is region-specific: Duodenum and Ileum images use
 # different cluster lists, keyed on cluster_annotation.
 EXCL_DOMINANT <- c("Unknown")
-EXCL_REGION   <- c("Tip_villus_distal_enterocytes", "Tip_villus_proximal_enterocytes")
+EXCL_REGION   <- c("Tip-villus distal enterocytes", "Tip-villus proximal enterocytes")
 EXCL_CLUSTER_DUODENUM <- c("Mid-villus distal enterocytes-1", "Mid-villus distal enterocytes-2",
                            "Mid-villus distal enterocytes-3",
                            "Bottom-villus distal enterocytes",
