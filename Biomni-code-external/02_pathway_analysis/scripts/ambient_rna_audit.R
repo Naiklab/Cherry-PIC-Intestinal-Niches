@@ -135,6 +135,15 @@ override_rec <- function(ct, pw, rec, reason_str) {
   }
 }
 
+# NOTE ON THE FOUR "borderline" OVERRIDES BELOW (bile acid signaling x2,
+# GOBP_RETINOL_METABOLIC_PROCESS, and KEGG_RETINOL_METABOLISM's REVIEW calls):
+# these represent a case this script builds for reconsidering pathways the biologist
+# asked to have excluded as ambient-driven. It was never adopted — the published
+# figure and the shipped ambient_annotated_pathway_table.csv / pathway_table_cleaned.csv
+# reflect the biologist's original exclusion, not these overrides. Running this script
+# end to end will NOT reproduce the shipped files; it will re-include these pathways.
+# Do not regenerate the shipped data from a run of this script without the biologist's
+# renewed sign-off on the specific cases below.
 cat("--- 6 pre-identified REMOVE pathways ---\n")
 override_rec("Fibroblasts", "REACTOME_ANTIMICROBIAL_PEPTIDES", "REMOVE_FROM_INTERPRETATION",
   "13/14 LE genes are Paneth/secretory epithelial markers (Defa family, Reg3g, Reg3b, Itln1). Pathway identity is entirely defined by ambient epithelial transcripts.")
@@ -197,6 +206,17 @@ for (g in not_in_panel) {
 # --- Save annotated table ---
 fwrite(le, file.path(DATA, "ambient_annotated_pathway_table.csv"))
 cat("\n\nSaved: ambient_annotated_pathway_table.csv (", nrow(le), "rows)\n")
+
+# --- Derive and save the cleaned plotting table ---
+# An independent audit found this derivation missing entirely: nothing regenerated
+# pathway_table_cleaned.csv from a fresh audit, so a revised audit could sit alongside
+# an unchanged final plotting table. The cleaned table is exactly the audit table's
+# non-REMOVE_FROM_INTERPRETATION rows, with the audit-only columns dropped.
+cleaned_cols <- c("module", "cell_type", "pathway", "region_class", "region_block",
+                  "NES", "padj", "source", "leading_edge_genes", "n_le_genes")
+cleaned <- le[recommendation != "REMOVE_FROM_INTERPRETATION", ..cleaned_cols]
+fwrite(cleaned, file.path(DATA, "pathway_table_cleaned.csv"))
+cat("Saved: pathway_table_cleaned.csv (", nrow(cleaned), "rows)\n")
 
 # --- Print audit table ---
 cat("\n=== AMBIENT RNA AUDIT TABLE ===\n")
