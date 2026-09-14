@@ -50,9 +50,11 @@ them and produces identical files. The chunk at the end of this notebook is kept
 
 | File | Contents |
 |---|---|
-| `../data/final_analysis_object_with_master_deconv_hires.RDS` | 8 µm object, hi-res images, RCTD results in `M_RCTD_*` |
+| `../data/final_analysis_object_with_master_deconv_hires.RDS` | 8 µm object, hi-res images, RCTD results in `M_RCTD_*` — feeds panels 3B/3C only |
 | `../data/8um-binned-updated-annotations(res2) Apr 21 with exclusion.csv` | res-2 cluster → annotation, compartment, colours |
-| `../data/single cell seq combined datasets annotation res 1_2 With colors RCTD broad Aug12.xlsx` | RCTD cell type → broad category and palette |
+| `../data/single cell seq combined datasets annotation res 1_2 With colors RCTD broad Aug12.xlsx` | RCTD cell type → broad category and palette, for panels 3B/3C |
+| `../data/broad_deconv_composition_all_spots_tissue.csv` | mean RCTD weight per broad cell type per tissue, for panel 3D |
+| `../data/single cell seq combined datasets annotation res 1_2 With colors RCTD broad July8.csv` | broad category → palette for the panel-3D composition table above |
 
 All frozen. Deconvolution is not re-run — `M_RCTD_dominant_celltype` already exists in the
 object; see `Preprocessing_VisiumHD_8um_final.Rmd` for how it was produced.
@@ -61,6 +63,23 @@ The mapping covers all 38 `M_RCTD_dominant_celltype` values present in the objec
 resolves to the 27 broad categories in the published legend (11 Epithelia, 7 Stroma,
 8 Immune, plus Unknown). "Mix cluster remove" and "Unidentified" both collapse to
 `Unknown`, which is a legend entry in the published figure rather than a dropped category.
+
+**Panel 3D uses a separate deconvolution from 3B/3C.** `Master_RCTD_Deconvolution_Broad_8um.Rmd`
+runs its own RCTD pass with `MB_RCTD_*` weight columns, against a reference built directly at
+broad-category resolution (not collapsed post hoc from the 38-category fine reference that
+`M_RCTD_*` uses), and — like the fine reference — excludes tissue-exclusive enterocyte
+subtypes from the other tissue's reference (`Mid_villus_proximal_enterocytes` is not offered
+to Ileum spots, `Mid_villus_distal_enterocytes` is not offered to Duodenum spots). Panel 3D's
+composition table is `mean(MB_RCTD_<celltype>)` per tissue across all spots, all four samples
+pooled — the pre-existing output of that notebook's own "All-spots Composition" section, not
+recomputed here. Earlier this used `M_RCTD_broad` dominant-identity counting on the object
+above, which a second independent review flagged as producing composition percentages that
+didn't match the manuscript's stacked bars (e.g. Mid-villus proximal/Duodenum: 64% vs. a
+published ~56%); the weight-based table here reproduces the manuscript within ~2-4 points
+(58.4%/37.9% vs. ~56%/~34%), the closest of every calculation tried, and traces to genuinely
+pre-existing code, so panel 3D was repointed at it. The remaining few points are consistent
+with reading a stacked bar by eye, not a further code discrepancy — per-sample splits and a
+same-object combined-subtype check were both tried and neither closes it further.
 
 ## Running this
 
@@ -215,27 +234,51 @@ for (img in sample_images) {
 
 ## Panel 3D — composition of deconvolved cell identities
 
-Pools both replicates per region — all four samples, not just the Duodenum_3/Ileum_3
-representative used for the spatial maps above — into two bars, the same pooling convention
-Fig 6C uses. Reuses the `M_RCTD_broad` categories and `deconv_colors` palette built for
-panels
-3B/3C, so no new category-mapping risk here.
+Mean RCTD weight per broad cell type, per tissue, pooling all four samples' spots —
+not the `M_RCTD_broad` dominant-identity counts panels 3B/3C use. This is a separate,
+pre-existing RCTD deconvolution (`Master_RCTD_Deconvolution_Broad_8um.Rmd`, `MB_RCTD_*`
+columns) run directly at broad-category resolution; its own "All-spots Composition"
+section already computed and saved this table, so it is read here rather than
+recomputed. See the Inputs section above for why: dominant-identity counting gave
+composition percentages that didn't reproduce the manuscript's bars, and this
+weight-based table is the closest match found, from genuinely pre-existing code.
 
 ```{r panel_3d_composition, fig.width=6, fig.height=8}
-merged.object$region <- ifelse(grepl("Duodenum", merged.object$orig.ident, ignore.case = TRUE),
-                               "Duo", "Ile")
+comp_tissue_csv   <- "../data/broad_deconv_composition_all_spots_tissue.csv"
+broad_palette_csv <- "../data/single cell seq combined datasets annotation res 1_2 With colors RCTD broad July8.csv"
 
-comp_df <- merged.object@meta.data |>
-  dplyr::count(region, M_RCTD_broad, name = "n") |>
-  dplyr::group_by(region) |>
-  dplyr::mutate(pct = 100 * n / sum(n)) |>
-  dplyr::ungroup() |>
+comp_raw <- read.csv(comp_tissue_csv, stringsAsFactors = FALSE)
+
+broad_pal_sheet <- read.csv(broad_palette_csv, stringsAsFactors = FALSE, check.names = FALSE)
+broad_cols_3d <- setNames(trimws(broad_pal_sheet$`Broad Hex code`), trimws(broad_pal_sheet$Broad))
+broad_cols_3d <- broad_cols_3d[nzchar(names(broad_cols_3d)) & nzchar(broad_cols_3d) & broad_cols_3d != "NA"]
+broad_cols_3d <- broad_cols_3d[!duplicated(names(broad_cols_3d))]
+
+comp_of_3d <- setNames(trimws(broad_pal_sheet$Compartment), trimws(broad_pal_sheet$Broad))
+comp_of_3d <- comp_of_3d[!duplicated(names(comp_of_3d))]
+
+comp_df <- comp_raw |>
+  dplyr::transmute(region = ifelse(tissue_type == "Duodenum", "Duo", "Ile"),
+                   celltype = celltype,
+                   pct = 100 * mean_prop)
+
+present_3d <- sort(unique(comp_df$celltype))
+present_3d <- present_3d[order(match(comp_of_3d[present_3d], c("Epithelia", "Stroma", "Immune"),
+                                     nomatch = 4L), present_3d)]
+
+comp_df <- comp_df |>
   dplyr::mutate(region = factor(region, levels = c("Duo", "Ile")),
-               M_RCTD_broad = factor(M_RCTD_broad, levels = present))
+               celltype = factor(celltype, levels = present_3d))
 
-p_composition <- ggplot(comp_df, aes(x = region, y = pct, fill = M_RCTD_broad)) +
+deconv_colors_3d <- vapply(present_3d, function(b) {
+  hex <- unname(broad_cols_3d[b])
+  if (!is.na(hex) && nzchar(hex) && hex != "NA") hex else "#D3D3D3"
+}, character(1))
+names(deconv_colors_3d) <- present_3d
+
+p_composition <- ggplot(comp_df, aes(x = region, y = pct, fill = celltype)) +
   geom_col(width = 0.6) +
-  scale_fill_manual(values = deconv_colors, drop = FALSE, name = "Annotation") +
+  scale_fill_manual(values = deconv_colors_3d, drop = FALSE, name = "Annotation") +
   labs(x = NULL, y = "% Composition") +
   theme_classic(base_size = 12) +
   theme(legend.text = element_text(size = 7), legend.key.size = unit(0.35, "cm"))
