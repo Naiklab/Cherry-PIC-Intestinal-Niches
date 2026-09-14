@@ -336,26 +336,34 @@ for (img in sample_images) {
 
 
 ## ----panel_3d_composition, fig.width=6, fig.height=8--------------------------
-comp_tissue_csv   <- "../data/broad_deconv_composition_all_spots_tissue.csv"
-broad_palette_csv <- "../data/single cell seq combined datasets annotation res 1_2 With colors RCTD broad July8.csv"
+fine_palette_csv <- "../data/single cell seq combined datasets annotation res 1_2 With colors RCTD broad July8.csv"
+fine_pal_sheet <- read.csv(fine_palette_csv, stringsAsFactors = FALSE, check.names = FALSE)
 
-comp_raw <- read.csv(comp_tissue_csv, stringsAsFactors = FALSE)
+fine_cols_3d <- setNames(trimws(fine_pal_sheet$`Hex Code`), trimws(fine_pal_sheet$`RCTD cell type name`))
+fine_cols_3d <- fine_cols_3d[nzchar(names(fine_cols_3d)) & nzchar(fine_cols_3d) & fine_cols_3d != "NA"]
+fine_cols_3d <- fine_cols_3d[!duplicated(names(fine_cols_3d))]
 
-broad_pal_sheet <- read.csv(broad_palette_csv, stringsAsFactors = FALSE, check.names = FALSE)
-broad_cols_3d <- setNames(trimws(broad_pal_sheet$`Broad Hex code`), trimws(broad_pal_sheet$Broad))
-broad_cols_3d <- broad_cols_3d[nzchar(names(broad_cols_3d)) & nzchar(broad_cols_3d) & broad_cols_3d != "NA"]
-broad_cols_3d <- broad_cols_3d[!duplicated(names(broad_cols_3d))]
+comp_of_fine_3d <- setNames(trimws(fine_pal_sheet$Compartment), trimws(fine_pal_sheet$`RCTD cell type name`))
+comp_of_fine_3d <- comp_of_fine_3d[!duplicated(names(comp_of_fine_3d))]
 
-comp_of_3d <- setNames(trimws(broad_pal_sheet$Compartment), trimws(broad_pal_sheet$Broad))
-comp_of_3d <- comp_of_3d[!duplicated(names(comp_of_3d))]
+m_rctd_cols_3d <- grep("^M_RCTD_", colnames(merged.object@meta.data), value = TRUE)
+m_rctd_cols_3d <- setdiff(m_rctd_cols_3d, "M_RCTD_dominant_celltype")
 
-comp_df <- comp_raw |>
-  dplyr::transmute(region = ifelse(tissue_type == "Duodenum", "Duo", "Ile"),
-                   celltype = celltype,
-                   pct = 100 * mean_prop)
+merged.object$region <- ifelse(grepl("Duodenum", merged.object$orig.ident, ignore.case = TRUE),
+                               "Duo", "Ile")
+
+comp_df <- merged.object@meta.data |>
+  dplyr::filter(!is.na(M_RCTD_dominant_celltype)) |>
+  dplyr::select(region, dplyr::all_of(m_rctd_cols_3d)) |>
+  dplyr::group_by(region) |>
+  dplyr::summarise(dplyr::across(dplyr::everything(), mean, na.rm = TRUE), .groups = "drop") |>
+  tidyr::pivot_longer(-region, names_to = "celltype", values_to = "prop") |>
+  dplyr::mutate(celltype = gsub("^M_RCTD_", "", celltype)) |>
+  dplyr::filter(prop > 0.005) |>
+  dplyr::mutate(pct = 100 * prop)
 
 present_3d <- sort(unique(comp_df$celltype))
-present_3d <- present_3d[order(match(comp_of_3d[present_3d], c("Epithelia", "Stroma", "Immune"),
+present_3d <- present_3d[order(match(comp_of_fine_3d[present_3d], c("Epithelia", "Stroma", "Immune"),
                                      nomatch = 4L), present_3d)]
 
 comp_df <- comp_df |>
@@ -363,7 +371,7 @@ comp_df <- comp_df |>
                celltype = factor(celltype, levels = present_3d))
 
 deconv_colors_3d <- vapply(present_3d, function(b) {
-  hex <- unname(broad_cols_3d[b])
+  hex <- unname(fine_cols_3d[b])
   if (!is.na(hex) && nzchar(hex) && hex != "NA") hex else "#D3D3D3"
 }, character(1))
 names(deconv_colors_3d) <- present_3d
