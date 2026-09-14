@@ -35,7 +35,7 @@ cat("Missing genes:", length(missing), "of 20\n")
 
 
 ## ----dotplot_fn---------------------------------------------------------------
-make_dotplot_3F <- function(obj, genes, title) {
+make_dotplot_3F <- function(obj, genes, title, fill_limits = NULL) {
   genes <- intersect(genes, rownames(obj))
   data_mat <- GetAssayData(obj, assay = "RNA", layer = "data")[genes, , drop = FALSE]
   loc <- obj$Location
@@ -60,9 +60,9 @@ make_dotplot_3F <- function(obj, genes, title) {
   df$gene <- factor(as.character(df$gene), levels = rev(genes))
   df$region <- factor(ifelse(df$region == "Duodenum", "Duo", "Ile"), levels = c("Duo", "Ile"))
 
-  ggplot(df, aes(x = region, y = gene)) +
+  p <- ggplot(df, aes(x = region, y = gene)) +
     geom_point(aes(size = pct_exp, fill = avg_exp), shape = 21, stroke = 0.25, color = "black") +
-    scale_fill_gradientn(colors = spectral_rev, name = "Ave. exp.") +
+    scale_fill_gradientn(colors = spectral_rev, name = "Ave. exp.", limits = fill_limits) +
     scale_size_continuous(range = c(1, 6), name = "Prop. %", limits = c(0, 1),
                           labels = scales::percent_format(accuracy = 1)) +
     labs(x = NULL, y = NULL, title = title) +
@@ -76,17 +76,58 @@ make_dotplot_3F <- function(obj, genes, title) {
       legend.title = element_text(size = 8),
       plot.margin = margin(6, 6, 6, 6)
     )
+  attr(p, "avg_exp_df") <- df   # carried through for the export chunk below
+  p
+}
+
+# Two averaging conventions for the same gene x region cells, for direct comparison --
+# not a decision about which is correct. mean_log matches what this notebook plots;
+# expm1_mean matches Seurat's own DotPlot() default.
+export_both_conventions <- function(obj, genes, region_label) {
+  genes <- intersect(genes, rownames(obj))
+  data_mat <- GetAssayData(obj, assay = "RNA", layer = "data")[genes, , drop = FALSE]
+  loc <- obj$Location
+  regions <- c("Duodenum", "Ileum")
+  out <- data.frame()
+  for (r in regions) {
+    cells <- colnames(obj)[loc == r]
+    sub <- data_mat[, cells, drop = FALSE]
+    out <- rbind(out, data.frame(
+      program = region_label, gene = genes, region = r,
+      mean_log = Matrix::rowMeans(sub),
+      expm1_mean = log1p(Matrix::rowMeans(expm1(sub))),
+      pct_exp = Matrix::rowSums(sub > 0) / length(cells)
+    ))
+  }
+  out
 }
 
 
+## ----fig3F_shared_scale-------------------------------------------------------
+# Shared colour scale across both panels, computed before either is plotted.
+all_genes <- intersect(c(genes_proximal, genes_distal), rownames(entero))
+all_mat <- GetAssayData(entero, assay = "RNA", layer = "data")[all_genes, , drop = FALSE]
+shared_fill_limits <- range(Matrix::rowMeans(all_mat[, entero$Location == "Duodenum", drop = FALSE]),
+                            Matrix::rowMeans(all_mat[, entero$Location == "Ileum", drop = FALSE]))
+cat("Shared Ave. exp. scale:", shared_fill_limits[1], "-", shared_fill_limits[2], "\n")
+
+exp_table <- rbind(
+  export_both_conventions(entero, genes_proximal, "Proximal"),
+  export_both_conventions(entero, genes_distal, "Distal")
+)
+write.csv(exp_table, op("supporting_fig3F_expression_both_conventions.csv"), row.names = FALSE)
+cat("Wrote both averaging conventions for", nrow(exp_table), "gene x region rows to",
+    "supporting_fig3F_expression_both_conventions.csv\n")
+
+
 ## ----fig3F_proximal, fig.width=3.2, fig.height=3.5----------------------------
-p_prox <- make_dotplot_3F(entero, genes_proximal, "Proximal SI program")
+p_prox <- make_dotplot_3F(entero, genes_proximal, "Proximal SI program", fill_limits = shared_fill_limits)
 ggsave(op("fig3F_dotplot_proximal_program.pdf"), p_prox, width = 3.2, height = 3.5)
 p_prox
 
 
 ## ----fig3F_distal, fig.width=3.2, fig.height=3.5------------------------------
-p_dist <- make_dotplot_3F(entero, genes_distal, "Distal SI program")
+p_dist <- make_dotplot_3F(entero, genes_distal, "Distal SI program", fill_limits = shared_fill_limits)
 ggsave(op("fig3F_dotplot_distal_program.pdf"), p_dist, width = 3.2, height = 3.5)
 p_dist
 
