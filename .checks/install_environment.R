@@ -28,6 +28,13 @@ same_ver <- function(a, b) {
   isTRUE(tryCatch(package_version(a) == package_version(b), error = function(e) FALSE))
 }
 have_ver <- function(p) tryCatch(as.character(packageVersion(p)), error = function(e) NA_character_)
+# GitHub packages have no CRAN-style release cadence, so two different commits can
+# legitimately share the same declared Version string -- a version match alone doesn't
+# prove the installed package is the exact commit this analysis used. remotes records
+# the actual installed commit in the package's own DESCRIPTION; compare that too.
+have_sha <- function(p) tryCatch(utils::packageDescription(p, fields = "RemoteSha"),
+                                 error = function(e) NA_character_)
+want_sha <- function(spec) sub("^.*@", "", spec)  # "owner/repo@sha" -> "sha"
 cur <- paste(R.version$major, R.version$minor, sep = ".")
 if (cur != R_TARGET)
   msg("NOTE: running R %s; the analysis used %s. Package versions below still apply,\n      but a different R minor version can change numerical output.", cur, R_TARGET)
@@ -97,11 +104,15 @@ msg("\n== GitHub (%d packages, pinned to commit) ==", length(github))
 github_failed <- character(0)
 for (p in names(github)) {
   have <- have_ver(p); want <- github_versions[[p]]
-  if (is.na(have) || !same_ver(have, want)) {
-    msg("  install %-10s %s from %s", p, want, github[[p]])
+  sha_have <- have_sha(p); sha_want <- want_sha(github[[p]])
+  # A version-string match is not sufficient on its own -- see the have_sha() comment.
+  sha_ok <- !is.na(sha_have) && identical(sha_have, sha_want)
+  if (is.na(have) || !same_ver(have, want) || !sha_ok) {
+    reason <- if (is.na(have)) "missing" else if (!same_ver(have, want)) "version differs" else "commit differs"
+    msg("  install %-10s %s from %s  (%s)", p, want, github[[p]], reason)
     result <- do_install(remotes::install_github(github[[p]], upgrade = "never", force = !is.na(have)))
     if (inherits(result, "try-error")) { msg("    ERROR installing %s: %s", p, conditionMessage(attr(result, "condition"))); github_failed <- c(github_failed, p) }
-  } else msg("  ok      %-14s %s", p, have)
+  } else msg("  ok      %-14s %s  (commit %s)", p, have, substr(sha_have, 1, 10))
 }
 
 # ── report ───────────────────────────────────────────────────────────────────
@@ -114,6 +125,16 @@ for (p in c(names(cran), names(bioc), names(github))) {
   if (is.na(have)) { msg("  MISSING  %s", p); bad <- bad + 1 }
   else if (!is.na(want) && !same_ver(have, want)) {
     msg("  DIFFERS  %-14s have %s, analysis used %s", p, have, want); diff <- diff + 1
+  }
+  else if (p %in% names(github)) {
+    # Version alone does not prove the exact commit for a GitHub package -- also check
+    # the installed RemoteSha against the one this analysis actually used.
+    sha_have <- have_sha(p); sha_want <- want_sha(github[[p]])
+    if (is.na(sha_have) || !identical(sha_have, sha_want)) {
+      msg("  DIFFERS  %-14s version matches (%s) but commit does not (have %s, analysis used %s)",
+          p, have, if (is.na(sha_have)) "unknown" else substr(sha_have, 1, 10), substr(sha_want, 1, 10))
+      diff <- diff + 1
+    }
   }
 }
 failed <- c(cran_failed, bioc_failed, github_failed)
