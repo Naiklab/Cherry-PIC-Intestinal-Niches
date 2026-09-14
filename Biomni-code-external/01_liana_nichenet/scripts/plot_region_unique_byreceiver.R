@@ -74,19 +74,32 @@ plot_region <- function(region_label, csv_path, top_n, out_svg, out_png) {
   df$short_module <- short_label(df$module_curated)
   df$dual_supported <- toupper(as.character(df$dual)) == "TRUE"
   df$neglog10_fdr <- -log10(pmax(df$aggregate_rank, 1e-300))
+  # Blank combined_rank sorts last (worst), matching how the CSV was already ranked.
+  df$rank_for_order <- ifelse(is.na(df$combined_rank), Inf, df$combined_rank)
 
   # LIANA-only pairs carry no nn_activity value at all (blank, not just low) -- these
-  # are exactly what the shipped figure's "no NicheNet activity" label marks. Give them
-  # a placeholder position at the left edge of the real activity range rather than
-  # dropping them.
+  # are exactly what the shipped figure's "no NicheNet activity" label marks. A second
+  # independent review found the first version of this script placed them at the same
+  # x-position as the most negative *real* measured value, which reads as a genuine
+  # (if weak) activity rather than "no activity at all" and put the label in a spot that
+  # could overlap real points. Give them their own position with a visible gap outside
+  # the measured range instead.
   no_nn <- is.na(df$nn_activity)
-  x_floor <- min(df$nn_activity, na.rm = TRUE)
-  df$nn_activity[no_nn] <- x_floor
+  x_range <- range(df$nn_activity, na.rm = TRUE)
+  x_gap <- diff(x_range) * 0.12
+  x_no_nn <- x_range[1] - x_gap
+  df$nn_activity[no_nn] <- x_no_nn
 
-  mod_order <- df %>% group_by(short_module) %>% summarise(best = max(nn_activity, na.rm = TRUE)) %>%
-    arrange(desc(best)) %>% pull(short_module)
+  # Order modules and pairs by combined_rank, ascending (best first) -- a second
+  # independent review found the previous version ordered by nn_activity instead, which
+  # does not reproduce the manuscript's order (verified here against the actual
+  # duodenum/ileum CSVs: sorting each module by its single best combined_rank
+  # reproduces the manuscript's exact module sequence, e.g. duodenum's
+  # FGF -> Growth factors -> ECM-Integrin -> Axon guidance -> Other -> ...).
+  mod_order <- df %>% group_by(short_module) %>% summarise(best = min(rank_for_order)) %>%
+    arrange(best) %>% pull(short_module)
   df$short_module <- factor(df$short_module, levels = mod_order)
-  df <- df %>% arrange(short_module, desc(nn_activity))
+  df <- df %>% arrange(short_module, rank_for_order)
   df$pair <- factor(df$pair, levels = rev(df$pair))
 
   cols <- setNames(color_for_short(levels(df$short_module)), levels(df$short_module))
@@ -103,13 +116,16 @@ plot_region <- function(region_label, csv_path, top_n, out_svg, out_png) {
     geom_point() +
     geom_text(data = mod_labels, aes(x = x, y = y, label = short_module, color = short_module),
              inherit.aes = FALSE, hjust = 0, fontface = "bold", size = 3) +
-    { if (any(no_nn)) annotate("text", x = x_floor, y = 0.3, label = "no NicheNet activity",
-                              angle = 90, hjust = 1, size = 2.3, color = "grey40") } +
+    { if (any(no_nn)) list(
+        geom_vline(xintercept = x_range[1] - x_gap / 2, linetype = "dashed", color = "grey70", linewidth = 0.3),
+        annotate("text", x = x_no_nn, y = 0.3, label = "no NicheNet\nactivity",
+                angle = 90, hjust = 1, size = 2.3, color = "grey40", lineheight = 0.8)
+      ) } +
     scale_color_manual(values = cols, guide = "none") +
     scale_alpha_manual(values = c(`TRUE` = 1, `FALSE` = 0.35), name = "Dual-supported",
                        labels = c(`FALSE` = "no", `TRUE` = "yes")) +
     scale_size_continuous(name = "-log10(RRA FDR)") +
-    scale_x_continuous(expand = expansion(mult = c(0.08, 0.35))) +
+    scale_x_continuous(expand = expansion(mult = c(0.1, 0.35))) +
     labs(title = sprintf("%s → Stem cells — top %d combined LIANA+NicheNet, by module",
                          region_label, min(top_n, nrow(df))),
         x = "NicheNet activity (stem Pearson)", y = NULL) +
