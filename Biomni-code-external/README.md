@@ -80,7 +80,7 @@ counts CSV.
 |--------|---------|-------|--------|
 | `ambient_rna_audit.R` | Identify ambient RNA contamination | `module_pathway_leading_edges.csv` | `ambient_annotated_pathway_table.csv` |
 | `cell_level_validation_fix.R` | Validate ambient genes at cell level | Seurat object + ambient panel | `cell_level_expression_validation.csv` |
-| `filter_and_rerun_fgsea_v5.R` | Re-run FGSEA without ambient genes | Pseudobulk CSVs + ambient panel | Filtered FGSEA results |
+| `filter_and_rerun_fgsea_v5.R` | Curate leading-edge genes for ambient contamination on the original fgsea run (does not recompute NES/padj on a filtered ranking — an earlier version of this row said "re-run"; see the script's own header for why a literal recompute was tried and rejected) | Pseudobulk CSVs + ambient panel | Curated FGSEA results |
 | `regenerate_pathway_figures.R` | Generate heatmaps + bar plots | `pathway_table_cleaned.csv` | 25 heatmaps + 6 bar plots |
 
 ### Run instructions
@@ -92,7 +92,8 @@ Rscript scripts/ambient_rna_audit.R
 # 2. Run cell-level validation (optional — already done, requires Seurat object)
 Rscript scripts/cell_level_validation_fix.R
 
-# 3. Re-run FGSEA without ambient genes (optional — already done)
+# 3. Curate leading-edge genes for ambient contamination (optional — already done;
+#    this does not recompute NES/padj, see the script's own header)
 Rscript scripts/filter_and_rerun_fgsea_v5.R
 
 # 4. Generate final plots (this is the main plotting script)
@@ -115,7 +116,7 @@ repository: its two inputs are read from `../data/` or from `CHERRYPIC_MASTER_OB
 `CHERRYPIC_MARKER_XLSX`, and it writes to `../outputs/` rather than the sandbox's
 `/mnt/results`.
 
-**Neither input ships here.** `Master.Obj.rds` is the 5.8 GB integrated atlas built by
+**Only one of the two inputs ships here.** `Master.Obj.rds` is the 5.8 GB integrated atlas built by
 `Cherry-PIC-ST-data/final_figures/03_scrna_reference/`; it is on the analysis cluster and
 belongs with the Zenodo deposit.
 

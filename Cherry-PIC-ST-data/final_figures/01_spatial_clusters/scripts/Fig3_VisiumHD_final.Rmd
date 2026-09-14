@@ -252,8 +252,10 @@ remapped through the 8 µm annotation CSV — but that clustering never distingu
 Enteroendocrine cells as their own cluster, so the panel only ever reached 8 of the
 published 9 categories.
 
-The real panel comes from a clustering run specifically on the epithelial subset at
-16 µm, which does resolve EEC as its own cluster (cluster 33). See
+The real panel comes from the 16 µm object's own whole-object clustering, which does
+resolve EEC as its own cluster (cluster 33) — coarser binning, not a clustering run
+confined to the epithelial subset; the subset itself is only re-embedded (PCA/UMAP),
+inheriting those cluster identities rather than being re-clustered. See
 `../../04_spatial_clusters_16um/scripts/Fig3E_16um_final.Rmd`, which resolves all 9
 categories in the published legend. `fig3E_epithelia_umap.pdf` and its supporting outputs
 are written there, not here.

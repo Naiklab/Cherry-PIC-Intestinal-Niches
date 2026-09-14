@@ -77,8 +77,8 @@ from sequencing data.
 | **S7A** | Marker dot plots, Cherry-PIC niche scRNA — epithelia | `Cherry-PIC-scRNA-project/final_figures/10x-Cherry-PIC-scRNA/02-clustering-and-annotation/scripts/FigS7_DotPlots_final.Rmd` |
 | **S7B** | Marker dot plots, Cherry-PIC niche scRNA — immune and stroma | *same* |
 | **S8A/B** | Region-unique ligand–receptor pairs by module, stem-cell receiver — duodenum and ileum | `Biomni-code-external/01_liana_nichenet/scripts/plot_region_unique_byreceiver.R` |
-| **S9A** | Module score heatmaps — Notch and WNT signalling | `Biomni-code-external/02_pathway_analysis/scripts/regenerate_pathway_figures.R` |
-| **S9B** | Module score heatmap — retinoic acid signalling | *same* |
+| **S9A** | Pathway-by-cell-type NES heatmaps, grouped by module — Notch and WNT signalling | `Biomni-code-external/02_pathway_analysis/scripts/regenerate_pathway_figures.R` |
+| **S9B** | Pathway-by-cell-type NES heatmap, grouped by module — retinoic acid signalling | *same* |
 | **S9C** | GSEA diverging bars — macrophages | *same* |
 
 Figures **1, 2, 5, S1, S2** and **S6** are not derived from sequencing data and have no code
