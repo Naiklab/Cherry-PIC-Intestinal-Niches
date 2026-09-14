@@ -550,16 +550,25 @@ Degirmenci.Obj$dataset_id      <- "GSE113043"
 Degirmenci.Obj$dataset_label   <- "Degirmenci_2018"
 Degirmenci.Obj$cell_class      <- "Mesenchymal"
 Degirmenci.Obj$tissue          <- "Small intestine"
-Degirmenci.Obj$sequencing_tech <- "10x_Chromium"
+Degirmenci.Obj$sequencing_tech <- "scRNA-seq_legacy"
 Degirmenci.Obj$orig_annotation <- NA_character_
 Degirmenci.Obj$data_type       <- "UMI_counts"
+# `sequencing_tech` is "scRNA-seq_legacy", not "10x_Chromium", even though GSE113043
+# almost certainly ran on 10x Chromium like SpaceFold/McCarthy below. The frozen,
+# published atlas built this Harmony correction with Degirmenci and Kinchen split out
+# as their own group (their platform was never confirmed at the time, so they were left
+# generically labeled) — four groups total, not three. This preserves that split so a
+# rerun corrects on the same grouping that produced the published embedding and its
+# cluster annotations, rather than "fixing" the label in a way that silently merges two
+# groups and changes what Harmony actually corrects for. See the RunHarmony comment
+# below for the full account.
 
 # ── Kinchen ───────────────────────────────────────────────────────────────────
 Kinchen.Obj$dataset_id      <- "GSE114374"
 Kinchen.Obj$dataset_label   <- "Kinchen_2018"
 Kinchen.Obj$cell_class      <- "Mesenchymal"
 Kinchen.Obj$tissue          <- "Colon"
-Kinchen.Obj$sequencing_tech <- "10x_Chromium"
+Kinchen.Obj$sequencing_tech <- "scRNA-seq_legacy"
 Kinchen.Obj$orig_annotation <- NA_character_
 Kinchen.Obj$data_type       <- "UMI_counts"
 
@@ -698,13 +707,24 @@ set.seed(42)
 Master.Obj <- RunHarmony(
   Master.Obj,
   # `sequencing_tech` records the single-cell CAPTURE platform (PIPseq / Drop-seq /
-  # 10x_Chromium), not the sequencer. It previously mixed a sequencer ("NovaSeqX") and an
-  # assay type ("scRNA-seq") with real platform names.
+  # 10x_Chromium), not the sequencer. It previously mixed a sequencer ("NovaSeqX") for the
+  # Rosenblum objects and a generic assay-type placeholder ("scRNA-seq") for Degirmenci and
+  # Kinchen in with real platform names. "NovaSeqX" was a pure rename to "PIPseq" (Epi/Immune
+  # were always their own group either way, so this doesn't change what Harmony corrects for).
   #
-  # NOTE for anyone rebuilding: standardising it merged the former "scRNA-seq" group into
-  # "10x_Chromium", so this variable now has 3 levels where the frozen object was built
-  # with 4. A rebuild therefore corrects on a slightly different grouping. Harmony is
-  # stochastic in any case, so a rebuild never reproduces the frozen embedding exactly.
+  # Degirmenci and Kinchen are kept as a separate "scRNA-seq_legacy" group here, distinct from
+  # SpaceFold/McCarthy's "10x_Chromium", even though both almost certainly ran on 10x Chromium
+  # too (GSE113043/GSE114374 are 2018 10x Genomics studies) and were most likely only left
+  # generically labeled because their platform was never confirmed at build time. Folding them
+  # into "10x_Chromium" is very likely the scientifically correct fix, but the frozen,
+  # published atlas was built with them as their own group — four groups total — and its
+  # cluster annotations and downstream RCTD/deconvolution are keyed to that clustering.
+  # Restoring the four-group split here means a rerun corrects on the same grouping that
+  # produced the published embedding, rather than silently changing it. Harmony is stochastic
+  # regardless, so no rerun reproduces the frozen embedding exactly — this only preserves the
+  # grouping structure, not bit-identical output. If the three-group version is ever adopted
+  # going forward, treat it as a new analysis: its cluster annotations and downstream RCTD
+  # reference/deconvolution need their own revalidation, not reuse of the frozen atlas's.
   group.by.vars  = c("dataset_label", "sequencing_tech"),
   reduction      = "pca",
   reduction.save = "harmony",
