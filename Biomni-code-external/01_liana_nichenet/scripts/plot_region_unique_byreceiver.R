@@ -20,8 +20,10 @@
 #   - point size = -log10(aggregate_rank) (shipped legend: "-log10(RRA FDR)")
 #   - point fill = dual (TRUE = solid, FALSE = pale/hollow; shipped legend
 #     "Dual-supported: no / yes")
-#   - rows within a module ordered by descending nn_activity; modules ordered by
-#     their best (highest) pair
+#   - rows and modules ordered by combined_rank, ascending (best first) -- this was
+#     originally read off the shipped PNG as descending nn_activity, but a second
+#     independent review found that doesn't reproduce the manuscript's module order;
+#     combined_rank does (verified against both regions' CSVs)
 #   - "top N" is the first N rows of the CSV, which is already combined_rank-
 #     ascending (32/32 for duodenum, 50/117 for ileum) - confirmed against the
 #     shipped files' own row/point counts
@@ -118,8 +120,13 @@ plot_region <- function(region_label, csv_path, top_n, out_svg, out_png) {
              inherit.aes = FALSE, hjust = 0, fontface = "bold", size = 3) +
     { if (any(no_nn)) list(
         geom_vline(xintercept = x_range[1] - x_gap / 2, linetype = "dashed", color = "grey70", linewidth = 0.3),
-        annotate("text", x = x_no_nn, y = 0.3, label = "no NicheNet\nactivity",
-                angle = 90, hjust = 1, size = 2.3, color = "grey40", lineheight = 0.8)
+        # A third independent review found this label at a fixed y = 0.3 (below row 1,
+        # the lowest real data row) was clipped out of the rendered PNG/SVG entirely --
+        # present in the vector geometry but invisible. Anchored to the midpoint of the
+        # actual no-activity rows' y-positions instead, which is always in-range.
+        annotate("text", x = x_no_nn, y = mean(y_idx[as.character(df$pair[no_nn])]),
+                label = "no NicheNet\nactivity",
+                angle = 90, hjust = 0.5, size = 2.3, color = "grey40", lineheight = 0.8)
       ) } +
     scale_color_manual(values = cols, guide = "none") +
     scale_alpha_manual(values = c(`TRUE` = 1, `FALSE` = 0.35), name = "Dual-supported",
