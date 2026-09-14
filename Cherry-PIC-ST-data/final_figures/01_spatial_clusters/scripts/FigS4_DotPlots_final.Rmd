@@ -88,7 +88,21 @@ cluster_map    <- setNames(trimws(ann$Annotation), ann$Cluster)
 cluster_levels <- unique(trimws(ann$Annotation))
 
 cl <- as.character(merged.object@meta.data[[cluster_col]])
-merged.object$cluster_annotation <- factor(unname(cluster_map[cl]), levels = cluster_levels)
+cluster_annotation_vec <- unname(cluster_map[cl])
+
+# A second independent review found Fig S4A's proximal panel merges two manuscript rows:
+# clusters 10 and 14 are both named "Mid-villus proximal enterocytes-4" in the crosswalk
+# (a deliberate shared label -- unlike Crypts and Muscularis, which also span multiple
+# clusters and are correctly meant to be averaged together as one row here). Give 10 and
+# 14 alone a disambiguating suffix so they display as two rows; every other label,
+# including the other multi-cluster ones, is untouched.
+cluster_annotation_vec[cl == "10"] <- paste0(cluster_annotation_vec[cl == "10"], " (cl.10)")
+cluster_annotation_vec[cl == "14"] <- paste0(cluster_annotation_vec[cl == "14"], " (cl.14)")
+cluster_levels <- append(cluster_levels,
+                         c("Mid-villus proximal enterocytes-4 (cl.10)", "Mid-villus proximal enterocytes-4 (cl.14)"),
+                         after = match("Mid-villus proximal enterocytes-4", cluster_levels))
+cluster_levels <- setdiff(cluster_levels, "Mid-villus proximal enterocytes-4")
+merged.object$cluster_annotation <- factor(cluster_annotation_vec, levels = cluster_levels)
 
 # The object arrives with normalized expression already in the default assay's
 # "data" layer, so no NormalizeData call is needed here.
@@ -108,11 +122,19 @@ panel_A_prox <- list(
            "Tmprss15","Akp3","S100g","Slc40a1","Car2","Aqp8","Car4","Enpp3","Apoa4",
            "Apoc3","Slc23a4","Bmp8a","Clca4a","Rab30","Cldn4","Cybrd1","Ada","Slc28a2",
            "Nt5e","Ly6m","Ifit1bl1","Isg15","Ifit1","Ifit3","Usp18"),
+  # A second independent review found this list silently loses two manuscript rows:
+  # "Tip-villus proximal enterocytes-3" was never a real crosswalk label (cluster 25 is
+  # "Tip-villus activated proximal enterocytes") and intersect() in make_dotplot() drops
+  # unmatched requests with no warning; and clusters 10 & 14 share one label, which
+  # merges two manuscript rows into one when grouped by that label alone. Corrected to
+  # the real label and the two disambiguated (cl.10)/(cl.14) labels set up above -- 9
+  # rows now, matching the manuscript's nine proximal rows.
   cell_types_top_to_bottom = c(
-    "Tip-villus proximal enterocytes-3", "Tip-villus proximal enterocytes-2",
-    "Tip-villus proximal enterocytes-1", "Mid-villus proximal enterocytes-4",
-    "Mid-villus proximal enterocytes-3", "Mid-villus proximal enterocytes-2",
-    "Mid-villus proximal enterocytes-1", "Bottom-villus proximal enterocytes")
+    "Tip-villus activated proximal enterocytes", "Tip-villus proximal enterocytes-2",
+    "Tip-villus proximal enterocytes-1", "Mid-villus proximal enterocytes-4 (cl.14)",
+    "Mid-villus proximal enterocytes-4 (cl.10)", "Mid-villus proximal enterocytes-3",
+    "Mid-villus proximal enterocytes-2", "Mid-villus proximal enterocytes-1",
+    "Bottom-villus proximal enterocytes")
 )
 
 panel_A_dist <- list(
@@ -160,7 +182,12 @@ Zero-expression dots are not drawn.
 ```{r dotplot_fn}
 make_dotplot <- function(obj, genes, cell_types, title) {
   genes <- intersect(genes, rownames(obj))
-  cell_types <- intersect(cell_types, levels(obj$cluster_annotation))
+  # A silent intersect() here is exactly how the missing-crosswalk-label bug above went
+  # unnoticed: fail loudly instead if a requested row does not exist.
+  missing_ct <- setdiff(cell_types, levels(obj$cluster_annotation))
+  if (length(missing_ct) > 0)
+    stop("make_dotplot(): requested cell type(s) not in cluster_annotation: ",
+        paste(missing_ct, collapse = ", "))
   data_mat <- GetAssayData(obj, layer = "data")[genes, , drop = FALSE]
   ct <- obj$cluster_annotation
 
