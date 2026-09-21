@@ -3,6 +3,8 @@ if (nzchar(Sys.getenv("CHERRYPIC_R_LIB"))) .libPaths(c(Sys.getenv("CHERRYPIC_R_L
 
 library(Seurat)
 library(tidyverse)
+library(speckle)
+library(jsonlite)
 
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
@@ -182,6 +184,43 @@ for (nm in names(compartments)) {
   p_l <- make_dotplot(dd, cts, nm, "avg_exp", c(0, max(dd$avg_exp)), "Log1p expression")
   ggsave(op(paste0("supporting_dotplot_", nm, "_log1p.pdf")), p_l, width = 12, height = 3.75)
 }
+
+
+## ----propeller_corrected------------------------------------------------------
+tags <- fromJSON(file.path(data_dir, "cells_per_tag.json"))
+bc2rep <- stack(tags)
+names(bc2rep) <- c("raw_barcode", "replicate")
+bc2rep$replicate <- as.character(bc2rep$replicate)
+tissue_map <- c(OB1 = "Ileum", OB2 = "Ileum", OB3 = "Duodenum", OB4 = "Duodenum")
+
+# Cell names carry a "{sample}_" prefix that the tag table does not.
+raw_bc <- sub("^[^_]+_", "", colnames(obj_filt))
+obj_filt$replicate <- unname(setNames(bc2rep$replicate, bc2rep$raw_barcode)[raw_bc])
+obj_filt$region    <- unname(tissue_map[obj_filt$replicate])
+stopifnot(!anyNA(obj_filt$replicate))
+
+prop_corrected <- propeller(clusters = as.character(obj_filt$broad_cell_type),
+                            sample = obj_filt$replicate, group = obj_filt$region,
+                            transform = "logit")
+prop_corrected <- prop_corrected[order(prop_corrected$FDR), ]
+write.csv(prop_corrected, op("supporting_propeller_results_broad_corrected.csv"), row.names = TRUE)
+
+ref_path <- op("supporting_propeller_results_broad.csv")
+if (file.exists(ref_path)) {
+  prop_original <- read.csv(ref_path, row.names = 1, check.names = FALSE)
+  cmp <- data.frame(
+    FDR_original  = prop_original[rownames(prop_corrected), "FDR"],
+    FDR_corrected = prop_corrected$FDR,
+    row.names = rownames(prop_corrected)
+  ) |> mutate(across(everything(), ~ signif(.x, 3)))
+  print(cmp)
+  cat("\nSignificant at FDR < 0.05, original :",
+      paste(rownames(prop_original)[prop_original$FDR < 0.05], collapse = "; "), "\n")
+} else {
+  print(signif(prop_corrected[, c("PropMean.Duodenum", "PropMean.Ileum", "FDR")], 3))
+}
+cat("Significant at FDR < 0.05, corrected:",
+    paste(rownames(prop_corrected)[prop_corrected$FDR < 0.05], collapse = "; "), "\n")
 
 
 ## ----session_info-------------------------------------------------------------
