@@ -50,7 +50,7 @@ in `Dataset_Documentation.xlsx`.
 | **3E** | Epithelial UMAP along the crypt–villus axis, 16 µm | `Cherry-PIC-ST-data/final_figures/04_spatial_clusters_16um/scripts/Fig3E_16um_final.Rmd` |
 | **3F** | Dot plots, region-specific enterocyte programs (proximal and distal), scRNA | `DR26001-scRNA-project/final_figures/DR26001-scRNA/04-merge-controls/scripts/Fig3F_DotPlots_final.Rmd` |
 | **4A** | Spatial expression of *Fabp1*, *Reg1*, *Fabp6*, *Slc10a2* across duodenum and ileum | `Cherry-PIC-ST-data/final_figures/02_regional_genes/scripts/Fig4A_VisiumHD_final.Rmd` |
-| **6B** | scRNA UMAP of sorted Cherry-PIC niches, broad cell type | `Cherry-PIC-scRNA-project/final_figures/10x-Cherry-PIC-scRNA/02-clustering-and-annotation/scripts/Fig6_scRNA_final.Rmd` |
+| **6B** | scRNA UMAP of sorted Cherry-PIC niches, broad cell type — Mid-villus removed, embedding recomputed | `Cherry-PIC-scRNA-project/final_figures/10x-Cherry-PIC-scRNA/02-clustering-and-annotation/scripts/Fig6B_UMAP_Recomputed_final.Rmd` |
 | **6C** | Cell-type composition by region, with propeller tests | *same* |
 | **6D** | RCTD dominant cell type, hi-res spatial — duodenum niche | `Cherry-PIC-scRNA-project/final_figures/10x-Cherry-PIC-scRNA/03-deconvolution-with-ST-data/scripts/Fig6_Deconvolution_StemNiche_final.Rmd` |
 | **6E** | RCTD dominant cell type, hi-res spatial — ileum niche | *same* |
@@ -119,7 +119,7 @@ Cherry-PIC-ST-data/            Visium HD spatial transcriptomics
 
 Cherry-PIC-scRNA-project/      10x scRNA of Cherry-PIC niches
   final_figures/10x-Cherry-PIC-scRNA/
-    02-clustering-and-annotation/   Fig 6B/6C, Fig S7
+    02-clustering-and-annotation/   Fig 6B (recomputed UMAP), Fig 6C, Fig S7
     03-deconvolution-with-ST-data/  Fig 6D/6E
 
 DR26001-scRNA-project/         10x scRNA time course — Fig 3F
@@ -258,6 +258,7 @@ Also used, by stage:
 | tibble | 3.3.1 | data frames |
 | tidyr | 1.3.2 | reshaping |
 | grid | base R | low-level graphics, used by the heatmap layouts |
+| tools | base R | title-casing in the Fig 6B/S7 marker-panel script |
 | gridExtra | 2.3 | multi-panel QC layouts in the hashtag-pool pipeline |
 
 **The hashtag-pool pipeline ran under a different R.** `DR26001-scRNA-project/.../00-hashtag-pools/scripts/`

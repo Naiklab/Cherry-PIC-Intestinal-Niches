@@ -11,15 +11,19 @@ output:
 
 ## Purpose
 
-10x scRNA of Cherry-PIC sorted niches — the annotated UMAP and cell-type composition
-panels, Figure 6B and 6C. The deconvolution panels 6D and 6E come from
+10x scRNA of Cherry-PIC sorted niches — the cell-type composition panel, Figure 6C, and the
+annotated UMAP on the original embedding. **Figure 6B itself now comes from
+`Fig6B_UMAP_Recomputed_final.Rmd`**, which re-embeds the cells after the Mid-villus removal and
+corrects 237 annotations; that is the layout of the published panel. The UMAP drawn here keeps
+the original embedding and is written as a `supporting_` file. The deconvolution panels 6D and
+6E come from
 `../../03-deconvolution-with-ST-data/scripts/Fig6_Deconvolution_StemNiche_final.Rmd`.
 
 ## Outputs
 
 | Panel | Output | Upstream source |
 |-------|--------|-----------------|
-| **Fig 6B** — annotated UMAP, broad cell type | `fig6B_umap_celltype_broad.pdf` | `03_annotation_and_doublet_filtering.Rmd` §7.1b |
+| supporting — annotated UMAP, broad cell type, original embedding (not the published 6B) | `supporting_umap_celltype_broad_original_embedding.pdf` | `03_annotation_and_doublet_filtering.Rmd` §7.1b |
 | **Fig 6C** — composition %, broad cell type, pooled by region (2 bars, no significance markers) | `fig6C_composition_stacked_broad.pdf` | `08_speckle_proportions.Rmd` §7.3.3, restructured (see §6 below) |
 | supporting — annotated UMAP, fine cell type | `supporting_umap_celltype_fine.pdf` | `03_annotation_and_doublet_filtering.Rmd` §7.1 |
 | supporting — composition %, fine cell type (per-replicate stacked bar) | `supporting_composition_stacked_fine.pdf` | `08_speckle_proportions.Rmd` §5.3 |
@@ -27,8 +31,10 @@ panels, Figure 6B and 6C. The deconvolution panels 6D and 6E come from
 | supporting — composition %, broad cell type (propeller FDR volcano) | `supporting_composition_volcano_broad.pdf` | `08_speckle_proportions.Rmd` §7.3.4 |
 
 **Mid-villus enterocytes are excluded from every panel above.** This is an analysis
-decision, not a QC filter — see §2.2. Fig 6B and 6C are the published panels; everything
-else carries a `supporting_` prefix and is kept for reference.
+decision, not a QC filter — see §2.2. Fig 6C is the published panel written here; everything
+else carries a `supporting_` prefix and is kept for reference. 6C and its propeller statistics
+use the uncorrected `broad_cell_type`; the corrected composition is in
+`Fig6B_UMAP_Recomputed_final.Rmd`.
 
 ## Inputs
 
@@ -204,7 +210,7 @@ p_umap_broad <- DimPlot(seu,
   ggtitle("Cherry-PIC sorted niches — cell-type annotation (broad)") +
   theme(legend.text = element_text(size = 9))
 
-save_pdf(p_umap_broad, op("fig6B_umap_celltype_broad.pdf"), width = 14, height = 7)
+save_pdf(p_umap_broad, op("supporting_umap_celltype_broad_original_embedding.pdf"), width = 14, height = 7)
 p_umap_broad
 ```
 

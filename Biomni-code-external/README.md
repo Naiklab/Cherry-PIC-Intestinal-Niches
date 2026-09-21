@@ -125,6 +125,21 @@ after an earlier version of this note called it missing entirely. Only `Master.O
 on the cluster and in the Zenodo deposit) is absent from this repository; Figure S5C–E can be
 regenerated once that object is available.
 
+## reproduce_plots — Figure 6B UMAP and Figure S7 annotation dot plots
+
+`reproduce_plots/` is the package Biomni delivered on 21 September 2026 for the panels drawn from
+the annotated Cherry-PIC scRNA object with Mid-villus enterocytes removed: the recomputed UMAP
+of Figure 6B, a composition plot, and the annotation marker dot plots of Figure S7. It is kept
+as delivered, apart from its `figures/` output folder, which is not tracked. Its two frozen
+objects (`objects/`, 670 MB) and `data/corrected_broad_cell_type.rds` are not tracked either;
+they are ignored like every other `.rds` here.
+
+The panels are reproduced by `Cherry-PIC-scRNA-project/final_figures/10x-Cherry-PIC-scRNA/02-clustering-and-annotation/scripts/Fig6B_UMAP_Recomputed_final.Rmd`,
+which reads the same two objects from that folder's `data/` and stores the annotation correction
+as a table of named cells (`broad_cell_type_corrections.csv`) instead of the package's unnamed
+vector. The recomputed embedding cannot be regenerated exactly, because Harmony's initialisation
+is unseeded; the published panel comes from the frozen object.
+
 ## A note on `Full-data/`
 
 `Full-data/` is the Biomni deliveries exactly as received, kept as the record of what was

@@ -187,7 +187,7 @@ p_umap_broad <- DimPlot(seu,
   ggtitle("Cherry-PIC sorted niches — cell-type annotation (broad)") +
   theme(legend.text = element_text(size = 9))
 
-save_pdf(p_umap_broad, op("fig6B_umap_celltype_broad.pdf"), width = 14, height = 7)
+save_pdf(p_umap_broad, op("supporting_umap_celltype_broad_original_embedding.pdf"), width = 14, height = 7)
 p_umap_broad
 
 
